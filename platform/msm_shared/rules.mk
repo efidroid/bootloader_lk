@@ -111,7 +111,8 @@ ifeq ($(PLATFORM),msm8960)
 			$(LOCAL_DIR)/mipi_dsi_phy.o \
 			$(LOCAL_DIR)/timer.o \
 			$(LOCAL_DIR)/mdp_lcdc.o \
-			$(LOCAL_DIR)/nand.o
+			$(LOCAL_DIR)/nand.o \
+			$(LOCAL_DIR)/dload_util.o
 endif
 
 ifeq ($(PLATFORM),msm8974)
