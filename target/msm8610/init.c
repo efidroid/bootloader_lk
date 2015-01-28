@@ -348,6 +348,11 @@ unsigned target_baseband()
 	return board_baseband();
 }
 
+int emmc_recovery_init(void)
+{
+    return _emmc_recovery_init();
+}
+
 void target_serialno(unsigned char *buf)
 {
 	uint32_t serialno;
