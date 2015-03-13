@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -124,6 +124,12 @@ uint32_t mmc_write(uint64_t data_addr, uint32_t data_len, void *in)
 	if (data_len % block_size)
 		data_len = ROUNDUP(data_len, block_size);
 
+	/*
+	 * Flush the cache before handing over the data to
+	 * storage driver
+	 */
+	arch_clean_invalidate_cache_range((addr_t)in, data_len);
+
 	if (platform_boot_dev_isemmc())
 	{
 		/* TODO: This function is aware of max data that can be
@@ -151,8 +157,6 @@ uint32_t mmc_write(uint64_t data_addr, uint32_t data_len, void *in)
 	}
 	else
 	{
-		arch_clean_invalidate_cache_range((addr_t)in, data_len);
-
 		ret = ufs_write((struct ufs_dev *)dev, data_addr, (addr_t)in, (data_len / block_size));
 
 		if (ret)
@@ -295,6 +299,9 @@ static uint32_t mmc_zero_out(struct mmc_device* dev, uint32_t blk_addr, uint32_t
 	}
 
 	memset((void *)out, 0, erase_size);
+
+	/* Flush the data to memory before writing to storage */
+	arch_clean_invalidate_cache_range((addr_t) out , erase_size);
 
 	if (mmc_sdhci_write(dev, out, blk_addr, num_blks))
 	{
@@ -614,7 +621,8 @@ uint32_t mmc_write_protect(const char *ptn_name, int set_clr)
 			return 1;
 		}
 
-		size = partition_get_size(index);
+		/* Convert the size to blocks */
+		size = partition_get_size(index) / block_size;
 
 		/*
 		 * For read only partitions the minimum size allocated on the disk is
@@ -623,6 +631,7 @@ uint32_t mmc_write_protect(const char *ptn_name, int set_clr)
 		 */
 		if (partition_read_only(index) && size < card->wp_grp_size)
 		{
+			/* Write protect api takes the size in bytes, convert size to bytes */
 			size = card->wp_grp_size * block_size;
 		}
 		/* Set the power on WP bit */
