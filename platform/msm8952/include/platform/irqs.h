@@ -1,17 +1,17 @@
-/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
-
+/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of The Linux Foundation, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of The Linux Foundation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -26,9 +26,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#ifndef __IRQS_THULIUM_H
-#define __IRQS_THULIUM_H
+#ifndef __IRQS_MSM8952_H
+#define __IRQS_MSM8952_H
 
 /* MSM ACPU Interrupt Numbers */
 
@@ -43,23 +42,18 @@
 #define INT_QTMR_NON_SECURE_PHY_TIMER_EXP      (GIC_PPI_START + 3)
 #define INT_QTMR_VIRTUAL_TIMER_EXP             (GIC_PPI_START + 4)
 
-#define INT_QTMR_FRM_0_PHYSICAL_TIMER_EXP      (GIC_SPI_START + 31)
+#define INT_QTMR_FRM_0_PHYSICAL_TIMER_EXP      (GIC_SPI_START + 257)
 
-#define USB30_EE1_IRQ                          (GIC_SPI_START + 131)
-
-#define GLINK_IPC_IRQ                          (GIC_SPI_START + 168)
-
-/* Retrofit universal macro names */
-#define INT_USB_HS                             USB30_EE1_IRQ
-
-#define SDCC1_PWRCTL_IRQ                       (GIC_SPI_START + 134)
+#define USB1_HS_BAM_IRQ                        (GIC_SPI_START + 135)
+#define USB1_HS_IRQ                            (GIC_SPI_START + 134)
+#define SDCC1_PWRCTL_IRQ                       (GIC_SPI_START + 138)
 #define SDCC2_PWRCTL_IRQ                       (GIC_SPI_START + 221)
 
-#define UFS_IRQ                                (GIC_SPI_START + 265)
+/* Retrofit universal macro names */
+#define INT_USB_HS                             USB1_HS_IRQ
 
-#define EE0_KRAIT_HLOS_SPMI_PERIPH_IRQ         (GIC_SPI_START + 265)
+#define EE0_KRAIT_HLOS_SPMI_PERIPH_IRQ         (GIC_SPI_START + 190)
 
-/* Fix this: where this comes from? */
 #define NR_MSM_IRQS                            256
 #define NR_GPIO_IRQS                           173
 #define NR_BOARD_IRQS                          0
@@ -67,4 +61,4 @@
 #define NR_IRQS                                (NR_MSM_IRQS + NR_GPIO_IRQS + \
                                                NR_BOARD_IRQS)
 
-#endif	/* __IRQS_THULIUM_H */
+#endif /* __IRQS_MSM8952_H */

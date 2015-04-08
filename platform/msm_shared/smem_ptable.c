@@ -35,6 +35,7 @@
 #include <platform/iomap.h>
 #include <lib/ptable.h>
 
+#include "board.h"
 #include "smem.h"
 
 
@@ -168,7 +169,7 @@ static void smem_copy_ram_ptable(void *buf)
 
 		memcpy(&ptable, table_v2, sizeof(ram_partition_table));
 	}
-	if(ptable.hdr.version == SMEM_RAM_PTABLE_VERSION_1)
+	else if(ptable.hdr.version == SMEM_RAM_PTABLE_VERSION_1)
 	{
 		table_v1 = (struct smem_ram_ptable_v1*)buf;
 
@@ -250,7 +251,7 @@ int smem_ram_ptable_init_v1()
 
 	if(version == SMEM_RAM_PTABLE_VERSION_2)
 		smem_ram_ptable_size = sizeof(struct smem_ram_ptable_v2);
-	if(version == SMEM_RAM_PTABLE_VERSION_1)
+	else if(version == SMEM_RAM_PTABLE_VERSION_1)
 		smem_ram_ptable_size = sizeof(struct smem_ram_ptable_v1);
 	else if(version == SMEM_RAM_PTABLE_VERSION_0)
 		smem_ram_ptable_size = sizeof(struct smem_ram_ptable);
@@ -293,4 +294,33 @@ uint32_t smem_get_ram_ptable_len(void)
 uint32_t smem_get_ram_ptable_version(void)
 {
 	return ptable.hdr.version;
+}
+
+uint32_t get_ddr_start()
+{
+	uint32_t i;
+	ram_partition ptn_entry;
+	uint32_t len = 0;
+
+	ASSERT(smem_ram_ptable_init_v1());
+
+	len = smem_get_ram_ptable_len();
+
+	/* Determine the Start addr of the DDR RAM */
+	for(i = 0; i < len; i++)
+	{
+		smem_get_ram_ptable_entry(&ptn_entry, i);
+		if(ptn_entry.type == SYS_MEMORY)
+		{
+			if((ptn_entry.category == SDRAM) ||
+			   (ptn_entry.category == IMEM))
+			{
+				/* Check to ensure that start address is 1MB aligned */
+				ASSERT((ptn_entry.start & (MB-1)) == 0);
+				return ptn_entry.start;
+			}
+		}
+	}
+	ASSERT("DDR Start Mem Not found\n");
+	return 0;
 }

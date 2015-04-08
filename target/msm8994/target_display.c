@@ -33,6 +33,7 @@
 #include <err.h>
 #include <msm_panel.h>
 #include <mipi_dsi.h>
+#include <mdss_hdmi.h>
 #include <pm8x41.h>
 #include <pm8x41_wled.h>
 #include <qpnp_wled.h>
@@ -79,6 +80,50 @@ static struct gpio_pin lcd_reg_en = {	/* boost regulator */
 static struct gpio_pin bklt_gpio = {	/* lcd_bklt_reg_en */
   "pmi8994_gpios", 2, 3, 1, 0, 1
 };
+
+/* gpio name, id, strength, direction, pull, state. */
+static struct gpio_pin hdmi_cec_gpio = {        /* CEC */
+  "msmgpio", 31, 0, 2, 3, 1
+};
+
+static struct gpio_pin hdmi_ddc_clk_gpio = {   /* DDC CLK */
+  "msmgpio", 32, 0, 2, 3, 1
+};
+
+static struct gpio_pin hdmi_ddc_data_gpio = {  /* DDC DATA */
+  "msmgpio", 33, 0, 2, 3, 1
+};
+
+static struct gpio_pin hdmi_hpd_gpio = {       /* HPD, input */
+  "msmgpio", 34, 7, 0, 1, 1
+};
+
+int target_hdmi_gpio_ctrl(uint8_t enable)
+{
+	gpio_tlmm_config(hdmi_cec_gpio.pin_id, 1,	/* gpio 31, CEC */
+		hdmi_cec_gpio.pin_direction, hdmi_cec_gpio.pin_pull,
+		hdmi_cec_gpio.pin_strength, hdmi_cec_gpio.pin_state);
+
+	gpio_tlmm_config(hdmi_ddc_clk_gpio.pin_id, 1,	/* gpio 32, DDC CLK */
+		hdmi_ddc_clk_gpio.pin_direction, hdmi_ddc_clk_gpio.pin_pull,
+		hdmi_ddc_clk_gpio.pin_strength, hdmi_ddc_clk_gpio.pin_state);
+
+
+	gpio_tlmm_config(hdmi_ddc_data_gpio.pin_id, 1,	/* gpio 33, DDC DATA */
+		hdmi_ddc_data_gpio.pin_direction, hdmi_ddc_data_gpio.pin_pull,
+		hdmi_ddc_data_gpio.pin_strength, hdmi_ddc_data_gpio.pin_state);
+
+	gpio_tlmm_config(hdmi_hpd_gpio.pin_id, 1,	/* gpio 34, HPD */
+		hdmi_hpd_gpio.pin_direction, hdmi_hpd_gpio.pin_pull,
+		hdmi_hpd_gpio.pin_strength, hdmi_hpd_gpio.pin_state);
+
+	gpio_set(hdmi_cec_gpio.pin_id,      hdmi_cec_gpio.pin_direction);
+	gpio_set(hdmi_ddc_clk_gpio.pin_id,  hdmi_ddc_clk_gpio.pin_direction);
+	gpio_set(hdmi_ddc_data_gpio.pin_id, hdmi_ddc_data_gpio.pin_direction);
+	gpio_set(hdmi_hpd_gpio.pin_id,      hdmi_hpd_gpio.pin_direction);
+
+	return NO_ERROR;
+}
 
 static uint32_t dsi_pll_20nm_enable_seq(uint32_t pll_base)
 {
@@ -252,6 +297,22 @@ int target_backlight_ctrl(struct backlight *bl, uint8_t enable)
 	}
 
 	return ret;
+}
+
+int target_hdmi_pll_clock(uint8_t enable, struct msm_panel_info *pinfo)
+{
+	if (enable) {
+		hdmi_phy_reset();
+		hdmi_pll_config(pinfo->clk_rate);
+		hdmi_vco_enable();
+		hdmi_pixel_clk_enable(pinfo->clk_rate);
+	} else if(!target_cont_splash_screen()) {
+		/* Disable clocks if continuous splash off */
+		hdmi_pixel_clk_disable();
+		hdmi_vco_disable();
+	}
+
+	return NO_ERROR;
 }
 
 int target_panel_clock(uint8_t enable, struct msm_panel_info *pinfo)
@@ -454,6 +515,7 @@ bool target_display_panel_node(char *panel_name, char *pbuf, uint16_t buf_size)
 {
 	int prefix_string_len = strlen(DISPLAY_CMDLINE_PREFIX);
 	bool ret = true;
+	char vic_buf[HDMI_VIC_LEN] = "0";
 
 	panel_name += strspn(panel_name, " ");
 
@@ -469,6 +531,9 @@ bool target_display_panel_node(char *panel_name, char *pbuf, uint16_t buf_size)
 		strlcat(pbuf, LK_OVERRIDE_PANEL, buf_size);
 		buf_size -= LK_OVERRIDE_PANEL_LEN;
 		strlcat(pbuf, HDMI_CONTROLLER_STRING, buf_size);
+		buf_size -= strlen(HDMI_CONTROLLER_STRING);
+		mdss_hdmi_get_vic(vic_buf);
+		strlcat(pbuf, vic_buf, buf_size);
 	} else {
 		ret = gcdb_display_cmdline_arg(panel_name, pbuf, buf_size);
 	}

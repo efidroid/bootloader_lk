@@ -464,7 +464,9 @@ DEFINES += DISPLAY_TYPE_MDSS=1
 			$(LOCAL_DIR)/mipi_dsi.o \
 			$(LOCAL_DIR)/mipi_dsi_phy.o \
 			$(LOCAL_DIR)/mipi_dsi_autopll.o \
-			$(LOCAL_DIR)/mipi_dsi_autopll_20nm.o
+			$(LOCAL_DIR)/mipi_dsi_autopll_20nm.o \
+			$(LOCAL_DIR)/mdss_hdmi.o \
+			$(LOCAL_DIR)/hdmi_pll_20nm.o
 endif
 
 ifeq ($(PLATFORM),msm8909)
@@ -499,7 +501,7 @@ DEFINES += DISPLAY_TYPE_MDSS=1
 			$(LOCAL_DIR)/mipi_dsi_autopll.o
 endif
 
-ifeq ($(PLATFORM),thulium)
+ifeq ($(PLATFORM),msm8996)
 	OBJS += $(LOCAL_DIR)/qtimer.o \
 			$(LOCAL_DIR)/qtimer_mmap.o \
 			$(LOCAL_DIR)/interrupts.o \
@@ -534,6 +536,31 @@ ifeq ($(ENABLE_UFS_SUPPORT), 1)
 			$(LOCAL_DIR)/dme.o
 endif
 
+ifeq ($(PLATFORM),msm8952)
+	OBJS += $(LOCAL_DIR)/qgic.o \
+			$(LOCAL_DIR)/qtimer.o \
+			$(LOCAL_DIR)/qtimer_mmap.o \
+			$(LOCAL_DIR)/interrupts.o \
+			$(LOCAL_DIR)/clock.o \
+			$(LOCAL_DIR)/clock_pll.o \
+			$(LOCAL_DIR)/clock_lib2.o \
+			$(LOCAL_DIR)/uart_dm.o \
+			$(LOCAL_DIR)/board.o \
+			$(LOCAL_DIR)/spmi.o \
+			$(LOCAL_DIR)/bam.o \
+			$(LOCAL_DIR)/qpic_nand.o \
+			$(LOCAL_DIR)/scm.o \
+			$(LOCAL_DIR)/dev_tree.o \
+			$(LOCAL_DIR)/gpio.o \
+			$(LOCAL_DIR)/dload_util.o \
+			$(LOCAL_DIR)/shutdown_detect.o \
+			$(LOCAL_DIR)/certificate.o \
+			$(LOCAL_DIR)/image_verify.o \
+			$(LOCAL_DIR)/crypto_hash.o \
+			$(LOCAL_DIR)/crypto5_eng.o \
+			$(LOCAL_DIR)/crypto5_wrapper.o
+endif
+
 ifeq ($(ENABLE_BOOT_CONFIG_SUPPORT), 1)
 	OBJS += \
 		$(LOCAL_DIR)/boot_device.o
@@ -553,4 +580,8 @@ endif
 
 ifeq ($(ENABLE_RPMB_SUPPORT), 1)
 include platform/msm_shared/rpmb/rules.mk
+endif
+
+ifeq ($(ENABLE_REBOOT_MODULE), 1)
+	OBJS += $(LOCAL_DIR)/reboot.o
 endif

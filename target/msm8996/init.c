@@ -282,7 +282,7 @@ void target_baseband_detect(struct board_data *board)
 	platform = board->platform;
 
 	switch(platform) {
-	case MSMTHULIUM:
+	case MSM8996:
 		if (board->platform_version == 0x10000)
 			board->baseband = BASEBAND_APQ;
 		else
@@ -434,4 +434,12 @@ unsigned target_pause_for_battery_charge(void)
 		return 1;
 	else
 		return 0;
+}
+
+int set_download_mode(enum dload_mode mode)
+{
+	int ret = 0;
+	ret = scm_dload_mode(mode);
+
+	return ret;
 }

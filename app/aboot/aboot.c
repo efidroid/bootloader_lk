@@ -759,18 +759,6 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 	set_tamper_flag(device.is_tampered);
 #endif
 
-	if(device.is_tampered)
-	{
-		write_device_info_mmc(&device);
-	#ifdef TZ_TAMPER_FUSE
-		set_tamper_fuse_cmd();
-	#endif
-	#ifdef ASSERT_ON_TAMPER
-		dprintf(CRITICAL, "Device is tampered. Asserting..\n");
-		ASSERT(0);
-	#endif
-	}
-
 #if VERIFIED_BOOT
 	if(boot_verify_get_state() == RED)
 	{
@@ -788,6 +776,19 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 		}
 	}
 #endif
+
+	if(device.is_tampered)
+	{
+		write_device_info_mmc(&device);
+	#ifdef TZ_TAMPER_FUSE
+		set_tamper_fuse_cmd();
+	#endif
+	#ifdef ASSERT_ON_TAMPER
+		dprintf(CRITICAL, "Device is tampered. Asserting..\n");
+		ASSERT(0);
+	#endif
+	}
+
 }
 
 static bool check_format_bit()
@@ -1588,8 +1589,11 @@ void read_device_info(device_info *dev)
 				info->is_unlocked = 1;
 			info->is_verified = 0;
 			info->is_tampered = 0;
+#if USER_BUILD_VARIANT
+			info->charger_screen_enabled = 1;
+#else
 			info->charger_screen_enabled = 0;
-
+#endif
 			write_device_info(info);
 		}
 		memcpy(dev, info, sizeof(device_info));
@@ -2332,6 +2336,30 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 	return;
 }
 
+void cmd_updatevol(const char *vol_name, void *data, unsigned sz)
+{
+	struct ptentry *sys_ptn;
+	struct ptable *ptable;
+
+	ptable = flash_get_ptable();
+	if (ptable == NULL) {
+		fastboot_fail("partition table doesn't exist");
+		return;
+	}
+
+	sys_ptn = ptable_find(ptable, "system");
+	if (sys_ptn == NULL) {
+		fastboot_fail("system partition not found");
+		return;
+	}
+
+	sz = ROUND_TO_PAGE(sz, page_mask);
+	if (update_ubi_vol(sys_ptn, vol_name, data, sz))
+		fastboot_fail("update_ubi_vol failed");
+	else
+		fastboot_okay("");
+}
+
 void cmd_flash_nand(const char *arg, void *data, unsigned sz)
 {
 	struct ptentry *ptn;
@@ -2346,7 +2374,9 @@ void cmd_flash_nand(const char *arg, void *data, unsigned sz)
 
 	ptn = ptable_find(ptable, arg);
 	if (ptn == NULL) {
-		fastboot_fail("unknown partition name");
+		dprintf(INFO, "unknown partition name (%s). Trying updatevol\n",
+				arg);
+		cmd_updatevol(arg, data, sz);
 		return;
 	}
 
@@ -2802,11 +2832,16 @@ void aboot_init(const struct app_descriptor *app)
 
 	/* Display splash screen if enabled */
 #if DISPLAY_SPLASH_SCREEN
-	dprintf(SPEW, "Display Init: Start\n");
-	target_display_init(device.display_panel);
-	dprintf(SPEW, "Display Init: Done\n");
+#if NO_ALARM_DISPLAY
+	if (!check_alarm_boot()) {
 #endif
-
+		dprintf(SPEW, "Display Init: Start\n");
+		target_display_init(device.display_panel);
+		dprintf(SPEW, "Display Init: Done\n");
+#if NO_ALARM_DISPLAY
+	}
+#endif
+#endif
 
 	target_serialno((unsigned char *) sn_buf);
 	dprintf(SPEW,"serial number: %s\n",sn_buf);
