@@ -1652,6 +1652,8 @@ void write_device_info(device_info *dev)
 #if USE_RPMB_FOR_DEVINFO
 		if (is_secure_boot_enable())
 			write_device_info_rpmb((void*) info, mmc_get_device_blocksize());
+		else
+			write_device_info_mmc(info);
 #else
 		write_device_info_mmc(info);
 #endif
@@ -1671,6 +1673,8 @@ void read_device_info(device_info *dev)
 #if USE_RPMB_FOR_DEVINFO
 		if (is_secure_boot_enable())
 			read_device_info_rpmb((void*) info, mmc_get_device_blocksize());
+		else
+			read_device_info_mmc(info);
 #else
 		read_device_info_mmc(info);
 #endif
