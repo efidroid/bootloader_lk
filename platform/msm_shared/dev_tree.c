@@ -501,6 +501,12 @@ void *dev_tree_appended(void *kernel, uint32_t kernel_size, uint32_t dtb_offset,
 	}
 
 	dprintf(CRITICAL, "DTB offset is incorrect, kernel image does not have appended DTB\n");
+	dprintf(CRITICAL, "No DTB found for the board: <%u %u 0x%x>, 0x%0x/0x%x/0x%x/0x%0x\n",
+		board_platform_id(),
+		board_hardware_id(),
+		board_soc_version(),
+		board_pmic_target(0), board_pmic_target(1),
+		board_pmic_target(2), board_pmic_target(3));
 
 	return NULL;
 }
