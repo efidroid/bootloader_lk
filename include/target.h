@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008 Travis Geiselbrecht
  *
- * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -60,8 +60,7 @@ bool target_is_ssd_enabled(void);
 void *target_mmc_device();
 uint32_t is_user_force_reset(void);
 
-bool target_display_panel_node(char *panel_name, char *pbuf,
-	uint16_t buf_size);
+bool target_display_panel_node(char *pbuf, uint16_t buf_size);
 void target_display_init(const char *panel_name);
 void target_display_shutdown(void);
 
