@@ -789,24 +789,23 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 #endif
 
 #if VERIFIED_BOOT
-	if(boot_verify_get_state() == RED)
+	switch(boot_verify_get_state())
 	{
-		if(!boot_into_recovery)
-		{
-			dprintf(CRITICAL,
-					"Device verification failed. Rebooting into recovery.\n");
-			mdelay(1000);
-			reboot_device(RECOVERY_MODE);
-		}
-		else
-		{
-			dprintf(CRITICAL,
-					"Recovery image verification failed. Asserting..\n");
-			ASSERT(0);
-		}
+		case RED:
+				dprintf(CRITICAL,
+						"Your device has failed verification and may not work properly.\nWait for 5 seconds before proceeding\n");
+				mdelay(5000);
+				break;
+		case YELLOW:
+				dprintf(CRITICAL,
+						"Your device has loaded a different operating system.\nWait for 5 seconds before proceeding\n");
+				mdelay(5000);
+				break;
+		default:
+				break;
 	}
 #endif
-
+#if !VERIFIED_BOOT
 	if(device.is_tampered)
 	{
 		write_device_info_mmc(&device);
@@ -818,7 +817,7 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 		ASSERT(0);
 	#endif
 	}
-
+#endif
 }
 
 static bool check_format_bit()
@@ -1055,6 +1054,15 @@ int boot_linux_from_mmc(void)
 		#ifdef TZ_SAVE_KERNEL_HASH
 		aboot_save_boot_hash_mmc((uint32_t) image_addr, imagesize_actual);
 		#endif /* TZ_SAVE_KERNEL_HASH */
+
+#if VERIFIED_BOOT
+	if(boot_verify_get_state() == ORANGE)
+	{
+		dprintf(CRITICAL,
+				"Your device has been unlocked and can't be trusted.\nWait for 5 seconds before proceeding\n");
+		mdelay(5000);
+	}
+#endif
 
 #ifdef MDTP_SUPPORT
 		{
