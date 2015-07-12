@@ -168,7 +168,7 @@ static bool devinfo_present = true;
 /* Assuming unauthorized kernel image by default */
 static int auth_kernel_img = 0;
 
-static device_info device = {DEVICE_MAGIC, 0, 0, 0, 0, {0}, {0},{0}};
+static device_info device = {DEVICE_MAGIC, 0, 0, 0, {0}, {0},{0}};
 
 struct atag_ptbl_entry
 {
@@ -1595,7 +1595,6 @@ void read_device_info(device_info *dev)
 				info->is_unlocked = 0;
 			else
 				info->is_unlocked = 1;
-			info->is_verified = 0;
 			info->is_tampered = 0;
 #if USER_BUILD_VARIANT
 			info->charger_screen_enabled = 1;
@@ -1941,6 +1940,17 @@ void cmd_erase_mmc(const char *arg, void *data, unsigned sz)
 
 void cmd_erase(const char *arg, void *data, unsigned sz)
 {
+#if VERIFIED_BOOT
+	if (target_build_variant_user())
+	{
+		if(!device.is_unlocked)
+		{
+			fastboot_fail("device is locked. Cannot erase");
+			return;
+		}
+	}
+#endif
+
 	if(target_is_emmc_boot())
 		cmd_erase_mmc(arg, data, sz);
 	else
@@ -2387,16 +2397,11 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 #endif /* SSD_ENABLE */
 
 #if VERIFIED_BOOT
-	if(!device.is_unlocked && !device.is_verified)
+	if (target_build_variant_user())
 	{
-		fastboot_fail("device is locked. Cannot flash images");
-		return;
-	}
-	if(!device.is_unlocked && device.is_verified)
-	{
-		if(!boot_verify_flash_allowed(arg))
+		if(!device.is_unlocked)
 		{
-			fastboot_fail("cannot flash this partition in verified state");
+			fastboot_fail("device is locked. Cannot flash images");
 			return;
 		}
 	}
@@ -2560,35 +2565,32 @@ void cmd_oem_select_display_panel(const char *arg, void *data, unsigned size)
 
 void cmd_oem_unlock(const char *arg, void *data, unsigned sz)
 {
-	/* TODO: Wipe user data */
-	if(!device.is_unlocked || device.is_verified)
+	display_fbcon_message("Oem Unlock requested");
+	fastboot_fail("Need wipe userdata. Do 'fastboot oem unlock-go'");
+}
+
+void cmd_oem_unlock_go(const char *arg, void *data, unsigned sz)
+{
+	if(!device.is_unlocked)
 	{
 		device.is_unlocked = 1;
-		device.is_verified = 0;
 		write_device_info(&device);
+
+		struct recovery_message msg;
+		snprintf(msg.recovery, sizeof(msg.recovery), "recovery\n--wipe_data");
+		write_misc(0, &msg, sizeof(msg));
+
+		fastboot_okay("");
+		reboot_device(RECOVERY_MODE);
 	}
 	fastboot_okay("");
 }
 
 void cmd_oem_lock(const char *arg, void *data, unsigned sz)
 {
-	/* TODO: Wipe user data */
-	if(device.is_unlocked || device.is_verified)
+	if(device.is_unlocked)
 	{
 		device.is_unlocked = 0;
-		device.is_verified = 0;
-		write_device_info(&device);
-	}
-	fastboot_okay("");
-}
-
-void cmd_oem_verified(const char *arg, void *data, unsigned sz)
-{
-	/* TODO: Wipe user data */
-	if(device.is_unlocked || !device.is_verified)
-	{
-		device.is_unlocked = 0;
-		device.is_verified = 1;
 		write_device_info(&device);
 	}
 	fastboot_okay("");
@@ -2840,8 +2842,8 @@ void aboot_fastboot_register_commands(void)
 											{"reboot", cmd_reboot},
 											{"reboot-bootloader", cmd_reboot_bootloader},
 											{"oem unlock", cmd_oem_unlock},
+											{"oem unlock-go", cmd_oem_unlock_go},
 											{"oem lock", cmd_oem_lock},
-											{"oem verified", cmd_oem_verified},
 											{"oem device-info", cmd_oem_devinfo},
 											{"preflash", cmd_preflash},
 											{"oem enable-charger-screen", cmd_oem_enable_charger_screen},
