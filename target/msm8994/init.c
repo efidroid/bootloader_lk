@@ -63,6 +63,7 @@
 #include <boot_device.h>
 #include <secapp_loader.h>
 #include <rpmb.h>
+#include <reboot.h>
 
 #include "target/display.h"
 
@@ -77,8 +78,6 @@
 
 #define PMIC_ARB_CHANNEL_NUM    0
 #define PMIC_ARB_OWNER_ID       0
-
-#define FASTBOOT_MODE           0x77665500
 
 #define PMIC_LED_SLAVE_ID      3
 #define DDR_CFG_DLY_VAL         0x80040870
@@ -512,7 +511,7 @@ void reboot_device(unsigned reboot_reason)
 	/* Write the reboot reason */
 	writel(reboot_reason, restart_reason_addr);
 
-	if(reboot_reason == FASTBOOT_MODE || reboot_reason == DLOAD)
+	if((reboot_reason == FASTBOOT_MODE) || (reboot_reason == DLOAD) || (reboot_reason == RECOVERY_MODE))
 		reset_type = PON_PSHOLD_WARM_RESET;
 	else
 		reset_type = PON_PSHOLD_HARD_RESET;
