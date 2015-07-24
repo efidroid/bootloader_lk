@@ -281,9 +281,16 @@ static void mdss_dsi_pll_20nm_config_powerdown(uint32_t pll_base)
 }
 
 
-void mdss_dsi_auto_pll_20nm_config(uint32_t pll_base, uint32_t pll_1_base,
-	struct mdss_dsi_pll_config *pd)
+void mdss_dsi_auto_pll_20nm_config(struct msm_panel_info *pinfo)
 {
+	struct mdss_dsi_pll_config *pd = pinfo->mipi.dsi_pll_config;
+	uint32_t pll_0_base = pinfo->mipi.pll_0_base;
+	uint32_t pll_1_base = pinfo->mipi.pll_1_base;
+
+	mdss_dsi_phy_sw_reset(pinfo->mipi.ctl_base);
+	if (pinfo->mipi.dual_dsi)
+		mdss_dsi_phy_sw_reset(pinfo->mipi.sctl_base);
+
 	/*
 	 * For 20nm PHY, DSI PLL 1 drains some current in its reset state.
 	 * Need to turn off the DSI1 PLL explicitly.
@@ -291,12 +298,12 @@ void mdss_dsi_auto_pll_20nm_config(uint32_t pll_base, uint32_t pll_1_base,
 	mdss_dsi_pll_20nm_config_common_block_1(pll_1_base);
 	mdss_dsi_pll_20nm_config_powerdown(pll_1_base);
 
-	mdss_dsi_pll_20nm_config_common_block_1(pll_base);
-	mdss_dsi_pll_20nm_config_common_block_2(pll_base);
-	mdss_dsi_pll_20nm_config_loop_bw(pll_base);
-	mdss_dsi_pll_20nm_config_vco_rate(pll_base, pd);
-	mdss_dsi_pll_20nm_config_resetsm(pll_base);
-	mdss_dsi_pll_20nm_config_vco_start(pll_base);
+	mdss_dsi_pll_20nm_config_common_block_1(pll_0_base);
+	mdss_dsi_pll_20nm_config_common_block_2(pll_0_base);
+	mdss_dsi_pll_20nm_config_loop_bw(pll_0_base);
+	mdss_dsi_pll_20nm_config_vco_rate(pll_0_base, pd);
+	mdss_dsi_pll_20nm_config_resetsm(pll_0_base);
+	mdss_dsi_pll_20nm_config_vco_start(pll_0_base);
 
 	udelay(1000);
 }
