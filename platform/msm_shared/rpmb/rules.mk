@@ -5,4 +5,3 @@ INCLUDES += -I$(LOCAL_DIR)/include
 OBJS += $(LOCAL_DIR)/rpmb.o \
 		$(LOCAL_DIR)/rpmb_listener.o \
 		$(LOCAL_DIR)/rpmb_emmc.o \
-		$(LOCAL_DIR)/rpmb_ufs.o

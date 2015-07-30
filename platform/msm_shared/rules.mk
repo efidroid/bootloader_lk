@@ -593,6 +593,9 @@ endif
 
 ifeq ($(ENABLE_RPMB_SUPPORT), 1)
 include platform/msm_shared/rpmb/rules.mk
+ifeq ($(ENABLE_UFS_SUPPORT), 1)
+	OBJS += $(LOCAL_DIR)/rpmb_ufs.o
+endif
 endif
 
 ifeq ($(ENABLE_REBOOT_MODULE), 1)
