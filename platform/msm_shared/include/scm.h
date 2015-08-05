@@ -459,6 +459,7 @@ bool is_secure_boot_enable(void);
 
 /* Is armv8 supported */
 bool is_scm_armv8_support(void);
+int is_scm_call_available(uint32_t svc_id, uint32_t cmd_id);
 
 int scm_dload_mode(int mode);
 #endif
