@@ -194,3 +194,30 @@ int platform_is_msm8956()
 
 	return ret;
 }
+
+uint32_t platform_read_pte_reg()
+{
+       uint32_t reg = 0;
+
+	if(platform_is_msm8956()) {
+		reg = readl(QFPROM_PTE_PART_ADDR);
+		/*
+		 * The PTE register bits 28 to 31 have the partial goods
+		 * info, extract the partial goods value before using
+		 */
+		reg = (reg & 0xf0000000) >> 28;
+		dprintf(CRITICAL, " platform_read_pte_reg %d\n", reg);
+	}
+
+	return reg;
+}
+
+uint32_t platform_check_pte_reg(uint32_t index, uint32_t reg)
+{
+	uint32_t ret = 0;
+
+	if((reg >> index) & 1)
+		ret = 1;
+
+	return ret;
+}

@@ -461,4 +461,6 @@
 #define APPS_WDOG_BITE_VAL_REG      0x0B017014
 #define APPS_WDOG_RESET_REG         0x0B017008
 #define APPS_WDOG_CTL_REG           0x0B017004
+
+#define QFPROM_PTE_PART_ADDR    0x000A0174
 #endif
