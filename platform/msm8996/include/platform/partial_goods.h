@@ -28,10 +28,8 @@
 
 #include <partial_goods.h>
 
-#define QFPROM_PTE_PART_ADDR    0x0007013C
-
 /* Look up table for partial goods */
-struct partial_goods table[] =
+static struct partial_goods table[] =
 {
 	{0x1, "/cpus", {{"cpu@100", "device_type"},}},
 	{0x2, "/cpus", {{"cpu@101", "device_type"},}},
@@ -45,3 +43,5 @@ struct partial_goods table[] =
 	{0x11, "/soc",  {{"qcom,vidc", "status"},}},
 	{0x12, "/soc",  {{"qcom,msm-adsp-loader", "status"},}},
 };
+uint32_t platform_read_pte_reg();
+uint32_t platform_check_pte_reg(uint32_t index, uint32_t reg);
