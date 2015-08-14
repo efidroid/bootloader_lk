@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008 Travis Geiselbrecht
  *
- * Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files
@@ -68,5 +68,9 @@ int platform_is_msm8992();
 int boot_device_mask(int);
 uint32_t platform_detect_panel();
 uint32_t platform_get_max_periph();
-void set_oem_unlock();
+void set_device_unlock_value(int type, bool status);
+void get_product_name(unsigned char *buf);
+void get_bootloader_version(unsigned char *buf);
+void get_baseband_version(unsigned char *buf);
+bool is_device_locked();
 #endif

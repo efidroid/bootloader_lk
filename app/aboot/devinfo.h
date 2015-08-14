@@ -37,6 +37,11 @@ typedef struct device_info device_info;
 #define MAX_PANEL_ID_LEN 64
 #define MAX_VERSION_LEN  64
 
+enum unlock_type {
+	UNLOCK = 0,
+	UNLOCK_CRITICAL,
+};
+
 #if VBOOT_MOTA
 struct device_info
 {
