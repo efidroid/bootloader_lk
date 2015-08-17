@@ -39,17 +39,13 @@ void update_partial_goods_dtb_nodes(void *fdt)
 	int subnode_offset = 0;
 	int ret = 0;
 	int prop_len = 0;
-	uint32_t reg = readl(QFPROM_PTE_PART_ADDR);
+	uint32_t reg = 0;
 	uint32_t prop_type = 0;
 	struct subnode_list *subnode_lst = NULL;
 	const struct fdt_property *prop = NULL;
 	const char *replace_str = NULL;
 
-	/*
-	 * The PTE register bits 23 to 27 have the partial goods
-	 * info, extract the partial goods value before using
-	 */
-	reg = (reg & 0x0f800000) >> 23;
+	reg = platform_read_pte_reg();
 
 	/* If none of the DTB needs update */
 	if (!reg)
@@ -64,7 +60,8 @@ void update_partial_goods_dtb_nodes(void *fdt)
 
 	for (i = 0; i < tbl_sz; i++)
 	{
-		if (reg == table[i].val)
+		dprintf(CRITICAL, "Partial Goods i=%d reg %d\n", i, platform_check_pte_reg(i, reg));
+		if (platform_check_pte_reg(i, reg))
 		{
 			/* Find the Parent node */
 			ret = fdt_path_offset(fdt, table[i].parent_node);

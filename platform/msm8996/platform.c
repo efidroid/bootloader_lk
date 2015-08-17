@@ -37,6 +37,7 @@
 #include <smem.h>
 #include <board.h>
 #include <target/display.h>
+#include <platform/partial_goods.h>
 
 #define MSM_IOMAP_SIZE     ((MSM_IOMAP_END - MSM_IOMAP_BASE)/MB)
 #define MSM_SHARED_SIZE    2
@@ -161,4 +162,30 @@ int platform_is_msm8996()
 		return 1;
 	else
 		return 0;
+}
+
+uint64_t platform_get_ddr_start()
+{
+	return ddr_start;
+}
+
+uint32_t platform_read_pte_reg()
+{
+	uint32_t reg = readl(QFPROM_PTE_PART_ADDR);
+
+	/*
+	 * The PTE register bits 23 to 27 have the partial goods
+	 * info, extract the partial goods value before using
+	 */
+	reg = (reg & 0x0f800000) >> 23;
+	return reg;
+
+}
+
+uint32_t platform_check_pte_reg(uint32_t index, uint32_t reg)
+{
+	uint32_t ret = 0;
+	if(reg == table[index].val)
+		ret = 1;
+	return ret;
 }
