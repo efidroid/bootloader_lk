@@ -28,20 +28,14 @@
 
 #include <partial_goods.h>
 
+
 /* Look up table for partial goods */
 static struct partial_goods table[] =
 {
 	{0x1, "/cpus", {{"cpu@100", "device_type"},}},
 	{0x2, "/cpus", {{"cpu@101", "device_type"},}},
-	{0x3, "/cpus", {{"cpu@100", "device_type"},
-                        {"cpu@101","device_type"},}},
-	{0x4, "/cpus", {{"cpu@100", "device_type"},
-                        {"cpu@101", "device_type"},
-                        {"cpu@1",   "device_type"},}},
-	{0x5, "/soc",   {{"qcom,mss", "status"},}},
-	{0x10, "/soc",  {{"qcom,kgsl-3d0", "status"},}},
-	{0x11, "/soc",  {{"qcom,vidc", "status"},}},
-	{0x12, "/soc",  {{"qcom,msm-adsp-loader", "status"},}},
+	{0x3, "/cpus", {{"cpu@102", "device_type"},}},
+	{0x4, "/cpus", {{"cpu@103", "device_type"},}},
 };
 uint32_t platform_read_pte_reg();
 uint32_t platform_check_pte_reg(uint32_t index, uint32_t reg);
