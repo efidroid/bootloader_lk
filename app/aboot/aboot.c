@@ -1688,6 +1688,7 @@ void read_device_info(device_info *dev)
 #else
 			info->charger_screen_enabled = 0;
 #endif
+			info->verity_mode = 1; //enforcing by default
 			write_device_info(info);
 		}
 		memcpy(dev, info, sizeof(device_info));
