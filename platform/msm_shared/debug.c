@@ -153,6 +153,17 @@ int dgetc(char *c, bool wait)
 	}
 }
 
+int dtstc(void) {
+	int rc = 0;
+
+#if WITH_DEBUG_UART
+	// check UART
+	rc = !!uart_tstc(0);
+#endif
+
+	return rc;
+}
+
 void platform_halt(void)
 {
 #if PON_VIB_SUPPORT
