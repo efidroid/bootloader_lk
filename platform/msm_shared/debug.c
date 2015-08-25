@@ -36,6 +36,7 @@
 #include <arch/arm/dcc.h>
 #include <dev/fbcon.h>
 #include <dev/uart.h>
+#include <dev/keys.h>
 #include <platform/timer.h>
 #include <platform.h>
 
@@ -151,6 +152,21 @@ int dgetc(char *c, bool wait)
 		*c = n;
 		return 0;
 	}
+}
+
+int dtstc(void) {
+	int rc = 0;
+
+	// poll keys
+	keys_poll();
+	if(keys_has_next()) return 1;
+
+#if WITH_DEBUG_UART
+	// check UART
+	rc = !!uart_tstc(0);
+#endif
+
+	return rc;
 }
 
 void platform_halt(void)
