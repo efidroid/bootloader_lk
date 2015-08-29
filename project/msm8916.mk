@@ -58,3 +58,6 @@ DEFINES += PLATFORM_USE_SCM_DLOAD=1
 
 #Enable the external reboot functions
 ENABLE_REBOOT_MODULE := 1
+
+#enable battery voltage check
+DEFINES += CHECK_BAT_VOLTAGE=1

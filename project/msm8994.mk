@@ -69,3 +69,6 @@ endif
 
 # Turn on Werror
 CFLAGS += -Werror
+
+#enable battery voltage check
+DEFINES += CHECK_BAT_VOLTAGE=1
