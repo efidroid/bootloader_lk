@@ -75,8 +75,6 @@ __WEAK void api_serial_write_char(char c) {
 }
 
 __WEAK int api_serial_read_char(char* cp) {
-	int ret = 0;
-
 	// return keys if available
 	uint16_t code;
 	uint16_t value;
