@@ -570,38 +570,40 @@ static void verify_all_partitions(DIP_t *dip,
 	}
 	else
 	{
-		for(i=0; i<MAX_PARTITIONS; i++)
+		if (ext_partition->partition != MDTP_PARTITION_NONE)
 		{
-			if(dip->partition_cfg[i].lock_enabled && dip->partition_cfg[i].size)
+			for(i=0; i<MAX_PARTITIONS; i++)
 			{
-				total_num_blocks = ((dip->partition_cfg[i].size - 1) / MDTP_FWLOCK_BLOCK_SIZE);
-				if (validate_partition_params(dip->partition_cfg[i].size,
-					dip->partition_cfg[i].hash_mode,
-					dip->partition_cfg[i].verify_ratio))
+				if(dip->partition_cfg[i].lock_enabled && dip->partition_cfg[i].size)
 				{
-					dprintf(CRITICAL, "mdtp: verify_all_partitions: Wrong partition parameters\n");
-					verify_failure = TRUE;
-					break;
-				}
+					total_num_blocks = ((dip->partition_cfg[i].size - 1) / MDTP_FWLOCK_BLOCK_SIZE);
+					if (validate_partition_params(dip->partition_cfg[i].size,
+							dip->partition_cfg[i].hash_mode,
+							dip->partition_cfg[i].verify_ratio))
+					{
+						dprintf(CRITICAL, "mdtp: verify_all_partitions: Wrong partition parameters\n");
+						verify_failure = TRUE;
+						break;
+					}
 
-				verify_failure |= (verify_partition(dip->partition_cfg[i].name,
-							 dip->partition_cfg[i].size,
-							 dip->partition_cfg[i].hash_mode,
-							 (dip->partition_cfg[i].verify_ratio * total_num_blocks) / 100,
-							 dip->partition_cfg[i].hash_table,
-							 dip->partition_cfg[i].force_verify_block) != 0);
+					verify_failure |= (verify_partition(dip->partition_cfg[i].name,
+							dip->partition_cfg[i].size,
+							dip->partition_cfg[i].hash_mode,
+							(dip->partition_cfg[i].verify_ratio * total_num_blocks) / 100,
+							dip->partition_cfg[i].hash_table,
+							dip->partition_cfg[i].force_verify_block) != 0);
+				}
+			}
+
+			ext_partition_verify_failure = verify_ext_partition(ext_partition);
+
+			if (verify_failure || ext_partition_verify_failure)
+			{
+				dprintf(CRITICAL, "mdtp: verify_all_partitions: Failed partition verification\n");
+				return;
 			}
 		}
-
-		ext_partition_verify_failure = verify_ext_partition(ext_partition);
-
-		if (verify_failure || ext_partition_verify_failure)
-		{
-			dprintf(CRITICAL, "mdtp: verify_all_partitions: Failed partition verification\n");
-			return;
-		}
 		is_mdtp_activated = 1;
-
 	}
 
 	*verify_result = VERIFY_OK;
@@ -728,7 +730,7 @@ void mdtp_fwlock_verify_lock(mdtp_ext_partition_verification_t *ext_partition)
 
 	/* Disallow CIPHER_DIP SCM call from this point, unless we are in recovery */
 	/* The recovery image will disallow CIPHER_DIP SCM call by itself. */
-	if (ext_partition->partition != MDTP_PARTITION_RECOVERY)
+	if (ext_partition->partition == MDTP_PARTITION_BOOT)
 	{
 		mdtp_tzbsp_disallow_cipher_DIP();
 	}
@@ -752,7 +754,6 @@ int mdtp_activated(bool * activated){
 static int mdtp_tzbsp_dec_verify_DIP(DIP_t *enc_dip, DIP_t *dec_dip, uint32_t *verified)
 {
 	unsigned char hash[HASH_LEN];
-	unsigned char buf[HASH_LEN], digest[HASH_LEN];
 	SHA256_CTX sha256_ctx;
 	int ret;
 
@@ -762,9 +763,6 @@ static int mdtp_tzbsp_dec_verify_DIP(DIP_t *enc_dip, DIP_t *dec_dip, uint32_t *v
 
 	arch_clean_invalidate_cache_range((addr_t)enc_dip, sizeof(DIP_t));
 	arch_invalidate_cache_range((addr_t)dec_dip, sizeof(DIP_t));
-
-	/* workaround: Dummy call to hash_find prevents a boot loop when using the CE from TZ */
-	hash_find(buf, HASH_LEN, digest, CRYPTO_AUTH_ALG_SHA1);
 
 	ret = mdtp_cipher_dip_cmd((uint8_t*)enc_dip, sizeof(DIP_t),
 								(uint8_t*)dec_dip, sizeof(DIP_t),
@@ -799,7 +797,6 @@ static int mdtp_tzbsp_dec_verify_DIP(DIP_t *enc_dip, DIP_t *dec_dip, uint32_t *v
 /* Encrypt a given DIP and calculate its integrity information */
 static int mdtp_tzbsp_enc_hash_DIP(DIP_t *dec_dip, DIP_t *enc_dip)
 {
-	unsigned char buf[HASH_LEN], digest[HASH_LEN];
 	SHA256_CTX sha256_ctx;
 	int ret;
 
@@ -812,9 +809,6 @@ static int mdtp_tzbsp_enc_hash_DIP(DIP_t *dec_dip, DIP_t *enc_dip)
 
 	arch_clean_invalidate_cache_range((addr_t)dec_dip, sizeof(DIP_t));
 	arch_invalidate_cache_range((addr_t)enc_dip, sizeof(DIP_t));
-
-	/* workaround: Dummy call to hash_find prevents a boot loop when using the CE from TZ */
-	hash_find(buf, HASH_LEN, digest, CRYPTO_AUTH_ALG_SHA1);
 
 	ret = mdtp_cipher_dip_cmd((uint8_t*)dec_dip, sizeof(DIP_t),
 								(uint8_t*)enc_dip, sizeof(DIP_t),
