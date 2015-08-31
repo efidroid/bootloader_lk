@@ -245,9 +245,11 @@ static void* add_dram_callback(void* pdata, unsigned long addr, unsigned long si
 }
 
 void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
-	// identity map
-	pdata = cb(pdata, 0x0, 0x0, 0x80000000, LKAPI_MEMORY_DEVICE);
-	pdata = cb(pdata, 0x80000000, 0x80000000, 0x80000000, LKAPI_MEMORY_DEVICE);
+	if(platform_use_identity_mmu_mappings()) {
+		// identity map
+		pdata = cb(pdata, 0x0, 0x0, 0x80000000, LKAPI_MEMORY_DEVICE);
+		pdata = cb(pdata, 0x80000000, 0x80000000, 0x80000000, LKAPI_MEMORY_DEVICE);
+	}
 
 	// dram map
 	dram_cb_arg_t arg = {pdata, cb};
