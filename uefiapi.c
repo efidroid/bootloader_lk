@@ -254,9 +254,6 @@ void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	api_mmap_get_dram(&arg, add_dram_callback);
 	pdata = arg.pdata;
 
-	// UEFI(PrePI)
-	pdata = cb(pdata, EDK2_BASE, EDK2_BASE, EDK2_SIZE, LKAPI_MEMORY_WRITE_THROUGH);
-
 	// LK
 	pdata = cb(pdata, MEMBASE, MEMBASE, MEMSIZE, LKAPI_MEMORY_WRITE_THROUGH);
 
