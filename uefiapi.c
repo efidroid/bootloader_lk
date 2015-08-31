@@ -263,6 +263,11 @@ void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	return pdata;
 }
 
+void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
+	*addr = MEMBASE;
+	*size = MEMSIZE;
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                            API TABLE                                //
@@ -306,4 +311,5 @@ lkapi_t uefiapi = {
 
 	.mmap_get_dram = api_mmap_get_dram,
 	.mmap_get_mappings = api_mmap_get_mappings,
+	.mmap_get_lk_range = api_mmap_get_lk_range,
 };
