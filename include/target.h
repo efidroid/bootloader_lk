@@ -91,4 +91,8 @@ bool target_build_variant_user();
 uint32_t get_vibration_type();
 #endif
 
+uint32_t target_get_battery_voltage();
+bool target_battery_soc_ok();
+bool target_battery_is_present();
+uint32_t target_get_pmic();
 #endif

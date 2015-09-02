@@ -56,6 +56,7 @@
 #include <clock.h>
 #include <secapp_loader.h>
 #include <rpmb.h>
+#include <smem.h>
 
 #include "target/display.h"
 
@@ -669,4 +670,9 @@ void target_crypto_init_params()
 	ce_params.do_bam_init      = 0;
 
 	crypto_init_params(&ce_params);
+}
+
+uint32_t target_get_pmic()
+{
+	return PMIC_IS_PMI8950;
 }

@@ -583,3 +583,8 @@ uint32_t target_ddr_cfg_val()
 {
 	return DDR_CFG_DLY_VAL;
 }
+
+uint32_t target_get_pmic()
+{
+	return PMIC_IS_PMI8994;
+}

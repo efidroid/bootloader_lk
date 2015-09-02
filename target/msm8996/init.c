@@ -508,3 +508,8 @@ void shutdown_device()
 
 	ASSERT(0);
 }
+
+uint32_t target_get_pmic()
+{
+	return PMIC_IS_PMI8996;
+}

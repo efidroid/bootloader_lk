@@ -49,6 +49,7 @@
 #include <gpio.h>
 #include <rpm-smd.h>
 #include <qpic_nand.h>
+#include <smem.h>
 
 #if LONG_PRESS_POWER_ON
 #include <shutdown_detect.h>
@@ -689,4 +690,9 @@ void target_crypto_init_params()
 uint32_t target_get_hlos_subtype()
 {
 	return board_hlos_subtype();
+}
+
+uint32_t target_get_pmic()
+{
+	return PMIC_IS_PM8909;
 }
