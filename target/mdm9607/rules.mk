@@ -4,8 +4,8 @@ INCLUDES += -I$(LOCAL_DIR)/include -I$(LK_TOP_DIR)/platform/msm_shared
 
 PLATFORM := mdm9607
 
-MEMBASE := 0x82900000 # SDRAM
-MEMSIZE := 0x00100000 # 1MB
+MEMBASE ?= 0x82900000 # SDRAM
+MEMSIZE ?= 0x00100000 # 1MB
 
 SCRATCH_ADDR                            := 0 # keeping for successful compilation
 SCRATCH_ADDR_128                        := 0x86000000
