@@ -525,6 +525,10 @@ void display_default_image_on_screen(void)
 
 void display_image_on_screen(void)
 {
+#ifdef WITH_KERNEL_UEFIAPI
+	return;
+#endif
+
 #if DISPLAY_TYPE_MIPI
 	int fetch_image_from_partition();
 

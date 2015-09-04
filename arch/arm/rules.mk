@@ -92,15 +92,21 @@ OBJS += \
 	$(LOCAL_DIR)/cache.o \
 	$(LOCAL_DIR)/cache-ops.o \
 	$(LOCAL_DIR)/ops.o \
-	$(LOCAL_DIR)/exceptions.o \
 	$(LOCAL_DIR)/faults.o \
-	$(LOCAL_DIR)/thread.o \
 	$(LOCAL_DIR)/dcc.o
+
+ifndef WITH_KERNEL_UEFIAPI
 
 ifeq ($(ENABLE_LPAE_SUPPORT), 1)
 OBJS +=  $(LOCAL_DIR)/mmu_lpae.o
 else
 OBJS +=  $(LOCAL_DIR)/mmu.o
+endif
+
+OBJS += \
+	$(LOCAL_DIR)/exceptions.o \
+	$(LOCAL_DIR)/thread.o
+
 endif
 
 # set the default toolchain to arm eabi and set a #define

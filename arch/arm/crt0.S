@@ -30,6 +30,7 @@
 .globl _start
 _start:
 	b	reset
+#ifndef WITH_KERNEL_UEFIAPI
 	b	arm_undefined
 	b	arm_syscall
 	b	arm_prefetch_abort
@@ -37,6 +38,7 @@ _start:
 	b	arm_reserved
 	b	arm_irq
 	b	arm_fiq
+#endif
 
 reset:
 	adr r7, lk_boot_args
@@ -94,6 +96,21 @@ reset:
 #endif
 #endif
 
+#ifdef WITH_KERNEL_UEFIAPI
+	// r1 = get phys offset
+.Lphys_offset:
+	ldr   r0, =.Lphys_offset
+	adr   r1, .Lphys_offset
+	sub   r1, r1, r0
+
+	// r0 = loading addr or 'lk_phys_offset'
+	ldr   r0, =lk_phys_offset
+	add   r0, r0, r1
+
+	// lk_phys_offset = r1
+	str   r1, [r0]
+#endif
+
 	/* see if we need to relocate */
 	mov		r0, pc
 	sub		r0, r0, #(.Laddr - _start)
@@ -126,8 +143,13 @@ lk_boot_args:
 	.word 0
 	.word 0
 	.word 0
+#ifdef WITH_KERNEL_UEFIAPI
+lk_phys_offset:
+	.word 0
+#endif
 
 .Lstack_setup:
+#ifndef WITH_KERNEL_UEFIAPI
 	/* set up the stack for irq, fiq, abort, undefined, system/user, and lastly supervisor mode */
 	mrs     r0, cpsr
 	bic     r0, r0, #0x1f
@@ -155,7 +177,39 @@ lk_boot_args:
 
 	orr		r1, r0, #0x13 // supervisor
 	msr		cpsr_c, r1
+#else
+	ldr		r2, =abort_stack_top
+#endif
 	mov		sp, r2
+
+#ifdef WITH_KERNEL_UEFIAPI
+	// r3 = lk_phys_offset
+	ldr     r3, =lk_phys_offset
+	ldr     r3, [r3]
+
+	// r0 = loading addr of '__data_end'
+	ldr     r0, =__data_end
+	add     r0, r0, r3
+
+	// r3 = EDK2_SIZE, r0 += 4
+	ldr     r3, [r0], #4
+
+	// check if we need to relocate EDK2
+	ldr     r1, =EDK2_BASE
+	cmp     r0, r1
+	beq     .Ledk2_relocate_done
+
+	// we need to relocate EDK2 to the proper spot
+	add     r2, r1, r3
+
+.Ledk2_relocate_loop:
+	ldr		r3, [r0], #4
+	str		r3, [r1], #4
+	cmp		r1, r2
+	bne		.Ledk2_relocate_loop
+
+.Ledk2_relocate_done:
+#endif
 
 	/* copy the initialized data segment out of rom if necessary */
 	ldr		r0, =__data_start_rom
