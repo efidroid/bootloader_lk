@@ -265,6 +265,25 @@ void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
 	*size = MEMSIZE;
 }
 
+/////////////////////////////////////////////////////////////////////////
+//                              BOOT                                   //
+/////////////////////////////////////////////////////////////////////////
+
+void generate_atags(unsigned *ptr, const char *cmdline, void *ramdisk, unsigned ramdisk_size);
+unsigned char *update_cmdline(const char * cmdline);
+
+int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
+			 unsigned int tags_addr, unsigned int tags_size)
+{
+	char* final_cmdline = (char*)update_cmdline(cmdline);
+	generate_atags((unsigned *)tags_addr, final_cmdline, (void*)ramdisk_addr, ramdisk_size);
+	return 0;
+}
+
+unsigned int api_boot_machine_type(void) {
+	return board_machtype();
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                            API TABLE                                //
@@ -309,4 +328,7 @@ lkapi_t uefiapi = {
 	.mmap_get_dram = api_mmap_get_dram,
 	.mmap_get_mappings = api_mmap_get_mappings,
 	.mmap_get_lk_range = api_mmap_get_lk_range,
+
+	.boot_create_tags = api_boot_create_tags,
+	.boot_machine_type = api_boot_machine_type,
 };
