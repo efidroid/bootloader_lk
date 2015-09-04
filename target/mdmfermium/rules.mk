@@ -4,8 +4,8 @@ INCLUDES += -I$(LOCAL_DIR)/include -I$(LK_TOP_DIR)/platform/msm_shared
 
 PLATFORM := mdmfermium
 
-MEMBASE := 0x82900000 # SDRAM
-MEMSIZE := 0x00100000 # 1MB
+MEMBASE ?= 0x82900000 # SDRAM
+MEMSIZE ?= 0x00100000 # 1MB
 
 SCRATCH_ADDR                        := 0x88000000
 SCRATCH_REGION1                     := 0x88000000
