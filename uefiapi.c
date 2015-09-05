@@ -173,6 +173,10 @@ __WEAK unsigned int api_lcd_get_height(void) {
 	return 0;
 }
 
+__WEAK unsigned int api_lcd_get_density(void) {
+	return LCD_DENSITY;
+}
+
 __WEAK void api_lcd_flush(void) {
 }
 
@@ -334,6 +338,7 @@ lkapi_t uefiapi = {
 	.lcd_init = api_lcd_init,
 	.lcd_get_width = api_lcd_get_width,
 	.lcd_get_height = api_lcd_get_height,
+	.lcd_get_density = api_lcd_get_density,
 	.lcd_flush = api_lcd_flush,
 	.lcd_shutdown = api_lcd_shutdown,
 
