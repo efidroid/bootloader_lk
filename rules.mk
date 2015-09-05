@@ -11,4 +11,5 @@ DEFINES += EDK2_SIZE=$(EDK2_SIZE)
 OBJS += \
 	$(LOCAL_DIR)/edk2bin.o \
 	$(LOCAL_DIR)/uefiapi.o \
-	$(LOCAL_DIR)/main.o
+	$(LOCAL_DIR)/main.o \
+	$(LOCAL_DIR)/event.o
