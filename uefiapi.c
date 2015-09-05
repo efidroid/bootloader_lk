@@ -266,6 +266,10 @@ static void* add_dram_callback(void* pdata, unsigned long addr, unsigned long si
 	return pdata;
 }
 
+__WEAK void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
+
+}
+
 void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	if(platform_use_identity_mmu_mappings()) {
 		// identity map
@@ -280,6 +284,9 @@ void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 
 	// LK
 	pdata = cb(pdata, MEMBASE, MEMBASE, MEMSIZE, LKAPI_MEMORY_WRITE_THROUGH);
+
+	// platform mappings
+	pdata = api_mmap_get_platform_mappings(pdata, cb);
 
 	return pdata;
 }
