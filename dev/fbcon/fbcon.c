@@ -210,7 +210,7 @@ void fbcon_draw_msg_background(unsigned y_start, unsigned y_end,
 	}
 }
 
-static void fbcon_flush(void)
+void fbcon_flush(void)
 {
 	unsigned total_x, total_y;
 	unsigned bytes_per_bpp;
