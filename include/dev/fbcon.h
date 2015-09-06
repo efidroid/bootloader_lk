@@ -85,6 +85,7 @@ void fbcon_setup(struct fbcon_config *cfg);
 void fbcon_putc(char c);
 void fbcon_clear(void);
 struct fbcon_config* fbcon_display(void);
+void fbcon_flush(void);
 void fbcon_putc_factor(char c, int type, unsigned scale_factor);
 void fbcon_draw_msg_background(unsigned y_start, unsigned y_end,
 	uint32_t paint, int update);
