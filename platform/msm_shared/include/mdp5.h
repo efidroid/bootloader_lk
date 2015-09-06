@@ -235,6 +235,7 @@ int mdp_edp_off(void);
 void mdp_disable(void);
 void mdp_gdsc_ctrl(uint8_t enable);
 int mdp_get_revision();
+int mdp_dump_config(struct fbcon_config *fb);
 uint8_t target_is_edp();
 void target_edp_panel_init(struct msm_panel_info *pinfo);
 int target_edp_panel_clock(uint8_t enable, struct msm_panel_info *pinfo);

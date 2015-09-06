@@ -51,7 +51,6 @@ DEFINES += \
 OBJS += \
 	$(LOCAL_DIR)/init.o \
 	$(LOCAL_DIR)/meminfo.o \
-	$(LOCAL_DIR)/target_display.o \
 	$(LOCAL_DIR)/oem_panel.o \
 
 ifeq ($(ENABLE_GLINK_SUPPORT),1)
@@ -62,4 +61,9 @@ endif
 ifeq ($(ENABLE_MDTP_SUPPORT),1)
 OBJS += \
 	$(LOCAL_DIR)/mdtp_defs.o
+endif
+
+ifneq ($(DISPLAY_2NDSTAGE),1)
+OBJS += \
+	$(LOCAL_DIR)/target_display.o
 endif
