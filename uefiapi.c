@@ -328,6 +328,15 @@ unsigned int api_boot_machine_type(void) {
 	return board_machtype();
 }
 
+void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned int* tags) {
+	/* overwrite the destination of specified for the project */
+#ifdef ABOOT_IGNORE_BOOT_HEADER_ADDRS
+	*kernel = ABOOT_FORCE_KERNEL_ADDR;
+	*ramdisk = ABOOT_FORCE_RAMDISK_ADDR;
+	*tags = ABOOT_FORCE_TAGS_ADDR;
+#endif
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                            API TABLE                                //
@@ -376,4 +385,5 @@ lkapi_t uefiapi = {
 
 	.boot_create_tags = api_boot_create_tags,
 	.boot_machine_type = api_boot_machine_type,
+	.boot_update_addrs = api_boot_update_addrs,
 };
