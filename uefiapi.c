@@ -386,4 +386,9 @@ lkapi_t uefiapi = {
 	.boot_create_tags = api_boot_create_tags,
 	.boot_machine_type = api_boot_machine_type,
 	.boot_update_addrs = api_boot_update_addrs,
+
+	.event_init = NULL,
+	.event_destroy = NULL,
+	.event_wait = NULL,
+	.event_signal = NULL,
 };
