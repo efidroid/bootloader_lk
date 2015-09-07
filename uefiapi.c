@@ -2,6 +2,7 @@
 #include <debug.h>
 #include <stdint.h>
 #include <target.h>
+#include <malloc.h>
 #include <lib/heap.h>
 #include <dev/keys.h>
 #include <dev/fbcon.h>
@@ -11,6 +12,7 @@
 #include <platform/iomap.h>
 #include <platform/interrupts.h>
 #include <atagparse.h>
+#include <cmdline.h>
 
 #include <uefiapi.h>
 
@@ -316,11 +318,62 @@ void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
 void generate_atags(unsigned *ptr, const char *cmdline, void *ramdisk, unsigned ramdisk_size);
 unsigned char *update_cmdline(const char * cmdline);
 
+#if DEVICE_TREE
+#include <libfdt.h>
+#include <dev_tree.h>
+
+static int load_dtb(unsigned int tags_addr, unsigned int tags_size)
+{
+	struct dt_table *table;
+	struct dt_entry dt_entry;
+	uint32_t dt_hdr_size;
+	unsigned int dtb_size = 0;
+	unsigned char *best_match_dt_addr = NULL;
+
+	/* offset now point to start of dt.img */
+	table = (struct dt_table*)(tags_addr);
+
+	if (dev_tree_validate(table, 2048, &dt_hdr_size) != 0) {
+		dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
+		return -1;
+	}
+	/* Find index of device tree within device tree table */
+	if(dev_tree_get_entry_info(table, &dt_entry) != 0){
+		dprintf(CRITICAL, "ERROR: Getting device tree address failed\n");
+		return -1;
+	}
+
+	best_match_dt_addr = (unsigned char *)tags_addr + dt_entry.offset;
+	dtb_size = dt_entry.size;
+
+	/* Read device device tree in the "tags_add */
+	memmove((void*) tags_addr, (void *)best_match_dt_addr, dtb_size);
+
+	/* Everything looks fine. Return success. */
+	return 0;
+}
+#endif
+
 int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
 			 unsigned int tags_addr, unsigned int tags_size)
 {
 	char* final_cmdline = (char*)update_cmdline(cmdline);
+	cmdline_addall((char*)final_cmdline, false);
+	free(final_cmdline);
+
+	int len = cmdline_length();
+	final_cmdline = malloc(len);
+	cmdline_generate((char*)final_cmdline, len);
+
+#if DEVICE_TREE
+	int ret = load_dtb(tags_addr, tags_size);
+	if(ret) return -1;
+
+	ret = update_device_tree((void *)tags_addr,(const char *)final_cmdline, (void*)ramdisk_addr, ramdisk_size);
+	return ret;
+#else
 	generate_atags((unsigned *)tags_addr, final_cmdline, (void*)ramdisk_addr, ramdisk_size);
+#endif
 	return 0;
 }
 
