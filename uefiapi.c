@@ -10,6 +10,7 @@
 #include <platform/timer.h>
 #include <platform/iomap.h>
 #include <platform/interrupts.h>
+#include <atagparse.h>
 
 #include <uefiapi.h>
 
@@ -56,6 +57,9 @@ __WEAK void api_common_platform_early_init(void) {
 	// bring up the kernel heap
 	dprintf(SPEW, "initializing heap\n");
 	heap_init();
+
+	// parse atags
+	atag_parse();
 
 	exit_critical_section();
 
