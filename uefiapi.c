@@ -280,7 +280,7 @@ static void* add_dram_callback(void* pdata, unsigned long addr, unsigned long si
 }
 
 __WEAK void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
-
+	return pdata;
 }
 
 void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
