@@ -1,8 +1,10 @@
 #include <err.h>
 #include <debug.h>
 #include <stdint.h>
+#include <target.h>
 #include <lib/heap.h>
 #include <dev/keys.h>
+#include <dev/fbcon.h>
 #include <kernel/thread.h>
 #include <platform/irqs.h>
 #include <platform/timer.h>
@@ -159,18 +161,23 @@ __WEAK int api_bio_list(lkapi_biodev_t* list) {
 /////////////////////////////////////////////////////////////////////////
 
 __WEAK unsigned long long api_lcd_get_vram_address(void) {
-	return 0;
+	struct fbcon_config* fbcon = fbcon_display();
+	return (uint32_t)fbcon->base;
 }
 
-__WEAK int api_lcd_init(unsigned long long vramaddr) {
+__WEAK int api_lcd_init(void) {
+	target_display_init("");
 	return 0;
 }
 
 __WEAK unsigned int api_lcd_get_width(void) {
-	return 0;
+	struct fbcon_config* fbcon = fbcon_display();
+	return fbcon->width;
 }
+
 __WEAK unsigned int api_lcd_get_height(void) {
-	return 0;
+	struct fbcon_config* fbcon = fbcon_display();
+	return fbcon->height;
 }
 
 __WEAK unsigned int api_lcd_get_density(void) {
@@ -178,9 +185,11 @@ __WEAK unsigned int api_lcd_get_density(void) {
 }
 
 __WEAK void api_lcd_flush(void) {
+	fbcon_flush();
 }
 
 __WEAK void api_lcd_shutdown(void) {
+	target_display_shutdown();
 }
 
 /////////////////////////////////////////////////////////////////////////
