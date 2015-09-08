@@ -1760,6 +1760,10 @@ void write_device_info_mmc(device_info *dev)
 	uint8_t lun = 0;
 	uint32_t ret = 0;
 
+	#ifdef EFIDROID_SAFEBOOT
+	return;
+	#endif
+
 	if (devinfo_present)
 		index = partition_get_index("devinfo");
 	else
@@ -1831,6 +1835,11 @@ void write_device_info_flash(device_info *dev)
 	struct device_info *info = memalign(PAGE_SIZE, ROUNDUP(BOOT_IMG_MAX_PAGE_SIZE, PAGE_SIZE));
 	struct ptentry *ptn;
 	struct ptable *ptable;
+
+	#ifdef EFIDROID_SAFEBOOT
+	return;
+	#endif
+
 	if(info == NULL)
 	{
 		dprintf(CRITICAL, "Failed to allocate memory for device info struct\n");
@@ -3863,6 +3872,10 @@ void aboot_init(const struct app_descriptor *app)
 	#if NO_KEYPAD_DRIVER
 	if (fastboot_trigger())
 		boot_into_fastboot = true;
+	#endif
+
+	#ifdef EFIDROID_SAFEBOOT
+	boot_into_fastboot = true;
 	#endif
 
 #if USE_PON_REBOOT_REG
