@@ -177,7 +177,8 @@ DEFINES += DISPLAY_TYPE_MDSS=1
 			$(LOCAL_DIR)/dev_tree.o \
 			$(LOCAL_DIR)/gpio.o \
 			$(LOCAL_DIR)/dload_util.o \
-			$(LOCAL_DIR)/shutdown_detect.o
+			$(LOCAL_DIR)/shutdown_detect.o \
+			$(LOCAL_DIR)/qseecom_lk.o
 endif
 
 ifeq ($(PLATFORM),msm8916)

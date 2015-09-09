@@ -257,6 +257,7 @@ void target_sdc_init()
 
 void target_init(void)
 {
+	int ret = 0;
 	dprintf(INFO, "target_init()\n");
 
 	spmi_init(PMIC_ARB_CHANNEL_NUM, PMIC_ARB_OWNER_ID);
@@ -264,6 +265,38 @@ void target_init(void)
 	target_keystatus();
 
 	target_sdc_init();
+	clock_ce_enable(SSD_CE_INSTANCE);
+	if (target_use_signed_kernel())
+		target_crypto_init_params();
+
+#if VERIFIED_BOOT
+	/* Initialize Qseecom */
+	ret = qseecom_init();
+
+	if (ret < 0)
+	{
+		dprintf(CRITICAL, "Failed to initialize qseecom, error: %d\n", ret);
+		ASSERT(0);
+	}
+
+	/* Start Qseecom */
+	ret = qseecom_tz_init();
+
+	if (ret < 0)
+	{
+		dprintf(CRITICAL, "Failed to start qseecom, error: %d\n", ret);
+		ASSERT(0);
+	}
+
+	/*
+	 * Load the sec app for first time
+	 */
+	if (load_sec_app() < 0)
+	{
+		dprintf(CRITICAL, "Failed to load App for verified\n");
+		ASSERT(0);
+	}
+#endif
 
 #if LONG_PRESS_POWER_ON
 	shutdown_detect();
@@ -274,8 +307,6 @@ void target_init(void)
 	vib_timed_turn_on(VIBRATE_TIME);
 #endif
 
-	if (target_use_signed_kernel())
-		target_crypto_init_params();
 }
 
 /* Do any target specific intialization needed before entering fastboot mode */
@@ -445,14 +476,20 @@ void target_uninit(void)
 
 	mmc_put_card_to_sleep(dev);
 
+	clock_ce_disable(SSD_CE_INSTANCE);
 	if (crypto_initialized())
 		crypto_eng_cleanup();
 
-	if (target_is_ssd_enabled())
-		clock_ce_disable(SSD_CE_INSTANCE);
-
-	/* Disable HC mode before jumping to kernel */
-	sdhci_mode_disable(&dev->host);
+#if VERIFIED_BOOT
+	if (is_sec_app_loaded())
+	{
+		if (send_milestone_call_to_tz() < 0)
+		{
+			dprintf(CRITICAL, "Failed to send milestone call\n");
+			ASSERT(0);
+		}
+	}
+#endif
 }
 
 void target_usb_init(void)

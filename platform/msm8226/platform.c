@@ -52,6 +52,7 @@ static mmu_section_t mmu_section_table[] = {
 /*       Physical addr,    Virtual addr,    Size (in MB),    Flags */
 	{    MEMBASE,          MEMBASE,        (MEMSIZE / MB),   LK_MEMORY},
 	{    MSM_IOMAP_BASE,   MSM_IOMAP_BASE,  MSM_IOMAP_SIZE,  IOMAP_MEMORY},
+    {    RPMB_SND_RCV_BUF,  RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ, IOMAP_MEMORY},
 };
 
 static struct smem_ram_ptable ram_ptable;

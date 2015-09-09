@@ -14,6 +14,7 @@ endif
 
 EMMC_BOOT := 1
 ENABLE_SDHCI_SUPPORT := 1
+ENABLE_SECAPP_LOADER := 1
 
 #enable power on vibrator feature
 ENABLE_PON_VIB_SUPPORT := true
