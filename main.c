@@ -27,7 +27,7 @@
 #include <string.h>
 #include <uefiapi.h>
 
-extern unsigned char uefi_bin[];										\
+extern unsigned char uefi_bin[];
 extern unsigned int uefi_size;
 
 /* the global critical section count */
