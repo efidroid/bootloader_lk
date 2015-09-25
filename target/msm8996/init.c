@@ -138,11 +138,6 @@ static void target_keystatus()
 
 void target_uninit(void)
 {
-	if (platform_boot_dev_isemmc())
-	{
-		mmc_put_card_to_sleep(dev);
-	}
-
 	if (is_sec_app_loaded())
 	{
 		if (unload_sec_app() < 0)
@@ -159,6 +154,13 @@ void target_uninit(void)
 	{
 		dprintf(CRITICAL, "RPMB uninit failed\n");
 		ASSERT(0);
+	}
+
+	if (platform_boot_dev_isemmc())
+	{
+		/*Keep the MMC card in sleep state before entering into kernel
+		so that kernel driver will do the initialization of the card again*/
+		mmc_put_card_to_sleep(dev);
 	}
 
 }

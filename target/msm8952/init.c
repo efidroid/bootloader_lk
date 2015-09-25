@@ -484,8 +484,6 @@ unsigned target_pause_for_battery_charge(void)
 
 void target_uninit(void)
 {
-	mmc_put_card_to_sleep(dev);
-	sdhci_mode_disable(&dev->host);
 	if (crypto_initialized())
 		crypto_eng_cleanup();
 
@@ -509,6 +507,12 @@ void target_uninit(void)
 	}
 
 	clock_ce_disable(CE1_INSTANCE);
+
+	/*Keep the MMC card in sleep state before entering into kernel
+	so that kernel driver will do the initialization of the card again*/
+	mmc_put_card_to_sleep(dev);
+	sdhci_mode_disable(&dev->host);
+
 #if SMD_SUPPORT
 	rpm_smd_uninit();
 #endif
