@@ -76,18 +76,23 @@ static struct mipi_dsi_cmd nt35523_wqxga_dualdsi_video_on_command[] = {
 
 #define NT35523_WQXGA_DUALDSI_VIDEO_ON_COMMAND 2
 
-
 static char nt35523_wqxga_dualdsi_videooff_cmd0[] = {
+	0x02, 0x00, 0x29, 0xC0,
+	0x28, 0x00, 0xFF, 0xFF,
+};
+
+static char nt35523_wqxga_dualdsi_videooff_cmd1[] = {
 	0x02, 0x00, 0x29, 0xC0,
 	0x10, 0x00, 0xFF, 0xFF,
 };
 
 
 static struct mipi_dsi_cmd nt35523_wqxga_dualdsi_video_off_command[] = {
-	{0x4, nt35523_wqxga_dualdsi_videooff_cmd0, 0x78},
+	{0x8, nt35523_wqxga_dualdsi_videooff_cmd0, 0x78},
+	{0x8, nt35523_wqxga_dualdsi_videooff_cmd1, 0x96},
 };
 
-#define NT35523_WQXGA_DUALDSI_VIDEO_OFF_COMMAND 1
+#define NT35523_WQXGA_DUALDSI_VIDEO_OFF_COMMAND 2
 
 static struct command_state nt35523_wqxga_dualdsi_video_state = {
 	1, 1

@@ -54,6 +54,7 @@
 #include "include/panel_nt35597_wqxga_dsc_video.h"
 #include "include/panel_nt35597_wqxga_dsc_cmd.h"
 #include "include/panel_byd_1200p_video.h"
+#include "include/panel_nt35523_wqxga_dualdsi_video.h"
 
 /*---------------------------------------------------------------------------*/
 /* static panel selection variable                                           */
@@ -69,6 +70,7 @@ enum {
 	NT35597_WQXGA_DSC_VIDEO_PANEL,
 	NT35597_WQXGA_DSC_CMD_PANEL,
 	BYD_1200P_VIDEO_PANEL,
+	NT35523_WQXGA_DUALDSI_VIDEO_PANEL,
 	UNKNOWN_PANEL
 };
 
@@ -91,6 +93,7 @@ static struct panel_list supp_panels[] = {
 	{"nt35597_wqxga_dsc_video", NT35597_WQXGA_DSC_VIDEO_PANEL},
 	{"nt35597_wqxga_dsc_cmd", NT35597_WQXGA_DSC_CMD_PANEL},
 	{"byd_1200p_video", BYD_1200P_VIDEO_PANEL},
+	{"nt35523_wqxga_dualdsi_video", NT35523_WQXGA_DUALDSI_VIDEO_PANEL},
 };
 
 static uint32_t panel_id;
@@ -433,6 +436,35 @@ static int init_panel_data(struct panel_struct *panelstruct,
 		pinfo->mipi.signature 	= BYD_1200P_VIDEO_SIGNATURE;
 		phy_db->regulator_mode = DSI_PHY_REGULATOR_LDO_MODE;
 		break;
+	case NT35523_WQXGA_DUALDSI_VIDEO_PANEL:
+		panelstruct->paneldata    = &nt35523_wqxga_dualdsi_video_panel_data;
+		panelstruct->paneldata->panel_operating_mode = DST_SPLIT_FLAG |
+					SPLIT_DISPLAY_FLAG | DUAL_DSI_FLAG;
+		panelstruct->paneldata->panel_with_enable_gpio = 0;
+		panelstruct->panelres     = &nt35523_wqxga_dualdsi_video_panel_res;
+		panelstruct->color        = &nt35523_wqxga_dualdsi_video_color;
+		panelstruct->videopanel   = &nt35523_wqxga_dualdsi_video_video_panel;
+		panelstruct->commandpanel = &nt35523_wqxga_dualdsi_video_command_panel;
+		panelstruct->state        = &nt35523_wqxga_dualdsi_video_state;
+		panelstruct->laneconfig   = &nt35523_wqxga_dualdsi_video_lane_config;
+		panelstruct->paneltiminginfo
+					= &nt35523_wqxga_dualdsi_video_timing_info;
+		panelstruct->panelresetseq
+					= &nt35523_wqxga_dualdsi_video_reset_seq;
+		panelstruct->backlightinfo = &nt35523_wqxga_dualdsi_video_backlight;
+		pinfo->labibb = &nt35523_wqxga_dualdsi_video_labibb;
+		pinfo->mipi.panel_on_cmds
+			= nt35523_wqxga_dualdsi_video_on_command;
+		pinfo->mipi.num_of_panel_on_cmds
+			= NT35523_WQXGA_DUALDSI_VIDEO_ON_COMMAND;
+		pinfo->mipi.panel_off_cmds
+			= nt35523_wqxga_dualdsi_video_off_command;
+		pinfo->mipi.num_of_panel_off_cmds
+			= NT35523_WQXGA_DUALDSI_VIDEO_OFF_COMMAND;
+		memcpy(phy_db->timing, nt35523_wqxga_dualdsi_video_timings,
+			TIMING_SIZE);
+		pinfo->mipi.tx_eot_append = true;
+		break;
 	case UNKNOWN_PANEL:
 	default:
 		memset(panelstruct, 0, sizeof(struct panel_struct));
@@ -500,7 +532,10 @@ int oem_panel_select(const char *panel_name, struct panel_struct *panelstruct,
 		break;
 	case HW_PLATFORM_QRD:
 		if (hw_subtype == HW_PLATFORM_SUBTYPE_POLARIS) {
-			panel_id = BYD_1200P_VIDEO_PANEL;
+			if (platform_is_msm8956())
+				panel_id = NT35523_WQXGA_DUALDSI_VIDEO_PANEL;
+			else
+				panel_id = BYD_1200P_VIDEO_PANEL;
 			break;
 		}
 
