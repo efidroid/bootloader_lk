@@ -69,16 +69,15 @@ unsigned check_reboot_mode(void)
 unsigned check_hard_reboot_mode(void)
 {
 	uint8_t hard_restart_reason = 0;
-	uint8_t value = 0;
 
 	/* Read reboot reason and scrub it
-	 * Bit-5, bit-6 and bit-7 of SOFT_RB_SPARE for hard reset reason
+	 * Bit-2 to bit-7 of SOFT_RB_SPARE for hard reset reason
 	 */
-	value = pm8x41_reg_read(PON_SOFT_RB_SPARE);
-	hard_restart_reason = value >> 5;
-	pm8x41_reg_write(PON_SOFT_RB_SPARE, value & 0x1f);
+	hard_restart_reason = REG_READ(PON_SOFT_RB_SPARE);
+	REG_WRITE(PON_SOFT_RB_SPARE, hard_restart_reason & 0x03);
 
-	return hard_restart_reason;
+	/* Extract the bits 5 to 7 and return */
+	return (hard_restart_reason & 0xFC) >> 2;
 }
 
 /* Return true if it is triggered by alarm. */
@@ -112,7 +111,7 @@ void reboot_device(unsigned reboot_reason)
 
 #if USE_PON_REBOOT_REG
 	value = REG_READ(PON_SOFT_RB_SPARE);
-	value |= ((reboot_reason << 5) & 0xff);
+	value |= (reboot_reason << 2);
 	REG_WRITE(PON_SOFT_RB_SPARE, value);
 #else
 	writel(reboot_reason, RESTART_REASON_ADDR);
