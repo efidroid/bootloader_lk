@@ -412,6 +412,7 @@ unsigned char *update_cmdline(const char * cmdline)
 
 		cmdline_final = (unsigned char*) malloc((cmdline_len + 4) & (~3));
 		ASSERT(cmdline_final != NULL);
+		memset((void *)cmdline_final, 0, sizeof(*cmdline_final));
 		dst = cmdline_final;
 
 		/* Save start ptr for debug print */
@@ -1045,6 +1046,9 @@ int boot_linux_from_mmc(void)
 		page_mask = page_size - 1;
 	}
 
+	/* ensure commandline is terminated */
+	hdr->cmdline[BOOT_ARGS_SIZE-1] = 0;
+
 	kernel_actual  = ROUND_TO_PAGE(hdr->kernel_size,  page_mask);
 	ramdisk_actual = ROUND_TO_PAGE(hdr->ramdisk_size, page_mask);
 
@@ -1366,6 +1370,9 @@ int boot_linux_from_flash(void)
 		dprintf(CRITICAL, "ERROR: Invalid boot image pagesize. Device pagesize: %d, Image pagesize: %d\n",page_size,hdr->page_size);
 		return -1;
 	}
+
+	/* ensure commandline is terminated */
+	hdr->cmdline[BOOT_ARGS_SIZE-1] = 0;
 
 	/*
 	 * Update the kernel/ramdisk/tags address if the boot image header
