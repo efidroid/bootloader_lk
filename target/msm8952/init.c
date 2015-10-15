@@ -56,6 +56,7 @@
 #include <clock.h>
 #include <secapp_loader.h>
 #include <rpmb.h>
+#include <qseecomi_lk.h>
 
 #include "target/display.h"
 
@@ -286,6 +287,10 @@ void target_init(void)
 		dprintf(CRITICAL, "Failed to initialize qseecom, error: %d\n", ret);
 		ASSERT(0);
 	}
+ 
+	/* set different address for TZ 4.0 */
+	if (qseecom_get_version() >= QSEE_VERSION_40)
+		qseecom_lk_set_app_region(APP_REGION_ADDR_TZ40, APP_REGION_SIZE_TZ40);
 
 	/* Start Qseecom */
 	ret = qseecom_tz_init();
