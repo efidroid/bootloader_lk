@@ -170,9 +170,9 @@ static const char *baseband_sglte2  = " androidboot.baseband=sglte2";
 static const char *warmboot_cmdline = " qpnp-power-on.warm_boot=1";
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 static const char *verity_mode = " androidboot.veritymode=";
 static const char *verified_state= " androidboot.verifiedbootstate=";
-
 //indexed based on enum values, green is 0 by default
 
 struct verified_boot_verity_mode vbvm[] =
@@ -187,6 +187,7 @@ struct verified_boot_state_name vbsn[] =
 	{YELLOW,"yellow"},
 	{RED,"red" },
 };
+#endif
 #endif
 
 static unsigned page_size = 0;
@@ -287,7 +288,9 @@ unsigned char *update_cmdline(const char * cmdline)
 	char *boot_dev_buf = NULL;
     bool is_mdtp_activated = 0;
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
     uint32_t boot_state = boot_verify_get_state();
+#endif
 #endif
 
 #ifdef MDTP_SUPPORT
@@ -312,8 +315,10 @@ unsigned char *update_cmdline(const char * cmdline)
 	cmdline_len += strlen(sn_buf);
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	cmdline_len += strlen(verified_state) + strlen(vbsn[boot_state].name);
 	cmdline_len += strlen(verity_mode) + strlen(vbvm[device.verity_mode].name);
+#endif
 #endif
 
 	if (boot_into_recovery && gpt_exists)
@@ -432,6 +437,7 @@ unsigned char *update_cmdline(const char * cmdline)
 		}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 		src = verified_state;
 		if(have_cmdline) --dst;
 		have_cmdline = 1;
@@ -446,6 +452,7 @@ unsigned char *update_cmdline(const char * cmdline)
 		src = vbvm[device.verity_mode].name;
 		if(have_cmdline) -- dst;
 		while ((*dst++ = *src++));
+#endif
 #endif
 		src = usb_sn_cmdline;
 		if (have_cmdline) --dst;
@@ -1723,7 +1730,10 @@ void read_device_info(device_info *dev)
 #else
 			info->charger_screen_enabled = 0;
 #endif
+
+#if !VBOOT_MOTA
 			info->verity_mode = 1; //enforcing by default
+#endif
 			write_device_info(info);
 		}
 		memcpy(dev, info, sizeof(device_info));
@@ -2570,12 +2580,14 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 		cmd_flash_mmc_img(arg, data, sz);
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if((!strncmp(arg, "system", 6)) && !device.verity_mode)
 	{
 		// reset dm_verity mode to enforcing
 		device.verity_mode = 1;
 		write_device_info(&device);
 	}
+#endif
 #endif
 
 	return;
@@ -3155,6 +3167,7 @@ void aboot_init(const struct app_descriptor *app)
 		boot_reason_alarm = true;
 	}
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	else if(reboot_mode == DM_VERITY_ENFORCING ||
 		hard_reboot_mode == DM_VERITY_ENFORCING_HARD_RESET_MODE) {
 		device.verity_mode = 1;
@@ -3168,6 +3181,7 @@ void aboot_init(const struct app_descriptor *app)
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
 	}
+#endif
 #endif
 
 normal_boot:
