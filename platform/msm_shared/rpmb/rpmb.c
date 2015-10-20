@@ -74,15 +74,14 @@ int rpmb_init()
 			}
 		}
 
-#ifdef FORCE_MIN_RPMB_CNT
 		/*
 		 *  tz changes required for supporting
 		 *  multiple frames are not present
 		 *  force the number of frames to be minimum
-		 *  i.e. one.
+		 *  i.e. one for tz 3.0 and earlier.
 		 */
-		info.rel_wr_count = 1;
-#endif
+		if( qseecom_get_version() < QSEE_VERSION_40 )
+			info.rel_wr_count = 1;
 
 		info.dev_type  = EMMC_RPMB;
 	}
