@@ -252,7 +252,7 @@ static struct backlight nt35597_wqxga_dualdsi_video_backlight = {
 };
 
 static struct labibb_desc nt35597_wqxga_dualdsi_video_labibb = {
-	0, 1, 5500000, 5500000, 5500000, 5500000, 3, 3, 1
+	0, 1, 5500000, 5500000, 5500000, 5500000, 3, 3, 1, 0
 };
 
 /*---------------------------------------------------------------------------*/
