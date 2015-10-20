@@ -167,6 +167,7 @@ void target_uninit(void)
 	}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if (is_sec_app_loaded())
 	{
 		if (send_milestone_call_to_tz() < 0)
@@ -181,6 +182,7 @@ void target_uninit(void)
 		dprintf(CRITICAL, "RPMB uninit failed\n");
 		ASSERT(0);
 	}
+#endif
 #endif
 	rpm_smd_uninit();
 }
@@ -334,7 +336,9 @@ void *target_mmc_device()
 void target_init(void)
 {
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	int ret = 0;
+#endif
 #endif
 
 	dprintf(INFO, "target_init()\n");
@@ -366,6 +370,7 @@ void target_init(void)
 	mmc_read_partition_table(0);
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	/* Initialize Qseecom */
 	ret = qseecom_init();
 
@@ -398,6 +403,7 @@ void target_init(void)
 		dprintf(CRITICAL, "Failed to load App for verified\n");
 		ASSERT(0);
 	}
+#endif
 #endif
 
 	rpm_smd_init();
