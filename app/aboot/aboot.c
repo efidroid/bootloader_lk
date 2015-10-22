@@ -1114,9 +1114,11 @@ int boot_linux_from_mmc(void)
 	}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	// send root of trust
 	if(!send_rot_command((uint32_t)device.is_unlocked))
 		ASSERT(0);
+#endif
 #endif
 
 	/*
@@ -1894,9 +1896,11 @@ void cmd_boot(const char *arg, void *data, unsigned sz)
 	}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	// send root of trust
 	if(!send_rot_command((uint32_t)device.is_unlocked))
 		ASSERT(0);
+#endif
 #endif
 
 	/*
@@ -2074,9 +2078,11 @@ void cmd_erase_mmc(const char *arg, void *data, unsigned sz)
 		}
 	}
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if(!(strncmp(arg, "userdata", 8)))
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
+#endif
 #endif
 	fastboot_okay("");
 }
