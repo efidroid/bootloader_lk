@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -573,6 +573,7 @@ bool target_display_panel_node(char *pbuf, uint16_t buf_size)
 	int prefix_string_len = strlen(DISPLAY_CMDLINE_PREFIX);
 	bool ret = true;
 	struct oem_panel_data oem = mdss_dsi_get_oem_data();
+	char vic_buf[HDMI_VIC_LEN] = "0";
 
 	if (!strcmp(oem.panel, HDMI_PANEL_NAME)) {
 		if (buf_size < (prefix_string_len + LK_OVERRIDE_PANEL_LEN +
@@ -586,6 +587,9 @@ bool target_display_panel_node(char *pbuf, uint16_t buf_size)
 		strlcat(pbuf, LK_OVERRIDE_PANEL, buf_size);
 		buf_size -= LK_OVERRIDE_PANEL_LEN;
 		strlcat(pbuf, HDMI_CONTROLLER_STRING, buf_size);
+		buf_size -= strlen(HDMI_CONTROLLER_STRING);
+		mdss_hdmi_get_vic(vic_buf);
+		strlcat(pbuf, vic_buf, buf_size);
 	} else {
 		ret = gcdb_display_cmdline_arg(pbuf, buf_size);
 	}
