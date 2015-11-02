@@ -36,12 +36,29 @@
 #define LOGO_IMG_MAGIC "SPLASH!!"
 #define LOGO_IMG_MAGIC_SIZE sizeof(LOGO_IMG_MAGIC) - 1
 
+enum fbcon_msg_type {
+	/* type for menu */
+	FBCON_COMMON_MSG = 0,
+	FBCON_UNLOCK_TITLE_MSG,
+	FBCON_TITLE_MSG,
+	FBCON_SUBTITLE_MSG,
 
+	/* type for warning */
+	FBCON_YELLOW_MSG,
+	FBCON_ORANGE_MSG,
+	FBCON_RED_MSG,
+
+	/* type for line color */
+	FBCON_LINE_COLOR,
+
+	/* and the select message's background */
+	FBCON_SELECT_MSG_BG_COLOR,
+};
 struct logo_img_header {
-    unsigned char magic[LOGO_IMG_MAGIC_SIZE]; // "SPLASH!!"
-    uint32_t width; // logo's width, little endian
-    uint32_t height; // logo's height, little endian
-    uint32_t offset;
+	unsigned char magic[LOGO_IMG_MAGIC_SIZE]; // "SPLASH!!"
+	uint32_t width; // logo's width, little endian
+	uint32_t height; // logo's height, little endian
+	uint32_t offset;
 };
 
 struct fbimage {
@@ -70,5 +87,11 @@ void fbcon_setup(struct fbcon_config *cfg);
 void fbcon_putc(char c);
 void fbcon_clear(void);
 struct fbcon_config* fbcon_display(void);
-
+void fbcon_putc_factor(char c, int type, unsigned scale_factor);
+void fbcon_draw_msg_background(unsigned y_start, unsigned y_end,
+	uint32_t paint, int update);
+void fbcon_draw_line(void);
+uint32_t fbcon_get_current_line(void);
+uint32_t fbcon_get_current_bg(void);
+uint32_t fbcon_get_max_x(void);
 #endif /* __DEV_FBCON_H */
