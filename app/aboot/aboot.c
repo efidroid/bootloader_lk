@@ -54,6 +54,7 @@
 #include <boot_stats.h>
 #include <sha.h>
 #include <platform/iomap.h>
+#include <platform/timer.h>
 #include <boot_device.h>
 #include <boot_verifier.h>
 #include <image_verify.h>
@@ -80,6 +81,8 @@
 #include "scm.h"
 #include "mdtp.h"
 #include "secapp_loader.h"
+#include <menu_keys_detect.h>
+#include <display_menu.h>
 
 extern  bool target_use_signed_kernel(void);
 extern void platform_uninit(void);
@@ -87,6 +90,7 @@ extern void target_uninit(void);
 extern int get_target_boot_params(const char *cmdline, const char *part,
 				  char *buf, int buflen);
 
+void *info_buf;
 void write_device_info_mmc(device_info *dev);
 void write_device_info_flash(device_info *dev);
 static int aboot_save_boot_hash_mmc(uint32_t image_addr, uint32_t image_size);
@@ -817,17 +821,28 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 	switch(boot_verify_get_state())
 	{
 		case RED:
-				dprintf(CRITICAL,
-						"Your device has failed verification and may not work properly.\nWait for 5 seconds before proceeding\n");
-				mdelay(5000);
-				break;
+#if FBCON_DISPLAY_MSG
+			display_menu_thread(DISPLAY_THREAD_BOOT_STATE);
+			wait_for_users_action();
+#else
+			dprintf(CRITICAL,
+					"Your device has failed verification and may not work properly.\nWait for 5 seconds before proceeding\n");
+			mdelay(5000);
+#endif
+
+			break;
 		case YELLOW:
-				dprintf(CRITICAL,
-						"Your device has loaded a different operating system.\nWait for 5 seconds before proceeding\n");
-				mdelay(5000);
-				break;
+#if FBCON_DISPLAY_MSG
+			display_menu_thread(DISPLAY_THREAD_BOOT_STATE);
+			wait_for_users_action();
+#else
+			dprintf(CRITICAL,
+					"Your device has loaded a different operating system.\nWait for 5 seconds before proceeding\n");
+			mdelay(5000);
+#endif
+			break;
 		default:
-				break;
+			break;
 	}
 #endif
 #if !VERIFIED_BOOT
@@ -1085,18 +1100,25 @@ int boot_linux_from_mmc(void)
 #if VERIFIED_BOOT
 	if(boot_verify_get_state() == ORANGE)
 	{
+#if FBCON_DISPLAY_MSG
+		display_menu_thread(DISPLAY_THREAD_BOOT_STATE);
+		wait_for_users_action();
+#else
 		dprintf(CRITICAL,
-				"Your device has been unlocked and can't be trusted.\nWait for 5 seconds before proceeding\n");
+			"Your device has been unlocked and can't be trusted.\nWait for 5 seconds before proceeding\n");
 		mdelay(5000);
+#endif
 	}
 #endif
 
 	}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	// send root of trust
-	if(!send_rot_command())
+	if(!send_rot_command((uint32_t)device.is_unlocked))
 		ASSERT(0);
+#endif
 #endif
 
 	/*
@@ -1481,7 +1503,6 @@ continue_boot:
 	return 0;
 }
 
-BUF_DMA_ALIGN(info_buf, BOOT_IMG_MAX_PAGE_SIZE);
 void write_device_info_mmc(device_info *dev)
 {
 	unsigned long long ptn = 0;
@@ -1560,10 +1581,15 @@ void read_device_info_mmc(struct device_info *info)
 
 void write_device_info_flash(device_info *dev)
 {
-	struct device_info *info = (void *) info_buf;
+	struct device_info *info = memalign(PAGE_SIZE, ROUNDUP(BOOT_IMG_MAX_PAGE_SIZE, PAGE_SIZE));
 	struct ptentry *ptn;
 	struct ptable *ptable;
-
+	if(info == NULL)
+	{
+		dprintf(CRITICAL, "Failed to allocate memory for device info struct\n");
+		ASSERT(0);
+	}
+	info_buf = info;
 	ptable = flash_get_ptable();
 	if (ptable == NULL)
 	{
@@ -1585,14 +1611,20 @@ void write_device_info_flash(device_info *dev)
 		dprintf(CRITICAL, "ERROR: Cannot write device info\n");
 			return;
 	}
+	free(info);
 }
 
 void read_device_info_flash(device_info *dev)
 {
-	struct device_info *info = (void*) info_buf;
+	struct device_info *info = memalign(PAGE_SIZE, ROUNDUP(BOOT_IMG_MAX_PAGE_SIZE, PAGE_SIZE));
 	struct ptentry *ptn;
 	struct ptable *ptable;
-
+	if(info == NULL)
+	{
+		dprintf(CRITICAL, "Failed to allocate memory for device info struct\n");
+		ASSERT(0);
+	}
+	info_buf = info;
 	ptable = flash_get_ptable();
 	if (ptable == NULL)
 	{
@@ -1621,21 +1653,31 @@ void read_device_info_flash(device_info *dev)
 		write_device_info_flash(info);
 	}
 	memcpy(dev, info, sizeof(device_info));
+	free(info);
 }
 
 void write_device_info(device_info *dev)
 {
 	if(target_is_emmc_boot())
 	{
-		struct device_info *info = (void*) info_buf;
+		struct device_info *info = memalign(PAGE_SIZE, ROUNDUP(BOOT_IMG_MAX_PAGE_SIZE, PAGE_SIZE));
+		if(info == NULL)
+		{
+			dprintf(CRITICAL, "Failed to allocate memory for device info struct\n");
+			ASSERT(0);
+		}
+		info_buf = info;
 		memcpy(info, dev, sizeof(struct device_info));
 
 #if USE_RPMB_FOR_DEVINFO
 		if (is_secure_boot_enable())
-			write_device_info_rpmb((void*) info, mmc_get_device_blocksize());
+			write_device_info_rpmb((void*) info, PAGE_SIZE);
+		else
+			write_device_info_mmc(info);
 #else
 		write_device_info_mmc(info);
 #endif
+		free(info);
 	}
 	else
 	{
@@ -1647,11 +1689,19 @@ void read_device_info(device_info *dev)
 {
 	if(target_is_emmc_boot())
 	{
-		struct device_info *info = (void*) info_buf;
+		struct device_info *info = memalign(PAGE_SIZE, ROUNDUP(BOOT_IMG_MAX_PAGE_SIZE, PAGE_SIZE));
+		if(info == NULL)
+		{
+			dprintf(CRITICAL, "Failed to allocate memory for device info struct\n");
+			ASSERT(0);
+		}
+		info_buf = info;
 
 #if USE_RPMB_FOR_DEVINFO
 		if (is_secure_boot_enable())
-			read_device_info_rpmb((void*) info, mmc_get_device_blocksize());
+			read_device_info_rpmb((void*) info, PAGE_SIZE);
+		else
+			read_device_info_mmc(info);
 #else
 		read_device_info_mmc(info);
 #endif
@@ -1669,9 +1719,11 @@ void read_device_info(device_info *dev)
 #else
 			info->charger_screen_enabled = 0;
 #endif
+			info->verity_mode = 1; //enforcing by default
 			write_device_info(info);
 		}
 		memcpy(dev, info, sizeof(device_info));
+		free(info);
 	}
 	else
 	{
@@ -1691,6 +1743,14 @@ void set_device_root()
 	dprintf(ALWAYS, "set_device_root called.");
 	device.is_tampered = 1;
 	write_device_info(&device);
+}
+
+void set_oem_unlock()
+{
+	if(!device.is_unlocked) {
+		device.is_unlocked = 1;
+		write_device_info(&device);
+	}
 }
 
 #if DEVICE_TREE
@@ -1820,14 +1880,28 @@ void cmd_boot(const char *arg, void *data, unsigned sz)
 		return;
 	}
 
+	// Initialize boot state before trying to verify boot.img
+#if VERIFIED_BOOT
+		boot_verifier_init();
+#endif
+
 	/* Verify the boot image
 	 * device & page_size are initialized in aboot_init
 	 */
-	if (target_use_signed_kernel() && (!device.is_unlocked))
+	if (target_use_signed_kernel() && (!device.is_unlocked)) {
 		/* Pass size excluding signature size, otherwise we would try to
 		 * access signature beyond its length
 		 */
 		verify_signed_bootimg((uint32_t)data, (image_actual - sig_actual));
+	}
+
+#if VERIFIED_BOOT
+#if !VBOOT_MOTA
+	// send root of trust
+	if(!send_rot_command((uint32_t)device.is_unlocked))
+		ASSERT(0);
+#endif
+#endif
 
 	/*
 	 * Check if the kernel image is a gzip package. If yes, need to decompress it.
@@ -2004,9 +2078,11 @@ void cmd_erase_mmc(const char *arg, void *data, unsigned sz)
 		}
 	}
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if(!(strncmp(arg, "userdata", 8)))
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
+#endif
 #endif
 	fastboot_okay("");
 }
@@ -2598,6 +2674,9 @@ void cmd_continue(const char *arg, void *data, unsigned sz)
 
 	if (target_is_emmc_boot())
 	{
+#if FBCON_DISPLAY_MSG
+		keys_detect_init();
+#endif
 		boot_linux_from_mmc();
 	}
 	else
@@ -2648,8 +2727,16 @@ void cmd_oem_select_display_panel(const char *arg, void *data, unsigned size)
 
 void cmd_oem_unlock(const char *arg, void *data, unsigned sz)
 {
-	display_fbcon_message("Oem Unlock requested");
+
+#if FBCON_DISPLAY_MSG
+	if(!device.is_unlocked)
+		display_menu_thread(DISPLAY_THREAD_UNLOCK);
+	else
+		fastboot_info("Device already unlocked!");
+	fastboot_okay("");
+#else
 	fastboot_fail("Need wipe userdata. Do 'fastboot oem unlock-go'");
+#endif
 }
 
 void cmd_oem_unlock_go(const char *arg, void *data, unsigned sz)
@@ -3062,7 +3149,9 @@ void aboot_init(const struct app_descriptor *app)
 	} else if(reboot_mode == ALARM_BOOT ||
 		hard_reboot_mode == RTC_HARD_RESET_MODE) {
 		boot_reason_alarm = true;
-	} else if(reboot_mode == DM_VERITY_ENFORCING ||
+	}
+#if VERIFIED_BOOT
+	else if(reboot_mode == DM_VERITY_ENFORCING ||
 		hard_reboot_mode == DM_VERITY_ENFORCING_HARD_RESET_MODE) {
 		device.verity_mode = 1;
 		write_device_info(&device);
@@ -3075,6 +3164,7 @@ void aboot_init(const struct app_descriptor *app)
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
 	}
+#endif
 
 normal_boot:
 	if (!boot_into_fastboot)
