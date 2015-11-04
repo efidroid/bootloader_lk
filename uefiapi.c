@@ -475,13 +475,14 @@ static int load_dtb(unsigned int tags_addr, unsigned int tags_size)
 int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
 			 unsigned int tags_addr, unsigned int tags_size)
 {
-	char* final_cmdline = (char*)update_cmdline(cmdline);
-	cmdline_addall((char*)final_cmdline, false);
-	free(final_cmdline);
+	char* final_cmdline;
+	cmdline_addall((char*)cmdline, false);
 
 	int len = cmdline_length();
 	final_cmdline = malloc(len);
 	cmdline_generate((char*)final_cmdline, len);
+
+	dprintf(INFO, "cmdline: %s\n", final_cmdline);
 
 #if DEVICE_TREE
 	int ret = load_dtb(tags_addr, tags_size);
