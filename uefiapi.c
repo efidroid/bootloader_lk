@@ -71,6 +71,16 @@ __WEAK void api_common_platform_early_init(void) {
 	api_platform_init();
 }
 
+__WEAK lkapi_uefi_bootmode api_platform_get_uefi_bootmode(void) {
+	switch(lkargs_get_uefi_bootmode()) {
+		case LKARGS_UEFI_BM_RECOVERY:
+			return LKAPI_UEFI_BM_RECOVERY;
+
+		default:
+			return LKAPI_UEFI_BM_NORMAL;
+	}
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -505,6 +515,7 @@ void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned
 
 lkapi_t uefiapi = {
 	.platform_early_init = api_common_platform_early_init,
+	.platform_get_uefi_bootmode = api_platform_get_uefi_bootmode,
 
 	.serial_poll_char = api_serial_poll_char,
 	.serial_write_char = api_serial_write_char,
