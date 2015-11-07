@@ -172,9 +172,9 @@ static const char *baseband_sglte2  = " androidboot.baseband=sglte2";
 static const char *warmboot_cmdline = " qpnp-power-on.warm_boot=1";
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 static const char *verity_mode = " androidboot.veritymode=";
 static const char *verified_state= " androidboot.verifiedbootstate=";
-
 //indexed based on enum values, green is 0 by default
 
 struct verified_boot_verity_mode vbvm[] =
@@ -191,6 +191,7 @@ struct verified_boot_state_name vbsn[] =
 	{RED,"red" },
 };
 #endif
+#endif
 
 static unsigned page_size = 0;
 static unsigned page_mask = 0;
@@ -202,8 +203,11 @@ static bool devinfo_present = true;
 
 /* Assuming unauthorized kernel image by default */
 static int auth_kernel_img = 0;
-
+#if VBOOT_MOTA
+static device_info device = {DEVICE_MAGIC, 0, 0, 0, 0, {0}, {0},{0}};
+#else
 static device_info device = {DEVICE_MAGIC, 0, 0, 0, 0, {0}, {0},{0}, 1};
+#endif
 static bool is_allow_unlock = 0;
 
 static char frp_ptns[2][8] = {"config","frp"};
@@ -305,7 +309,9 @@ unsigned char *update_cmdline(const char * cmdline)
 	char *boot_dev_buf = NULL;
     bool is_mdtp_activated = 0;
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
     uint32_t boot_state = boot_verify_get_state();
+#endif
 #endif
 
 #ifdef MDTP_SUPPORT
@@ -330,8 +336,10 @@ unsigned char *update_cmdline(const char * cmdline)
 	cmdline_len += strlen(sn_buf);
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	cmdline_len += strlen(verified_state) + strlen(vbsn[boot_state].name);
 	cmdline_len += strlen(verity_mode) + strlen(vbvm[device.verity_mode].name);
+#endif
 #endif
 
 	if (boot_into_recovery && gpt_exists)
@@ -450,6 +458,7 @@ unsigned char *update_cmdline(const char * cmdline)
 		}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 		src = verified_state;
 		if(have_cmdline) --dst;
 		have_cmdline = 1;
@@ -464,6 +473,7 @@ unsigned char *update_cmdline(const char * cmdline)
 		src = vbvm[device.verity_mode].name;
 		if(have_cmdline) -- dst;
 		while ((*dst++ = *src++));
+#endif
 #endif
 		src = usb_sn_cmdline;
 		if (have_cmdline) --dst;
@@ -1173,11 +1183,12 @@ int boot_linux_from_mmc(void)
 	}
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	// send root of trust
 	if(!send_rot_command((uint32_t)device.is_unlocked))
 		ASSERT(0);
 #endif
-
+#endif
 	/*
 	 * Check if the kernel image is a gzip package. If yes, need to decompress it.
 	 * If not, continue booting.
@@ -1866,14 +1877,20 @@ void read_device_info(device_info *dev)
 			memcpy(info->magic, DEVICE_MAGIC, DEVICE_MAGIC_SIZE);
 			if (is_secure_boot_enable()) {
 				info->is_unlocked = 0;
+#if !VBOOT_MOTA
 				info->is_unlock_critical = 0;
+#endif
 			} else {
 				info->is_unlocked = 1;
+#if !VBOOT_MOTA
 				info->is_unlock_critical = 1;
+#endif
 			}
 			info->is_tampered = 0;
 			info->charger_screen_enabled = 0;
+#if !VBOOT_MOTA
 			info->verity_mode = 1; //enforcing by default
+#endif
 			write_device_info(info);
 		}
 		memcpy(dev, info, sizeof(device_info));
@@ -1911,9 +1928,10 @@ void set_device_unlock_value(int type, bool status)
 {
 	if (type == UNLOCK)
 		device.is_unlocked = status;
+#if !VBOOT_MOTA
 	else if (type == UNLOCK_CRITICAL)
 		device.is_unlock_critical = status;
-
+#endif
 	write_device_info(&device);
 }
 
@@ -1925,9 +1943,10 @@ static void set_device_unlock(int type, bool status)
 	/* check device unlock status if it is as expected */
 	if (type == UNLOCK)
 		is_unlocked = device.is_unlocked;
+#if !VBOOT_MOTA
 	else if (type == UNLOCK_CRITICAL)
 		is_unlocked = device.is_unlock_critical;
-
+#endif
 	if (is_unlocked == status) {
 		snprintf(response, sizeof(response), "\tDevice already : %s", (status ? "unlocked!" : "locked!"));
 		fastboot_info(response);
@@ -2171,11 +2190,12 @@ void cmd_boot(const char *arg, void *data, unsigned sz)
 #endif /* MDTP_SUPPORT */
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	// send root of trust
 	if(!send_rot_command((uint32_t)device.is_unlocked))
 		ASSERT(0);
 #endif
-
+#endif
 	/*
 	 * Check if the kernel image is a gzip package. If yes, need to decompress it.
 	 * If not, continue booting.
@@ -2352,9 +2372,11 @@ void cmd_erase_mmc(const char *arg, void *data, unsigned sz)
 		}
 	}
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if(!(strncmp(arg, "userdata", 8)))
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
+#endif
 #endif
 	fastboot_okay("");
 }
@@ -2856,7 +2878,7 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 			fastboot_fail("Partition flashing is not allowed");
 			return;
 		}
-
+#if !VBOOT_MOTA
 		/* if device critical is locked:
 		 * common partition will allow to be flashed
 		 * critical partition will not allow to flash image.
@@ -2865,6 +2887,7 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 			fastboot_fail("Critical partition flashing is not allowed");
 			return;
 		}
+#endif
 	}
 #endif
 
@@ -2878,12 +2901,14 @@ void cmd_flash_mmc(const char *arg, void *data, unsigned sz)
 		cmd_flash_mmc_img(arg, data, sz);
 
 #if VERIFIED_BOOT
+#if !VBOOT_MOTA
 	if((!strncmp(arg, "system", 6)) && !device.verity_mode)
 	{
 		// reset dm_verity mode to enforcing
 		device.verity_mode = 1;
 		write_device_info(&device);
 	}
+#endif
 #endif
 
 	return;
@@ -3122,8 +3147,10 @@ void cmd_oem_devinfo(const char *arg, void *data, unsigned sz)
 	fastboot_info(response);
 	snprintf(response, sizeof(response), "\tDevice unlocked: %s", (device.is_unlocked ? "true" : "false"));
 	fastboot_info(response);
+#if !VBOOT_MOTA
 	snprintf(response, sizeof(response), "\tDevice critical unlocked: %s", (device.is_unlock_critical ? "true" : "false"));
 	fastboot_info(response);
+#endif
 	snprintf(response, sizeof(response), "\tCharger screen enabled: %s", (device.charger_screen_enabled ? "true" : "false"));
 	fastboot_info(response);
 	snprintf(response, sizeof(response), "\tDisplay panel: %s", (device.display_panel));
@@ -3585,7 +3612,11 @@ void aboot_init(const struct app_descriptor *app)
 	} else if(reboot_mode == ALARM_BOOT ||
 		hard_reboot_mode == RTC_HARD_RESET_MODE) {
 		boot_reason_alarm = true;
-	} else if(reboot_mode == DM_VERITY_ENFORCING) {
+	}
+#if VERIFIED_BOOT
+#if !VBOOT_MOTA
+	else if (reboot_mode == DM_VERITY_ENFORCING)
+	{
 		device.verity_mode = 1;
 		write_device_info(&device);
 	} else if(reboot_mode == DM_VERITY_LOGGING) {
@@ -3595,6 +3626,8 @@ void aboot_init(const struct app_descriptor *app)
 		if(send_delete_keys_to_tz())
 			ASSERT(0);
 	}
+#endif
+#endif
 
 normal_boot:
 	if (!boot_into_fastboot)
