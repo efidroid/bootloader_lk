@@ -209,7 +209,7 @@ static int api_mmc_read(lkapi_biodev_t* dev, unsigned long long lba, unsigned lo
 		return 0;
 
 	int rc = mmc_read(BLOCK_SIZE * lba, buffer, buffersize);
-	return rc != MMC_BOOT_E_SUCCESS;
+	return rc != 0;
 }
 
 static int api_mmc_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
@@ -229,7 +229,7 @@ static int api_mmc_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned l
 #if 0
 	int rc = mmc_write(BLOCK_SIZE * lba, buffersize, buffer);
 	dprintf(CRITICAL, "%s(%p, %llu, %lu, %p) = %d\n", __func__, dev, lba, buffersize, buffer, rc);
-	return rc != MMC_BOOT_E_SUCCESS;
+	return rc != 0;
 #else
 	ASSERT(0);
 	return 0;
@@ -266,12 +266,12 @@ int vnor_init(lkapi_biodev_t* dev)
 
 static int vnor_read(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
 	int rc = mmc_read(dev->block_size * (vnor_lba_start + lba), buffer, buffersize);
-	return rc != MMC_BOOT_E_SUCCESS;
+	return rc != 0;
 }
 
 static int vnor_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
 	int rc = mmc_write(BLOCK_SIZE * (vnor_lba_start + lba), buffersize, buffer);
-	return rc != MMC_BOOT_E_SUCCESS;
+	return rc != 0;
 }
 
 int api_bio_list(lkapi_biodev_t* list) {
