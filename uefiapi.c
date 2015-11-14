@@ -117,8 +117,11 @@ __WEAK int api_serial_read_char(char* cp) {
 /////////////////////////////////////////////////////////////////////////
 
 static lkapi_timer_callback_t timer_callback = NULL;
+static time_t timer_interval;
+static volatile uint64_t perf_ticks;
 
 enum handler_return timer_tick(void *arg, time_t now) {
+	perf_ticks += timer_interval;
 	timer_callback();
 	return INT_RESCHEDULE;
 }
@@ -133,7 +136,8 @@ __WEAK void api_timer_set_period(unsigned long long period) {
 
 	if(period!=0) {
 		ASSERT(timer_callback);
-		platform_set_periodic_timer(timer_tick, NULL, (period/10000));
+		timer_interval = (period/10000);
+		platform_set_periodic_timer(timer_tick, NULL, timer_interval);
 	}
 }
 
@@ -143,6 +147,24 @@ __WEAK void api_timer_delay_microseconds(unsigned int microseconds) {
 
 __WEAK void api_timer_delay_nanoseconds(unsigned int nanoseconds) {
 	udelay(nanoseconds);
+}
+
+__WEAK unsigned long long api_perf_ticks(void) {
+	return perf_ticks;
+}
+
+__WEAK unsigned long long api_perf_props(unsigned long long* startval, unsigned long long* endval) {
+	if(startval)
+		*startval = 0;
+
+	if(endval)
+		*endval = 0xffffffffffffffffULL;
+
+	return platform_tick_rate();
+}
+
+__WEAK unsigned long long api_perf_ticks_to_ns(unsigned long long ticks) {
+	return ticks * 1000000ULL;
 }
 
 
@@ -526,6 +548,10 @@ lkapi_t uefiapi = {
 	.timer_set_period = api_timer_set_period,
 	.timer_delay_microseconds = api_timer_delay_microseconds,
 	.timer_delay_nanoseconds = api_timer_delay_nanoseconds,
+
+	.perf_ticks = api_perf_ticks,
+	.perf_props = api_perf_props,
+	.perf_ticks_to_ns = api_perf_ticks_to_ns,
 
 	.int_mask = NULL,
 	.int_unmask = NULL,
