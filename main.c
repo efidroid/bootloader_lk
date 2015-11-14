@@ -23,12 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <compiler.h>
-#include <debug.h>
-#include <string.h>
 #include <uefiapi.h>
-
-extern unsigned char uefi_bin[];
-extern unsigned int uefi_size;
 
 /* the global critical section count */
 int critical_section_count = 1;
@@ -38,9 +33,6 @@ void kmain(void) __NO_RETURN __EXTERNALLY_VISIBLE;
 void kmain(void)
 {
 	void (*entry)(void*) __NO_RETURN = (void*)(EDK2_BASE);
-
-	// move UEFI to the right location
-	memmove(entry, uefi_bin, uefi_size);
 
 	// BOOT :D
 	entry(&uefiapi);
