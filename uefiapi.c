@@ -402,8 +402,6 @@ __WEAK void* platform_get_mmap(void* pdata, platform_mmap_cb_t cb) {
 	return pdata;
 }
 
-void* platform_get_mmap(void* pdata, platform_mmap_cb_t cb);
-
 __WEAK void* api_mmap_get_dram(void* pdata, lkapi_mmap_cb_t cb) {
 	return platform_get_mmap(pdata, (platform_mmap_cb_t)cb);
 }
