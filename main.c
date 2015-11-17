@@ -23,6 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <compiler.h>
+#include <sys/types.h>
 #include <uefiapi.h>
 
 /* the global critical section count */
@@ -36,4 +37,8 @@ void kmain(void)
 
 	// BOOT :D
 	entry(&uefiapi);
+}
+
+void thread_sleep(time_t delay) {
+    mdelay(delay);
 }
