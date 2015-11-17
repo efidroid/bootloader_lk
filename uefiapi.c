@@ -18,6 +18,7 @@
 #include <dev/udc.h>
 #include <arch/defines.h>
 #include <stdlib.h>
+#include <bootimg.h>
 
 #include <uefiapi.h>
 
@@ -456,6 +457,10 @@ void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
 //                              BOOT                                   //
 /////////////////////////////////////////////////////////////////////////
 
+#define IS_ARM64(ptr) (ptr->magic_64 == KERNEL64_HDR_MAGIC) ? true : false
+
+typedef void entry_func_ptr(unsigned, unsigned, unsigned*);
+
 void generate_atags(unsigned *ptr, const char *cmdline, void *ramdisk, unsigned ramdisk_size);
 unsigned char *update_cmdline(const char * cmdline);
 
@@ -530,6 +535,18 @@ void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned
 	*ramdisk = ABOOT_FORCE_RAMDISK_ADDR;
 	*tags = ABOOT_FORCE_TAGS_ADDR;
 #endif
+}
+
+void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, unsigned int tags) {
+	struct kernel64_hdr *kptr = (struct kernel64_hdr*)kernel;
+	void (*entry)(unsigned, unsigned, unsigned*) = (entry_func_ptr*)kernel;
+
+	if (IS_ARM64(kptr))
+		/* Jump to a 64bit kernel */
+		scm_elexec_call((paddr_t)kernel, tags);
+	else
+		/* Jump to a 32bit kernel */
+		entry(zero, arch, (unsigned*)tags);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -875,6 +892,7 @@ lkapi_t uefiapi = {
 	.boot_create_tags = api_boot_create_tags,
 	.boot_machine_type = api_boot_machine_type,
 	.boot_update_addrs = api_boot_update_addrs,
+	.boot_exec = api_boot_exec,
 
 	.event_init = NULL,
 	.event_destroy = NULL,
