@@ -48,7 +48,7 @@ __WEAK void api_platform_early_init(void) {
 __WEAK void api_platform_init(void) {
 }
 
-__WEAK void api_common_platform_early_init(void) {
+static void api_common_platform_early_init(void) {
 	// disable all known interrupts because UEFI enables interrupts before initializing the GIC
 	int i;
 	for(i=0; i<NR_IRQS; i++) {
@@ -93,15 +93,15 @@ __WEAK lkapi_uefi_bootmode api_platform_get_uefi_bootmode(void) {
 /////////////////////////////////////////////////////////////////////////
 //                              SERIAL                                 //
 /////////////////////////////////////////////////////////////////////////
-__WEAK int api_serial_poll_char(void) {
+static int api_serial_poll_char(void) {
 	return dtstc();
 }
 
-__WEAK void api_serial_write_char(char c) {
+static void api_serial_write_char(char c) {
 	_dputc(c);
 }
 
-__WEAK int api_serial_read_char(char* cp) {
+static int api_serial_read_char(char* cp) {
 	// return keys if available
 	uint16_t code;
 	uint16_t value;
@@ -127,18 +127,18 @@ static lkapi_timer_callback_t timer_callback = NULL;
 static time_t timer_interval;
 static volatile uint64_t perf_ticks;
 
-enum handler_return timer_tick(void *arg, time_t now) {
+static enum handler_return timer_tick(void *arg, time_t now) {
 	perf_ticks += timer_interval;
 	timer_callback();
 	return INT_RESCHEDULE;
 }
 
-__WEAK int api_timer_register_handler(lkapi_timer_callback_t callback) {
+static int api_timer_register_handler(lkapi_timer_callback_t callback) {
 	timer_callback = callback;
 	return 0;
 }
 
-__WEAK void api_timer_set_period(unsigned long long period) {
+static void api_timer_set_period(unsigned long long period) {
 	platform_uninit_timer();
 
 	if(period!=0) {
@@ -148,19 +148,19 @@ __WEAK void api_timer_set_period(unsigned long long period) {
 	}
 }
 
-__WEAK void api_timer_delay_microseconds(unsigned int microseconds) {
+static void api_timer_delay_microseconds(unsigned int microseconds) {
 	mdelay(microseconds/1000);
 }
 
-__WEAK void api_timer_delay_nanoseconds(unsigned int nanoseconds) {
+static void api_timer_delay_nanoseconds(unsigned int nanoseconds) {
 	udelay(nanoseconds);
 }
 
-__WEAK unsigned long long api_perf_ticks(void) {
+static unsigned long long api_perf_ticks(void) {
 	return perf_ticks;
 }
 
-__WEAK unsigned long long api_perf_props(unsigned long long* startval, unsigned long long* endval) {
+static unsigned long long api_perf_props(unsigned long long* startval, unsigned long long* endval) {
 	if(startval)
 		*startval = 0;
 
@@ -170,7 +170,7 @@ __WEAK unsigned long long api_perf_props(unsigned long long* startval, unsigned 
 	return platform_tick_rate();
 }
 
-__WEAK unsigned long long api_perf_ticks_to_ns(unsigned long long ticks) {
+static unsigned long long api_perf_ticks_to_ns(unsigned long long ticks) {
 	return ticks * 1000000ULL;
 }
 
@@ -179,11 +179,11 @@ __WEAK unsigned long long api_perf_ticks_to_ns(unsigned long long ticks) {
 //                            Interrupts                               //
 /////////////////////////////////////////////////////////////////////////
 
-__WEAK unsigned int api_int_get_dist_base(void) {
+static unsigned int api_int_get_dist_base(void) {
 	return MSM_GIC_DIST_BASE;
 }
 
-__WEAK unsigned int api_int_get_redist_base(void) {
+static unsigned int api_int_get_redist_base(void) {
 #ifdef MSM_GIC_REDIST_BASE
 	return MSM_GIC_REDIST_BASE;
 #else
@@ -191,7 +191,7 @@ __WEAK unsigned int api_int_get_redist_base(void) {
 #endif
 }
 
-__WEAK unsigned int api_int_get_cpu_base(void) {
+static unsigned int api_int_get_cpu_base(void) {
 	return MSM_GIC_CPU_BASE;
 }
 
@@ -247,7 +247,7 @@ static int api_mmc_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned l
 static uint64_t vnor_lba_start = 0;
 static uint64_t vnor_lba_count = (VNOR_SIZE/BLOCK_SIZE);
 
-int vnor_init(lkapi_biodev_t* dev)
+static int vnor_init(lkapi_biodev_t* dev)
 {
 	api_mmc_init(NULL);
 
@@ -281,7 +281,7 @@ static int vnor_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long
 	return rc != 0;
 }
 
-int api_bio_list(lkapi_biodev_t* list) {
+static int api_bio_list(lkapi_biodev_t* list) {
 	int count = 0, dev;
 
 	// VNOR
@@ -313,35 +313,35 @@ int api_bio_list(lkapi_biodev_t* list) {
 //                               LCD                                   //
 /////////////////////////////////////////////////////////////////////////
 
-__WEAK unsigned long long api_lcd_get_vram_address(void) {
+static unsigned long long api_lcd_get_vram_address(void) {
 	struct fbcon_config* fbcon = fbcon_display();
 	return (uint32_t)fbcon->base;
 }
 
-__WEAK int api_lcd_init(void) {
+static int api_lcd_init(void) {
 	target_display_init("");
 	return 0;
 }
 
-__WEAK unsigned int api_lcd_get_width(void) {
+static unsigned int api_lcd_get_width(void) {
 	struct fbcon_config* fbcon = fbcon_display();
 	return fbcon->width;
 }
 
-__WEAK unsigned int api_lcd_get_height(void) {
+static unsigned int api_lcd_get_height(void) {
 	struct fbcon_config* fbcon = fbcon_display();
 	return fbcon->height;
 }
 
-__WEAK unsigned int api_lcd_get_density(void) {
+static unsigned int api_lcd_get_density(void) {
 	return LCD_DENSITY;
 }
 
-__WEAK void api_lcd_flush(void) {
+static void api_lcd_flush(void) {
 	fbcon_flush();
 }
 
-__WEAK void api_lcd_shutdown(void) {
+static void api_lcd_shutdown(void) {
 	target_display_shutdown();
 }
 
@@ -351,15 +351,15 @@ __WEAK void api_lcd_shutdown(void) {
 
 #define NORMAL_MODE     0x77665501
 
-__WEAK void api_reset_cold(void) {
+static void api_reset_cold(void) {
 	reboot_device(NORMAL_MODE);
 }
 
-__WEAK void api_reset_warm(void) {
+static void api_reset_warm(void) {
 	api_reset_cold();
 }
 
-__WEAK void api_reset_shutdown(void) {
+static void api_reset_shutdown(void) {
 	platform_halt();
 }
 
@@ -369,16 +369,16 @@ __WEAK void api_reset_shutdown(void) {
 
 static unsigned int rtctime = 0;
 
-__WEAK int api_rtc_init(void) {
+static int api_rtc_init(void) {
 	return 0;
 }
 
-__WEAK int api_rtc_gettime(unsigned int* time) {
+static int api_rtc_gettime(unsigned int* time) {
 	*time = rtctime + current_time()/1000;
 	return 0;
 }
 
-__WEAK int api_rtc_settime(unsigned int time) {
+static int api_rtc_settime(unsigned int time) {
 	rtctime = time - current_time()/1000;
 	return 0;
 }
@@ -409,7 +409,7 @@ __WEAK void* platform_get_mmap(void* pdata, platform_mmap_cb_t cb) {
 	return pdata;
 }
 
-__WEAK void* api_mmap_get_dram(void* pdata, lkapi_mmap_cb_t cb) {
+static void* api_mmap_get_dram(void* pdata, lkapi_mmap_cb_t cb) {
 	return platform_get_mmap(pdata, (platform_mmap_cb_t)cb);
 }
 
@@ -430,7 +430,7 @@ __WEAK void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_
 	return pdata;
 }
 
-void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
+static void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	if(platform_use_identity_mmu_mappings()) {
 		// identity map
 		pdata = cb(pdata, 0x0, 0x0, 0x80000000, LKAPI_MEMORY_DEVICE);
@@ -451,7 +451,7 @@ void* api_mmap_get_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	return pdata;
 }
 
-void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
+static void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size) {
 	*addr = MEMBASE;
 	*size = MEMSIZE;
 }
@@ -503,7 +503,7 @@ static int load_dtb(unsigned int tags_addr, unsigned int tags_size)
 }
 #endif
 
-int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
+static int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
 			 unsigned int tags_addr, unsigned int tags_size)
 {
 	char* final_cmdline;
@@ -527,11 +527,11 @@ int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, unsigne
 	return 0;
 }
 
-unsigned int api_boot_machine_type(void) {
+static unsigned int api_boot_machine_type(void) {
 	return board_machtype();
 }
 
-void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned int* tags) {
+static void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned int* tags) {
 	/* overwrite the destination of specified for the project */
 #ifdef ABOOT_IGNORE_BOOT_HEADER_ADDRS
 	*kernel = ABOOT_FORCE_KERNEL_ADDR;
@@ -540,7 +540,7 @@ void api_boot_update_addrs(unsigned int* kernel, unsigned int* ramdisk, unsigned
 #endif
 }
 
-void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, unsigned int tags) {
+static void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, unsigned int tags) {
 	struct kernel64_hdr *kptr = (struct kernel64_hdr*)kernel;
 	void (*entry)(unsigned, unsigned, unsigned*) = (entry_func_ptr*)kernel;
 
