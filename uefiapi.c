@@ -75,6 +75,9 @@ __WEAK void api_common_platform_early_init(void) {
 	api_platform_init();
 }
 
+__WEAK void api_platform_uninit(void) {
+}
+
 __WEAK lkapi_uefi_bootmode api_platform_get_uefi_bootmode(void) {
 	switch(lkargs_get_uefi_bootmode()) {
 		case LKARGS_UEFI_BM_RECOVERY:
@@ -845,6 +848,7 @@ static int api_usbgadget_write(void* buffer, unsigned int len) {
 
 lkapi_t uefiapi = {
 	.platform_early_init = api_common_platform_early_init,
+	.platform_uninit = api_platform_uninit,
 	.platform_get_uefi_bootmode = api_platform_get_uefi_bootmode,
 
 	.serial_poll_char = api_serial_poll_char,
