@@ -507,11 +507,11 @@ static int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, 
 			 unsigned int tags_addr, unsigned int tags_size)
 {
 	char* final_cmdline;
-	cmdline_addall((char*)cmdline, false);
+	cmdline_addall(cmdline, false);
 
 	int len = cmdline_length();
 	final_cmdline = malloc(len);
-	cmdline_generate((char*)final_cmdline, len);
+	cmdline_generate(final_cmdline, len);
 
 	dprintf(INFO, "cmdline: %s\n", final_cmdline);
 
@@ -519,7 +519,7 @@ static int api_boot_create_tags(const char* cmdline, unsigned int ramdisk_addr, 
 	int ret = load_dtb(tags_addr, tags_size);
 	if(ret) return -1;
 
-	ret = update_device_tree((void *)tags_addr,(const char *)final_cmdline, (void*)ramdisk_addr, ramdisk_size);
+	ret = update_device_tree((void *)tags_addr, final_cmdline, (void*)ramdisk_addr, ramdisk_size);
 	return ret;
 #else
 	generate_atags((unsigned *)tags_addr, final_cmdline, (void*)ramdisk_addr, ramdisk_size);
