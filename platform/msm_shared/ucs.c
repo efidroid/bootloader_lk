@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -424,14 +424,20 @@ int ucs_scsi_send_inquiry(struct ufs_dev *dev)
 
 	memset(cdb_param, 0, SCSI_CDB_PARAM_LEN);
 	cdb_param[0] = SCSI_CMD_INQUIRY;
-	cdb_param[3] = sizeof(param)>> 8;
-	cdb_param[4] = sizeof(param);
+	cdb_param[3] = SCSI_INQUIRY_LEN >> 8;
+	cdb_param[4] = SCSI_INQUIRY_LEN;
 
 	/* Flush cdb to memory. */
 	dsb();
 	arch_clean_invalidate_cache_range((addr_t) cdb_param, SCSI_CDB_PARAM_LEN);
 
 	memset(&req_upiu, 0 , sizeof(struct scsi_req_build_type));
+
+	/* Set the param to 0 and flush the cacheline, if we dont then the
+	 * param updated by UFS device would be overwritten when the cache is evicted
+	 */
+	memset(param, 0, sizeof(param));
+	arch_clean_invalidate_cache_range((addr_t) param, sizeof(param));
 
 	req_upiu.cdb			   = (addr_t) cdb_param;
 	req_upiu.data_buffer_addr  = (addr_t) param;
@@ -446,6 +452,7 @@ int ucs_scsi_send_inquiry(struct ufs_dev *dev)
 		return -UFS_FAILURE;
 	}
 
+	arch_invalidate_cache_range((addr_t) param, SCSI_INQUIRY_LEN);
 	return UFS_SUCCESS;
 }
 
