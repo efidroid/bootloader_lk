@@ -45,13 +45,6 @@ enum keys_option {
 	POWER_KEY,
 };
 
-enum pages_type {
-	UNLOCK_PAGE = 0,
-	BOOT_VERIFY_PAGE1,
-	BOOT_VERIFY_PAGE2,
-	FASTBOOT_PAGE,
-};
-
 int select_msg_keys_detect(void *param);
 void keys_detect_init();
 #endif				/* __PLATFORM_MSM_SHARED_KEYS_DETECT_H */
