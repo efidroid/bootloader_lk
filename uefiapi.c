@@ -554,6 +554,8 @@ static void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, un
 //                           USB GADGET                                //
 /////////////////////////////////////////////////////////////////////////
 
+#ifndef UEFIAPI_DISABLE_USB
+
 #define MAX_USBFS_BULK_SIZE (32 * 1024)
 
 typedef struct {
@@ -838,6 +840,7 @@ static int api_usbgadget_read(void* buffer, unsigned int len) {
 static int api_usbgadget_write(void* buffer, unsigned int len) {
 	return usb_if.usb_write(buffer, len);
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -901,6 +904,7 @@ lkapi_t uefiapi = {
 	.event_wait = NULL,
 	.event_signal = NULL,
 
+#ifndef UEFIAPI_DISABLE_USB
 	.usbgadget_init = api_usbgadget_init,
 	.usbgadget_register_gadget = api_usbgadget_register_gadget,
 	.usbgadget_start = api_usbgadget_start,
@@ -909,4 +913,5 @@ lkapi_t uefiapi = {
 	.usbgadget_free = api_usbgadget_free,
 	.usbgadget_read = api_usbgadget_read,
 	.usbgadget_write = api_usbgadget_write,
+#endif
 };
