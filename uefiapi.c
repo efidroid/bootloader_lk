@@ -43,10 +43,8 @@ void call_constructors(void)
 //                            PLATFORM                                 //
 /////////////////////////////////////////////////////////////////////////
 
-__WEAK void api_platform_early_init(void) {
-}
-__WEAK void api_platform_init(void) {
-}
+void api_platform_early_init(void);
+void api_platform_init(void);
 
 static void api_common_platform_early_init(void) {
 	// disable all known interrupts because UEFI enables interrupts before initializing the GIC
