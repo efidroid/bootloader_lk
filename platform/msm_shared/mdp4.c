@@ -331,6 +331,12 @@ int mdp_dsi_video_config(struct msm_panel_info *pinfo,
 			DMA_IBUF_FORMAT_RGB888 | DMA_DSTC0G_8BITS |
 			DMA_DSTC1B_8BITS | DMA_DSTC2R_8BITS,
 			MDP_DMA_P_CONFIG);
+	} else if (fb->bpp == 32) {
+		writel(DMA_PACK_ALIGN_LSB | DMA_PACK_PATTERN_RGB |
+			DMA_DITHER_EN |	DMA_OUT_SEL_LCDC |
+			DMA_IBUF_FORMAT_RGB888 | DMA_DSTC0G_8BITS |
+			DMA_DSTC1B_8BITS | DMA_DSTC2R_8BITS,
+			MDP_DMA_P_CONFIG);
 	} else {
 		dprintf(CRITICAL, "Unsupported bpp detected!\n");
 		return ERR_INVALID_ARGS;

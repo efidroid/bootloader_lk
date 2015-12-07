@@ -55,6 +55,9 @@ static struct fbcon_config *config = NULL;
 #define RGB888_BLACK            0x000000
 #define RGB888_WHITE            0xffffff
 
+#define ARGB8888_BLACK            0xff000000
+#define ARGB8888_WHITE            0xffffffff
+
 #define FONT_WIDTH		5
 #define FONT_HEIGHT		12
 
@@ -337,7 +340,7 @@ void fbcon_extract_to_screen(logo_img_header *header, void* address)
 
 void display_default_image_on_screen(void)
 {
-	unsigned i = 0;
+	unsigned i = 0, j, k;
 	unsigned total_x;
 	unsigned total_y;
 	unsigned bytes_per_bpp;
@@ -371,6 +374,19 @@ void display_default_image_on_screen(void)
 			memcpy (config->base + ((image_base + (i * (config->width))) * bytes_per_bpp),
 			image + (i * SPLASH_IMAGE_WIDTH * bytes_per_bpp),
 			SPLASH_IMAGE_WIDTH * bytes_per_bpp);
+		}
+	}
+	if (bytes_per_bpp == 4) {
+		for (i = 0; i < SPLASH_IMAGE_HEIGHT; i++) {
+			for (j = 0; j < SPLASH_IMAGE_WIDTH; j++) {
+				for (k = 0; k < 4; k++) {
+					if (k == 3) {
+						*(char*)(config->base + (image_base + (i * (config->width)) + j) * bytes_per_bpp + k) = 0xff;
+					} else {
+						*(char*)(config->base + (image_base + (i * (config->width)) + j) * bytes_per_bpp + k) = *(char*)(image + (i * SPLASH_IMAGE_WIDTH * 3) + (j * 3) + k);
+					}
+				}
+			}
 		}
 	}
 	fbcon_flush();
