@@ -56,6 +56,7 @@ struct fbimage {
 #define FB_FORMAT_RGB666 1
 #define FB_FORMAT_RGB666_LOOSE 2
 #define FB_FORMAT_RGB888 3
+#define FB_FORMAT_ARGB8888 4
 
 struct fbcon_config {
 	void		*base;
