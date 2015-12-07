@@ -69,6 +69,10 @@
 #include <dev_tree.h>
 #endif
 
+#if EFIDROID_2NDSTAGE
+#include <atagparse.h>
+#endif
+
 #include <cmdline.h>
 
 #include "image_verify.h"
@@ -668,7 +672,11 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 
 	ptr = atag_core(ptr);
 	ptr = atag_ramdisk(ptr, ramdisk, ramdisk_size);
+#if EFIDROID_2NDSTAGE
+	ptr = lkargs_gen_meminfo_atags(ptr);
+#else
 	ptr = target_atag_mem(ptr);
+#endif
 
 	/* Skip NAND partition ATAGS for eMMC boot */
 	if (!target_is_emmc_boot()){
