@@ -52,6 +52,11 @@ void fastboot_publish(const char *name, const char *value);
 void fastboot_okay(const char *result);
 void fastboot_fail(const char *reason);
 void fastboot_info(const char *reason);
+void fastboot_send_string(void* data, size_t size);
+void fastboot_send_string_human(void* data, size_t size);
+#ifdef WITH_LIB_BASE64
+void fastboot_send_buf(const void* data, size_t size);
+#endif
 
 
 #endif
