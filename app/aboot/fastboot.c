@@ -42,6 +42,10 @@
 #include <usb30_udc.h>
 #endif
 
+#ifdef WITH_LIB_BASE64
+#include <lib/base64.h>
+#endif
+
 typedef struct
 {
 	int (*udc_init)(struct udc_device *devinfo);
@@ -427,6 +431,60 @@ void fastboot_okay(const char *info)
 {
 	fastboot_ack("OKAY", info);
 }
+
+void fastboot_send_string(const void* _data, size_t size) {
+	uint32_t i;
+	char buf[MAX_RSP_SIZE];
+	const uint8_t* data = _data;
+
+	for(i=0; i<size; i+=MAX_RSP_SIZE-5) {
+		uint32_t copysize = MIN(size-i, MAX_RSP_SIZE-5);
+		memcpy(buf, &data[i], copysize);
+		buf[copysize] = 0;
+		fastboot_info(buf);
+	}
+}
+
+void fastboot_send_string_human(const void* _data, size_t size) {
+	uint32_t i;
+	char buf[MAX_RSP_SIZE];
+	size_t pos = 0;
+	const char* data = _data;
+
+	if(size==0)
+		size=strlen(data);
+
+	for(i=0; i<size; i++) {
+		char c = data[i];
+		buf[pos++] = c;
+
+		if(pos==sizeof(buf)-1-4 || i==size-1 || c=='\n' || c=='\r') {
+			buf[pos] = 0;
+			fastboot_info(buf);
+			pos = 0;
+		}
+	}
+}
+
+#ifdef WITH_LIB_BASE64
+void fastboot_send_buf(const void* data, size_t size) {
+	size_t b64_data_size = BASE64_ENCODED_SIZE(size);
+	char* b64_data = download_base;
+
+	if(b64_data_size>download_max) {
+		fastboot_fail("out of memory");
+		return;
+	}
+
+	int ret = b64_ntop (data, size, b64_data, b64_data_size);
+	if(ret<=0) {
+		fastboot_fail("encoding error");
+		return;
+	}
+
+	fastboot_send_string(b64_data, ret);
+}
+#endif
 
 static void getvar_all()
 {
