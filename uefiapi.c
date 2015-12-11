@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <target.h>
 #include <malloc.h>
+#include <lib/bio.h>
 #include <lib/heap.h>
 #include <dev/keys.h>
 #include <dev/fbcon.h>
@@ -19,6 +20,7 @@
 #include <arch/defines.h>
 #include <stdlib.h>
 #include <bootimg.h>
+#include <string.h>
 
 #include <uefiapi.h>
 
@@ -66,6 +68,10 @@ static void api_common_platform_early_init(void) {
 
 	// parse atags
 	atag_parse();
+
+#if WITH_LIB_BIO
+	bio_init();
+#endif
 
 	exit_critical_section();
 
@@ -197,114 +203,132 @@ static unsigned int api_int_get_cpu_base(void) {
 //                            BlockIO                                  //
 /////////////////////////////////////////////////////////////////////////
 
+#define VNOR_SIZE 0x10000
+
+typedef struct {
+	int count;
+	lkapi_biodev_t* list;
+} bio_iter_pdata_t;
+
 __WEAK int api_mmc_init(lkapi_biodev_t* dev) {
 	return 0;
 }
 
-static int api_mmc_read(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
-	if(lba>dev->num_blocks-1)
-		return -1;
-	if(buffersize % dev->block_size)
-		return -1;
-	if(lba + (buffersize/dev->block_size) > dev->num_blocks)
-		return -1;
-	if(!buffer)
-		return -1;
-	if(!buffersize)
-		return 0;
-
-	int rc = mmc_read(BLOCK_SIZE * lba, buffer, buffersize);
-	return rc != 0;
-}
-
-static int api_mmc_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
-	if(lba>dev->num_blocks-1)
-		return -1;
-	if(buffersize % dev->block_size)
-		return -1;
-	if(lba + (buffersize/dev->block_size) > dev->num_blocks)
-		return -1;
-	if(!buffer)
-		return -1;
-	if(!buffersize)
-		return 0;
-
-// there's no reason that UEFI should be able to do this
-// also it could be too risky because we have no experience with uncached buffers
-#if 0
-	int rc = mmc_write(BLOCK_SIZE * lba, buffersize, buffer);
-	dprintf(CRITICAL, "%s(%p, %llu, %lu, %p) = %d\n", __func__, dev, lba, buffersize, buffer, rc);
-	return rc != 0;
-#else
-	ASSERT(0);
+static int api_bio_init(lkapi_biodev_t* dev) {
 	return 0;
-#endif
 }
 
-#define VNOR_SIZE 0x10000
-static uint64_t vnor_lba_start = 0;
-static uint64_t vnor_lba_count = (VNOR_SIZE/BLOCK_SIZE);
+static int api_bio_read(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
+	bdev_t* bdev = dev->api_pdata;
 
-static int vnor_init(lkapi_biodev_t* dev)
+	if(lba>dev->num_blocks-1)
+		return -1;
+	if(buffersize % dev->block_size)
+		return -1;
+	if(lba + (buffersize/dev->block_size) > dev->num_blocks)
+		return -1;
+	if(!buffer)
+		return -1;
+	if(!buffersize)
+		return 0;
+
+	ssize_t rc = bio_read_block(bdev, buffer, lba, buffersize/dev->block_size);
+	return rc != (ssize_t)buffersize;
+}
+
+static int api_bio_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
+	bdev_t* bdev = dev->api_pdata;
+
+	if(lba>dev->num_blocks-1)
+		return -1;
+	if(buffersize % dev->block_size)
+		return -1;
+	if(lba + (buffersize/dev->block_size) > dev->num_blocks)
+		return -1;
+	if(!buffer)
+		return -1;
+	if(!buffersize)
+		return 0;
+
+	// there's no reason that UEFI should be able to do this
+	// also it could be too risky because we have no experience with uncached buffers
+	if(strcmp(bdev->name, "vnor"))
+		ASSERT(0);
+
+	ssize_t rc = bio_write_block(bdev, buffer, lba, buffersize/dev->block_size);
+	return rc != (ssize_t)buffersize;
+}
+
+static int vnor_init(void)
 {
-	api_mmc_init(NULL);
+	status_t rc;
+	static int initialized = 0;
 
-	int index = INVALID_PTN;
-	uint64_t ptn = 0;
-	uint64_t size;
+	if(initialized)
+		return 0;
 
-	// get partition
-	index = partition_get_index(DEVICE_NVVARS_PARTITION);
-	ptn = partition_get_offset(index);
-	if(ptn == 0) {
+	bdev_t* dev = bio_open_by_label(DEVICE_NVVARS_PARTITION);
+	if(!dev) {
 		return -1;
 	}
 
-	// get size
-	size = partition_get_size(index);
+	bnum_t num_blocks = (VNOR_SIZE/dev->block_size);
+	rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks-1, num_blocks);
 
-	// calculate vnor offset
-	vnor_lba_start = (ptn + size - VNOR_SIZE)/BLOCK_SIZE;
+	bio_close(dev);
 
-	return 0;
+	if(!rc)
+		initialized = 1;
+	return rc;
 }
 
-static int vnor_read(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
-	int rc = mmc_read(dev->block_size * (vnor_lba_start + lba), buffer, buffersize);
-	return rc != 0;
-}
+static void bio_foreach_cb(void* _pdata, const char* name) {
+	bio_iter_pdata_t* pdata = _pdata;
+	int is_vnor = 0;
 
-static int vnor_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned long buffersize, void* buffer) {
-	int rc = mmc_write(BLOCK_SIZE * (vnor_lba_start + lba), buffersize, buffer);
-	return rc != 0;
+	// open bio dev
+	bdev_t* bdev = bio_open(name);
+	if(!bdev) return;
+
+	// allow vnor subdevs only
+	if(bdev->is_subdev) {
+		if(!strcmp(bdev->name, "vnor")) {
+			is_vnor = 1;
+		}
+		else {
+			bio_close(bdev);
+			return;
+		}
+	}
+
+	if(pdata->list) {
+		int dev = pdata->count++;
+		pdata->list[dev].type = is_vnor?LKAPI_BIODEV_TYPE_VNOR:LKAPI_BIODEV_TYPE_MMC;
+		pdata->list[dev].block_size = bdev->block_size;
+		pdata->list[dev].num_blocks = bdev->block_count;
+		pdata->list[dev].api_pdata = bdev;
+		pdata->list[dev].init = api_bio_init;
+		pdata->list[dev].read = api_bio_read;
+		pdata->list[dev].write = api_bio_write;
+	}
+
+	else {
+		pdata->count++;
+	}
 }
 
 static int api_bio_list(lkapi_biodev_t* list) {
-	int count = 0, dev;
+	// initialize MMC now so we can use BIO to retrieve all devices
+	api_mmc_init(NULL);
+	vnor_init();
 
-	// VNOR
-	dev = count++;
-	if(list) {
-		list[dev].type = LKAPI_BIODEV_TYPE_VNOR;
-		list[dev].block_size = BLOCK_SIZE;
-		list[dev].num_blocks = vnor_lba_count;
-		list[dev].init = vnor_init;
-		list[dev].read = vnor_read;
-		list[dev].write = vnor_write;
-	}
+	bio_iter_pdata_t pdata = {
+		.count = 0,
+		.list = list,
+	};
 
-	// MMC
-	dev = count++;
-	if(list) {
-		list[dev].type = LKAPI_BIODEV_TYPE_MMC;
-		list[dev].block_size = BLOCK_SIZE;
-		list[dev].num_blocks = 0;
-		list[dev].init = api_mmc_init;
-		list[dev].read = api_mmc_read;
-		list[dev].write = api_mmc_write;
-	}
-
-	return count;
+	bio_foreach(&bio_foreach_cb, &pdata, true);
+	return pdata.count;
 }
 
 /////////////////////////////////////////////////////////////////////////
