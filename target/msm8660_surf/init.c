@@ -50,6 +50,7 @@
 #include <crypto_hash.h>
 
 static const uint8_t uart_gsbi_id = GSBI_ID_12;
+static struct mmc_device *dev;
 
 /* Setting this variable to different values defines the
  * behavior of CE engine:
@@ -93,7 +94,7 @@ void target_init(void)
 	display_image_on_screen();
 #endif
 
-	if (mmc_boot_main(MMC_SLOT, MSM_SDC1_BASE)) {
+	if (!(dev = mmc_boot_main(MMC_SLOT, MSM_SDC1_BASE))) {
 		dprintf(CRITICAL, "mmc init failed!");
 		ASSERT(0);
 	}
