@@ -210,8 +210,40 @@ typedef struct {
 	lkapi_biodev_t* list;
 } bio_iter_pdata_t;
 
-__WEAK int api_mmc_init(lkapi_biodev_t* dev) {
+__WEAK int api_mmc_init(void) {
 	return 0;
+}
+
+static int vnor_init(void)
+{
+	status_t rc;
+
+	bdev_t* dev = bio_open_by_label(DEVICE_NVVARS_PARTITION);
+	if(!dev) {
+		return -1;
+	}
+
+	bnum_t num_blocks = (VNOR_SIZE/dev->block_size);
+	rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks-1, num_blocks);
+
+	bio_close(dev);
+
+	return rc;
+}
+
+static int api_mmc_init_once(void) {
+	static int initialized = 0;
+
+	if(initialized)
+		return 0;
+
+	int rc = api_mmc_init();
+	if(!rc) {
+		initialized = 1;
+		vnor_init();
+	}
+
+	return rc;
 }
 
 static int api_bio_init(lkapi_biodev_t* dev) {
@@ -259,29 +291,6 @@ static int api_bio_write(lkapi_biodev_t* dev, unsigned long long lba, unsigned l
 	return rc != (ssize_t)buffersize;
 }
 
-static int vnor_init(void)
-{
-	status_t rc;
-	static int initialized = 0;
-
-	if(initialized)
-		return 0;
-
-	bdev_t* dev = bio_open_by_label(DEVICE_NVVARS_PARTITION);
-	if(!dev) {
-		return -1;
-	}
-
-	bnum_t num_blocks = (VNOR_SIZE/dev->block_size);
-	rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks-1, num_blocks);
-
-	bio_close(dev);
-
-	if(!rc)
-		initialized = 1;
-	return rc;
-}
-
 static void bio_foreach_cb(void* _pdata, const char* name) {
 	bio_iter_pdata_t* pdata = _pdata;
 	int is_vnor = 0;
@@ -319,8 +328,7 @@ static void bio_foreach_cb(void* _pdata, const char* name) {
 
 static int api_bio_list(lkapi_biodev_t* list) {
 	// initialize MMC now so we can use BIO to retrieve all devices
-	api_mmc_init(NULL);
-	vnor_init();
+	api_mmc_init_once();
 
 	bio_iter_pdata_t pdata = {
 		.count = 0,
