@@ -1242,8 +1242,23 @@ int boot_linux_from_mmc(void)
 	 */
 	if (is_gzip_package((unsigned char *)(image_addr + page_size), hdr->kernel_size))
 	{
+		if ((imagesize_actual + page_size) < imagesize_actual)
+		{
+			dprintf(CRITICAL, "Integer overflow in boot.img header fields\n");
+			ASSERT(0);
+		}
 		out_addr = (unsigned char *)(image_addr + imagesize_actual + page_size);
+		if (target_get_max_flash_size() < (imagesize_actual + page_size))
+		{
+			dprintf(CRITICAL, "No space avaiable for decompression\n");
+			ASSERT(0);
+		}
 		out_avai_len = target_get_max_flash_size() - imagesize_actual - page_size;
+		if (check_aboot_addr_range_overlap((uint32_t)out_addr, out_avai_len))
+		{
+			dprintf(CRITICAL, "decompress address overlap with aboot addresse\n");
+			return -1;
+		}
 		dprintf(INFO, "decompressing kernel image: start\n");
 		rc = decompress((unsigned char *)(image_addr + page_size),
 				hdr->kernel_size, out_addr, out_avai_len,
