@@ -3375,6 +3375,17 @@ struct persistent_ram_buffer {
 	uint8_t     data[0];
 };
 
+static void cmd_oem_memfill(const char *arg, void *data, unsigned sz) {
+	uint32_t i;
+	uint32_t testbase = hex2unsigned(arg);
+	arg += 9;
+	uint32_t length = hex2unsigned(arg);
+	for (i = 0; i < length; i++) {
+		*(volatile uint8_t*)(testbase + i) = 0xff;
+	}
+	fastboot_okay("");
+}
+
 static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz) {
 	char buf[MAX_RSP_SIZE];
 
@@ -3434,6 +3445,7 @@ void aboot_fastboot_register_commands(void)
 											{"oem findbootimages", cmd_oem_findbootimages},
 											{"oem dump-partitiontable", cmd_oem_dump_partitiontable},
 											{"oem last_kmsg", cmd_oem_lastkmsg},
+											{"oem memfill", cmd_oem_memfill},
 #endif
 										  };
 
