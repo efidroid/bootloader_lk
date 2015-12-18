@@ -177,9 +177,7 @@ __WEAK void target_display_init(const char *panel_name)
 	mdp_dump_config(config);
 	fbcon_setup(config);
 
-#ifndef WITH_KERNEL_UEFIAPI
 	display_image_on_screen();
-#endif
 }
 
 __WEAK void target_display_shutdown(void)

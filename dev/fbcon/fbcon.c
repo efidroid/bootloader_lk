@@ -410,6 +410,10 @@ void display_image_on_screen()
 	struct fbimage default_fbimg, *fbimg;
 	bool flag = true;
 
+#ifdef WITH_KERNEL_UEFIAPI
+	return;
+#endif
+
 	fbcon_clear();
 	fbimg = fetch_image_from_partition();
 
