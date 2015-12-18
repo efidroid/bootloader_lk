@@ -761,20 +761,15 @@ static int hsusb_usb_write(void* buffer, unsigned int len) {
 }
 
 static int api_usbgadget_init(lkapi_usb_gadget_device* device) {
-	char sn_buf[13];
-
 	/* target specific initialization before going into fastboot. */
 	target_fastboot_init();
-
-	/* setup serialno */
-	target_serialno((unsigned char *) sn_buf);
 
 	udc_device.vendor_id = device->vendor_id;
 	udc_device.product_id = device->product_id;
 	udc_device.version_id = device->version_id;
 	udc_device.manufacturer = device->manufacturer;
 	udc_device.product = device->product;
-	udc_device.serialno = sn_buf;
+	udc_device.serialno = "EFIDroid";
 
 	if(!strcmp(target_usb_controller(), "dwc"))
 	{
