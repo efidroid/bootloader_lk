@@ -348,6 +348,10 @@ static unsigned long long api_lcd_get_vram_address(void) {
 	return (uint32_t)fbcon->base;
 }
 
+static unsigned long long api_lcd_get_vram_size(void) {
+    return LCD_VRAM_SIZE;
+}
+
 static int api_lcd_init(void) {
 	target_display_init("");
 	return 0;
@@ -920,6 +924,7 @@ lkapi_t uefiapi = {
 	.bio_list = api_bio_list,
 
 	.lcd_get_vram_address = api_lcd_get_vram_address,
+	.lcd_get_vram_size = api_lcd_get_vram_size,
 	.lcd_init = api_lcd_init,
 	.lcd_get_width = api_lcd_get_width,
 	.lcd_get_height = api_lcd_get_height,
