@@ -1155,20 +1155,6 @@ int boot_linux_from_mmc(void)
 		aboot_save_boot_hash_mmc((uint32_t) image_addr, imagesize_actual);
 		#endif /* TZ_SAVE_KERNEL_HASH */
 
-#if VERIFIED_BOOT
-	if(boot_verify_get_state() == ORANGE)
-	{
-#if FBCON_DISPLAY_MSG
-		display_bootverify_menu_thread(DISPLAY_MENU_ORANGE);
-		wait_for_users_action();
-#else
-		dprintf(CRITICAL,
-			"Your device has been unlocked and can't be trusted.\nWait for 5 seconds before proceeding\n");
-		mdelay(5000);
-#endif
-	}
-#endif
-
 #ifdef MDTP_SUPPORT
 		{
 			/* Verify MDTP lock.
@@ -1186,6 +1172,22 @@ int boot_linux_from_mmc(void)
 		}
 #endif /* MDTP_SUPPORT */
 	}
+
+#if VERIFIED_BOOT
+	if(boot_verify_get_state() == ORANGE)
+	{
+#if FBCON_DISPLAY_MSG
+		display_bootverify_menu_thread(DISPLAY_MENU_ORANGE);
+		wait_for_users_action();
+#else
+		dprintf(CRITICAL,
+			"Your device has been unlocked and can't be trusted.\nWait for 5 seconds before proceeding\n");
+		mdelay(5000);
+#endif
+	}
+#endif
+
+
 
 #if VERIFIED_BOOT
 #if !VBOOT_MOTA
