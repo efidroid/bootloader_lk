@@ -224,7 +224,7 @@ static int vnor_init(void)
 	}
 
 	bnum_t num_blocks = (VNOR_SIZE/dev->block_size);
-	rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks-1, num_blocks);
+	rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks, num_blocks);
 
 	bio_close(dev);
 
