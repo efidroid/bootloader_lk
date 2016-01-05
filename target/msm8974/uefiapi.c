@@ -79,19 +79,19 @@ static int target_power_key(void)
 
 static int event_source_poll(key_event_source_t* source) {
 	uint16_t value = target_power_key();
-	if(keys_set_report_key(source, 0, value)){
+	if(keys_set_report_key(source, 0, &value)){
 		keys_post_event(13, value);
 	}
 
 	value = target_volume_up();
-	if(keys_set_report_key(source, 1,value)){
+	if(keys_set_report_key(source, 1, &value)){
 		keys_post_event(0x1b, value);
 		keys_post_event(0x5b, value);
 		keys_post_event(0x41, value);
 	}
 
 	value = target_volume_down();
-	if(keys_set_report_key(source, 2,value)){
+	if(keys_set_report_key(source, 2, &value)){
 		keys_post_event(0x1b, value);
 		keys_post_event(0x5b, value);
 		keys_post_event(0x42, value);
@@ -130,6 +130,7 @@ void api_platform_init(void) {
 
 	keys_init();
 	keys_add_source(&event_source);
+	event_source.keymap[0].enable_longpress = true;
 }
 
 void api_platform_uninit(void) {

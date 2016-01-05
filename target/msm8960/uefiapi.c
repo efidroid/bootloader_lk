@@ -30,7 +30,7 @@ static int target_power_key(void)
 
 static int event_source_poll(key_event_source_t* source) {
 	uint16_t value = target_power_key();
-	if(keys_set_report_key(source, 0, value)){
+	if(keys_set_report_key(source, 0, &value)){
 		keys_post_event(13, value);
 	}
 
@@ -71,6 +71,7 @@ void api_platform_init(void) {
 	keys_init();
 	apq8064_keypad_init();
 	keys_add_source(&event_source);
+	event_source.keymap[0].enable_longpress = true;
 }
 
 /////////////////////////////////////////////////////////////////////////

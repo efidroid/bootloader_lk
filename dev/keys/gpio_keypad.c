@@ -490,17 +490,18 @@ report_qwerty_gpio_keypad(key_event_source_t* source)
 		keypad->key_gpio_get(keypad->gpiomap[i], &key_status);
 
 		/*Post event if key pressed*/
-		if(keys_set_report_key(source, keypad->keymap[i], key_status)) {
+		uint16_t value = key_status;
+		if(keys_set_report_key(source, keypad->keymap[i], &value)) {
 			switch(keypad->keymap[i]) {
 				case KEY_VOLUMEUP:
-					keys_post_event(0x1b, key_status);
-					keys_post_event(0x5b, key_status);
-					keys_post_event(0x41, key_status);
+					keys_post_event(0x1b, value);
+					keys_post_event(0x5b, value);
+					keys_post_event(0x41, value);
 					break;
 				case KEY_VOLUMEDOWN:
-					keys_post_event(0x1b, key_status);
-					keys_post_event(0x5b, key_status);
-					keys_post_event(0x42, key_status);
+					keys_post_event(0x1b, value);
+					keys_post_event(0x5b, value);
+					keys_post_event(0x42, value);
 					break;
 			}
 		}
