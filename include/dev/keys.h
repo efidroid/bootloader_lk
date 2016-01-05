@@ -89,10 +89,20 @@
 typedef struct key_event_source key_event_source_t;
 typedef int (*key_event_poll_t)(key_event_source_t* source);
 
+typedef enum {
+    KEYSTATE_RELEASED,
+    KEYSTATE_PRESSED,
+    KEYSTATE_LONGPRESS_WAIT,
+    KEYSTATE_LONGPRESS_RELEASE,
+} keystate_t;
+
 typedef struct {
-	bool pressed;
 	time_t time;
 	bool repeat;
+	bool longpress;
+	keystate_t state;
+
+	bool enable_longpress;
 } keymap_t;
 
 struct key_event_source {
@@ -114,42 +124,94 @@ void keys_clear_all(void);
 int keys_get_next(uint16_t* code, uint16_t* value);
 int keys_has_next(void);
 
-static inline int keys_set_report_key(key_event_source_t* source, uint16_t code, uint16_t value) {
+static inline int keys_set_report_key(key_event_source_t* source, uint16_t code, uint16_t* pvalue) {
+	int rc = 0;
+	uint16_t value = *pvalue;
+
 	// update key time
 	source->keymap[code].time+=source->delta;
 
-	if(value) {
-		bool report = false;
+	switch(source->keymap[code].state) {
+		case KEYSTATE_RELEASED:
+			if(value) {
+				// change to pressed
+				if(source->keymap[code].enable_longpress) {
+					source->keymap[code].time=0;
+					source->keymap[code].state = KEYSTATE_LONGPRESS_WAIT;
+				}
+				else {
+					*pvalue = 1;
+					rc = 1;
+					source->keymap[code].time=0;
+					source->keymap[code].state = KEYSTATE_PRESSED;
+				}
+			}
+			break;
 
-		// change to pressed
-		if(!source->keymap[code].pressed) {
-			report=true;
+		case KEYSTATE_PRESSED:
+			if(!value && source->keymap[code].time>50) {
+				// change to released
+				source->keymap[code].time=0;
+				source->keymap[code].repeat=false;
+				source->keymap[code].longpress = false;
+				source->keymap[code].state = KEYSTATE_RELEASED;
+				*pvalue = 0;
+				rc = 1;
+			}
+
+			// key repeat
+			else if((source->keymap[code].repeat && source->keymap[code].time>=200) || source->keymap[code].time>=500) {
+				*pvalue = 1;
+				rc = 1;
+				source->keymap[code].time=0;
+				source->keymap[code].repeat=true;
+			}
+			break;
+
+		case KEYSTATE_LONGPRESS_WAIT:
+			if(value) {
+				if(!source->keymap[code].longpress && source->keymap[code].time>=500) {
+					// report spacebar
+					keys_post_event(32, 1);
+					keys_post_event(32, 0);
+
+					source->keymap[code].longpress=true;
+				}
+			}
+
+			else {
+				if(!source->keymap[code].longpress) {
+					// we supressed down, so report it now
+					*pvalue = 1;
+					rc = 1;
+					source->keymap[code].state = KEYSTATE_LONGPRESS_RELEASE;
+				}
+
+				else if(source->keymap[code].time>50) {
+					// we reported a longpress already
+					source->keymap[code].time=0;
+					source->keymap[code].repeat=false;
+					source->keymap[code].longpress = false;
+					source->keymap[code].state = KEYSTATE_RELEASED;
+				}
+			}
+			break;
+
+		case KEYSTATE_LONGPRESS_RELEASE:
+			// change to released
 			source->keymap[code].time=0;
-			source->keymap[code].pressed=true;
-		}
+			source->keymap[code].repeat=false;
+			source->keymap[code].longpress = false;
+			source->keymap[code].state = KEYSTATE_RELEASED;
+			*pvalue = 0;
+			rc = 1;
+			break;
 
-		// key repeat
-		if((source->keymap[code].repeat && source->keymap[code].time>=200) || source->keymap[code].time>=500) {
-			report=true;
-			source->keymap[code].time=0;
-			source->keymap[code].repeat=true;
-		}
-
-		if(report){
-			 return 1;
-		}
+		default:
+			ASSERT(0);
 	}
 
-	// change to released
-	else if(source->keymap[code].pressed && source->keymap[code].time>200) {
-		source->keymap[code].pressed=false;
-		source->keymap[code].time=0;
-		source->keymap[code].repeat=false;
-
-		return 1;
-	}
-
-	return 0;
+	return rc;
 }
 
 #endif /* __DEV_KEYS_H */

@@ -73,7 +73,16 @@ void keys_init(void)
 }
 
 void keys_add_source(key_event_source_t* source) {
+	int i;
+
 	source->last = INFINITE_TIME;
+
+	for(i=0; i<MAX_KEYS; i++) {
+		source->keymap[i].time = 0;
+		source->keymap[i].repeat = false;
+		source->keymap[i].longpress = false;
+		source->keymap[i].state = KEYSTATE_RELEASED;
+	}
 
 	list_add_tail(&event_sources, &source->node);
 }
