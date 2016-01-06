@@ -12,6 +12,12 @@ $(OUTELF): $(ALLOBJS) $(LINKER_SCRIPT) $(OUTPUT_TZ_BIN)
 	$(NOECHO)$(LD) $(LDFLAGS) -T $(LINKER_SCRIPT) $(OUTPUT_TZ_BIN) $(ALLOBJS) $(LIBGCC) -o $@
 else
 $(OUTELF): $(ALLOBJS) $(LINKER_SCRIPT)
+	$(NOECHO)if [ -n "$(SHIMOBJS)" ];then \
+		echo weakening shim symbols; \
+		$(OBJDUMP) -t $(SHIMOBJS) | awk '$$2 == "g"' | awk '{print $$6}' > $(BUILDDIR)/lk.weaken.syms; \
+		for obj in $(SHIMPATCHOBJS); do $(OBJCOPY) --weaken-symbols=$(BUILDDIR)/lk.weaken.syms $$obj; done; \
+	fi
+	
 	@echo linking $@
 	$(NOECHO)$(LD) $(LDFLAGS) -T $(LINKER_SCRIPT) $(ALLOBJS) $(LIBGCC) -o $@
 endif
