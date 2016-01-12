@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2015 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -454,13 +454,15 @@ void target_baseband_detect(struct board_data *board)
 	{
 		switch(platform) {
 		case APQ8096:
+		case APQ8096AU:
+		case APQ8096SG:
 			board->baseband = BASEBAND_APQ;
 			break;
 		case MSM8996:
-			if (board->platform_version == 0x10000)
-				board->baseband = BASEBAND_APQ;
-			else
-				board->baseband = BASEBAND_MSM;
+		case MSM8996SG:
+		case MSM8996AU:
+		case MSM8996L:
+			board->baseband = BASEBAND_MSM;
 			break;
 		default:
 			dprintf(CRITICAL, "Platform type: %u is not supported\n",platform);
