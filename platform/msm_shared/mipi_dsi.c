@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -83,7 +83,7 @@ static uint32_t mdss_dsi_read_panel_signature(struct mipi_panel_info *mipi)
 	if (ret && ret != panel_signature)
 		goto exit_read_signature;
 
-	ret = mdss_dsi_cmds_tx(mipi, &read_ddb_start_cmd, 1, 0);
+	ret = mdss_dsi_cmds_tx(mipi, &read_ddb_start_cmd, 1, mipi->broadcast);
 	if (ret)
 		goto exit_read_signature;
 	if (!mdss_dsi_cmds_rx(mipi, &lp, 1, 1))
@@ -112,15 +112,14 @@ static int mdss_dsi_cmd_dma_trigger_for_panel(char dual_dsi,
 	uint32_t base = dual_dsi ? sctl_base : ctl_base;
 
 #if (DISPLAY_TYPE_MDSS == 1)
-	writel(0x03030303, ctl_base + INT_CTRL);
-	writel(0x1, ctl_base + CMD_MODE_DMA_SW_TRIGGER);
-	dsb();
-
 	if (dual_dsi) {
 		writel(0x03030303, sctl_base + INT_CTRL);
 		writel(0x1, sctl_base + CMD_MODE_DMA_SW_TRIGGER);
 		dsb();
 	}
+	writel(0x03030303, ctl_base + INT_CTRL);
+	writel(0x1, ctl_base + CMD_MODE_DMA_SW_TRIGGER);
+	dsb();
 
 	ReadValue = readl(base + INT_CTRL) & 0x00000001;
 	while (ReadValue != 0x00000001) {
@@ -219,12 +218,13 @@ int mdss_dsi_cmds_tx(struct mipi_panel_info *mipi,
 		size += cm->size;
 		memcpy((uint8_t *)off, (cm->payload), size);
 		arch_clean_invalidate_cache_range((addr_t)(off), size);
-		writel(off, ctl_base + DMA_CMD_OFFSET);
-		writel(size, ctl_base + DMA_CMD_LENGTH);
 		if (dual_dsi) {
 			writel(off, sctl_base + DMA_CMD_OFFSET);
 			writel(size, sctl_base + DMA_CMD_LENGTH);
+			dsb();
 		}
+		writel(off, ctl_base + DMA_CMD_OFFSET);
+		writel(size, ctl_base + DMA_CMD_LENGTH);
 		dsb();
 		ret += mdss_dsi_cmd_dma_trigger_for_panel(dual_dsi, ctl_base,
 			sctl_base);
@@ -497,16 +497,16 @@ int mdss_dsi_panel_initialize(struct mipi_panel_info *mipi, uint32_t
 	ctrl_mode = readl(mipi->ctl_base + CTRL);
 
 	/* Enable command mode before sending the commands. */
-	writel(ctrl_mode | 0x04, mipi->ctl_base + CTRL);
 	if (broadcast)
 		writel(ctrl_mode | 0x04, mipi->sctl_base + CTRL);
+	writel(ctrl_mode | 0x04, mipi->ctl_base + CTRL);
 	status = mdss_dsi_cmds_tx(mipi, mipi->panel_on_cmds,
 			mipi->num_of_panel_on_cmds, broadcast);
-	writel(ctrl_mode, mipi->ctl_base + CTRL);
 	if (broadcast)
 		writel(ctrl_mode, mipi->sctl_base + CTRL);
+	writel(ctrl_mode, mipi->ctl_base + CTRL);
 
-	if (!broadcast && !status && target_panel_auto_detect_enabled())
+	if (!status && target_panel_auto_detect_enabled())
 		status = mdss_dsi_read_panel_signature(mipi);
 
 end:
