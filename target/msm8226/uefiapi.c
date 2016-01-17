@@ -25,30 +25,8 @@
 //                                KEYS                                 //
 /////////////////////////////////////////////////////////////////////////
 
-#define TLMM_VOL_UP_BTN_GPIO    106
-
-/* Return 1 if vol_up pressed */
-static int target_volume_up(void)
-{
-	uint8_t status = 0;
-
-	gpio_tlmm_config(TLMM_VOL_UP_BTN_GPIO, 0, GPIO_INPUT, GPIO_PULL_UP, GPIO_2MA, GPIO_ENABLE);
-
-	mdelay(10);
-
-	/* Get status of GPIO */
-	status = gpio_status(TLMM_VOL_UP_BTN_GPIO);
-
-	/* Active low signal. */
-	return !status;
-}
-
-/* Return 1 if vol_down pressed */
-static uint32_t target_volume_down(void)
-{
-	/* Volume down button tied in with PMIC RESIN. */
-	return pm8x41_resin_status();
-}
+uint32_t target_volume_up(void);
+uint32_t target_volume_down(void);
 
 static int target_power_key(void)
 {

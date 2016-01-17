@@ -28,49 +28,8 @@ static uint32_t pmic_ver;
 //                                KEYS                                 //
 /////////////////////////////////////////////////////////////////////////
 
-#define TLMM_VOL_UP_BTN_GPIO    106
-
-int platform_is_8974(void);
-
-/* Return 1 if vol_up pressed */
-static int target_volume_up(void)
-{
-	uint8_t status = 0;
-	struct pm8x41_gpio gpio;
-
-	/* CDP vol_up seems to be always grounded. So gpio status is read as 0,
-	 * whether key is pressed or not.
-	 * Ignore volume_up key on CDP for now.
-	 */
-	if (board_hardware_id() == HW_PLATFORM_SURF)
-		return 0;
-
-	/* Configure the GPIO */
-	gpio.direction = PM_GPIO_DIR_IN;
-	gpio.function  = 0;
-	gpio.pull      = PM_GPIO_PULL_UP_30;
-	gpio.vin_sel   = 2;
-
-	pm8x41_gpio_config(5, &gpio);
-
-	/* Wait for the pmic gpio config to take effect */
-	thread_sleep(1);
-
-	/* Get status of P_GPIO_5 */
-	pm8x41_gpio_get(5, &status);
-
-	return !status; /* active low */
-}
-
-/* Return 1 if vol_down pressed */
-static uint32_t target_volume_down(void)
-{
-	/* Volume down button is tied in with RESIN on MSM8974. */
-	if (platform_is_8974() && (pmic_ver == PM8X41_VERSION_V2))
-		return pm8x41_v2_resin_status();
-	else
-		return pm8x41_resin_status();
-}
+uint32_t target_volume_up(void);
+uint32_t target_volume_down(void);
 
 static int target_power_key(void)
 {
