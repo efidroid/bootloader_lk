@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -245,9 +245,11 @@ int target_edp_panel_enable(void);
 int target_edp_panel_disable(void);
 int target_edp_bl_ctrl(int enable);
 int mdss_hdmi_init(void);
+void mdss_hdmi_display_init(uint32_t rev, void *base);
 int mdss_hdmi_on(struct msm_panel_info *pinfo);
 int mdss_hdmi_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 void mdss_hdmi_get_vic(char *buf);
+void hdmi_phy_init(void);
 int msm_display_off();
 void display_shutdown(void);
 
