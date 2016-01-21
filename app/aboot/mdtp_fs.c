@@ -68,6 +68,7 @@ int mdtp_fs_init(){
 	int index = INVALID_PTN;
 	unsigned long long ptn = 0;
 	int i = 0;
+	uint32_t block_size = mmc_get_device_blocksize();
 
 	index = partition_get_index("mdtp");
 	if (index == 0) {
@@ -83,23 +84,32 @@ int mdtp_fs_init(){
 		return 1;
 	}
 
-	for(i = 0; i< MAX_PARAMS; i++){
+	for(i = 0; i< MAX_PARAMS; i++) {
 		mdtp_img.meta_data.params[i] = -1; //Initiate params for errors check
 	}
 
-	uint8_t data[MDTP_HEADER_LEN];
-	uint8_t *base = data;
+	uint8_t *base = memalign(block_size, ROUNDUP(MDTP_HEADER_LEN, block_size));
+	if (!base) {
+		dprintf(CRITICAL, "ERROR: mdtp malloc failed\n");
+		return 1;
+	}
+
 	// read image meta data
 	if (mmc_read(ptn, (void*)base, MDTP_HEADER_LEN)) {
 		dprintf(CRITICAL, "ERROR: mdtp meta data read failed\n");
+		free(base);
 		return 1;
 	}
-	uint32_t params_size = MAX_PARAMS*sizeof(uint32_t);
+
+	uint32_t params_size = MAX_PARAMS * sizeof(uint32_t);
 	uint32_t images_params_size = MAX_IMAGES*sizeof(mdtp_image_params_t);
-	memscpy(mdtp_img.meta_data.params, sizeof(mdtp_img.meta_data.params), data, params_size);
+	memscpy(mdtp_img.meta_data.params, sizeof(mdtp_img.meta_data.params), base, params_size);
 	memscpy(mdtp_img.meta_data.image_params, META_DATA_PARTITION_LEN,
-	data+sizeof(mdtp_img.meta_data.params), images_params_size);
+			base + sizeof(mdtp_img.meta_data.params), images_params_size);
+
 	dprintf(INFO, "mdtp: mdtp_img loaded\n");
+
+	free(base);
 	return 0;
 }
 
