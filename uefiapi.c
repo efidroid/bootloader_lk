@@ -16,11 +16,11 @@
 #include <cmdline.h>
 #include <mmc.h>
 #include <partition_parser.h>
-#include <dev/udc.h>
 #include <arch/defines.h>
 #include <stdlib.h>
 #include <bootimg.h>
 #include <string.h>
+#include <kernel/event.h>
 
 #include <uefiapi.h>
 
@@ -608,9 +608,14 @@ static void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, un
 //                           USB GADGET                                //
 /////////////////////////////////////////////////////////////////////////
 
-#ifndef UEFIAPI_DISABLE_USB
+#include <dev/udc.h>
+
+#ifdef USB30_SUPPORT
+#include <usb30_udc.h>
+#endif
 
 #define MAX_USBFS_BULK_SIZE (32 * 1024)
+#define MAX_USBSS_BULK_SIZE (0x1000000)
 
 typedef struct {
 	int (*udc_init)(struct udc_device *devinfo);
@@ -622,274 +627,429 @@ typedef struct {
 	void (*udc_endpoint_free)(struct udc_endpoint *ept);
 	struct udc_request *(*udc_request_alloc)(void);
 	void (*udc_request_free)(struct udc_request *req);
-
-	int (*usb_read)(void *buf, unsigned len);
-	int (*usb_write)(void *buf, unsigned len);
 } usb_controller_interface_t;
 
 typedef struct {
-	void *buffer;
-	unsigned len;
+    lkapi_udc_gadget_t* lk_udc_gadget;
+    struct udc_request* req;
+    event_t txn_done;
+    int txn_status;
+    int errno;
 
-	unsigned xfer;
-	unsigned char *bufptr;
-	int count;
-
-	int txn_status;
-
-	struct udc_endpoint* ept;
-	struct udc_request *req;
-	lkapi_usb_gadget_event event_success;
-	lkapi_usb_gadget_event event_error;
-} udc_req_context_t;
-
-static udc_req_context_t udc_read_context = {0};
-static udc_req_context_t udc_write_context = {0};
-static lkapi_usb_gadget_gadget* lkapi_gadget = NULL;
-static struct udc_device udc_device = {0};
-static struct udc_gadget udc_gadget = {0};
-static usb_controller_interface_t usb_if;
-static struct udc_endpoint *in, *out;
-static struct udc_request *reqin, *reqout;
-static struct udc_endpoint *fastboot_endpoints[2];
-
-static void hsusb_usb_req_internal(udc_req_context_t* context);
-
-static void udc_status_notify(struct udc_gadget *gadget, unsigned event)
-{
-	if (event == UDC_EVENT_ONLINE) {
-		lkapi_gadget->notify(lkapi_gadget, LKAPI_USB_GADGET_EVENT_ONLINE, NULL);
-	}
-	else if (event == UDC_EVENT_OFFLINE) {
-		lkapi_gadget->notify(lkapi_gadget, LKAPI_USB_GADGET_EVENT_OFFLINE, NULL);
-	}
-}
+	int (*usb_read)(struct udc_gadget* udc_gadget, void *buf, unsigned len);
+	int (*usb_write)(struct udc_gadget* udc_gadget, void *buf, unsigned len);
+} udc_gadget_context_t;
 
 static void req_complete(struct udc_request *req, unsigned actual, int status)
 {
-	udc_req_context_t* context = req->context;
+    udc_gadget_context_t* context = req->context;
 
 	context->txn_status = status;
 	req->length = actual;
 
+	event_signal(&context->txn_done, 0);
+}
+
+#ifdef USB30_SUPPORT
+static int usb30_usb_read(struct udc_gadget* udc_gadget, void *_buf, unsigned len)
+{
+	int r;
+	struct udc_request req;
+	uint32_t xfer;
+	int count = 0;
+	uint32_t trans_len = len;
+	const char *buf = _buf;
+    udc_gadget_context_t* context = udc_gadget->context;
+
+	ASSERT(buf);
+	ASSERT(len);
+
+	if (context->errno)
+		goto oops;
+
+	dprintf(SPEW, "usb_read(): len = %d\n", len);
+
+	while (len > 0)
+	{
+		xfer = (len > MAX_USBSS_BULK_SIZE) ? MAX_USBSS_BULK_SIZE : len;
+
+		req.buf      = (void*) PA((addr_t)buf);
+		req.length   = xfer;
+		req.complete = req_complete;
+        req.context  = context;
+
+		r = usb30_udc_request_queue(out, &req);
+		if (r < 0)
+		{
+			dprintf(CRITICAL, "usb_read() queue failed. r = %d\n", r);
+			goto oops;
+		}
+		event_wait(&context->txn_done);
+
+		if (context->txn_status < 0)
+		{
+			dprintf(CRITICAL, "usb_read() transaction failed. txn_status = %d\n",
+					context->txn_status);
+			goto oops;
+		}
+
+		count += req.length;
+		buf += req.length;
+		len -= req.length;
+
+		/* note: req.length is update by callback to reflect the amount of data
+		 * actually read.
+		 */
+		dprintf(SPEW, "usb_read(): DONE. req.length = %d\n\n", req.length);
+
+		/* For USB3.0 if the data transfer is less than MaxpacketSize, its
+		 * short packet and DWC layer generates transfer complete. App layer
+		 * shold handle this and continue trasnferring the data instead of treating
+		 * this as a transfer complete. This case is not applicable for transfers
+		 * which involve protocol communication to exchange information whose length
+		 * is always equal to MAX_RSP_SIZE. This check ensures that we dont abort
+		 * data transfers on short packet.
+		 */
+		if (req.length != xfer && trans_len == MAX_RSP_SIZE) break;
+	}
+
+	/* invalidate any cached buf data (controller updates main memory) */
+	arch_invalidate_cache_range((addr_t) _buf, count);
+
+	return count;
+
+oops:
+	context->errno = -1;
+	dprintf(CRITICAL, "usb_read(): DONE: ERROR: len = %d\n", len);
+	return -1;
+}
+
+static int usb30_usb_write(struct udc_gadget* udc_gadget, void *buf, unsigned len)
+{
+	int r;
+	struct udc_request req;
+    udc_gadget_context_t* context = udc_gadget->context;
+
+	ASSERT(buf);
+	ASSERT(len);
+
+	if (context->errno)
+		goto oops;
+
+	dprintf(SPEW, "usb_write(): len = %d str = %s\n", len, (char *) buf);
+
+	/* flush buffer to main memory before giving to udc */
+	arch_clean_invalidate_cache_range((addr_t) buf, len);
+
+	req.buf      = (void*) PA((addr_t)buf);
+	req.length   = len;
+	req.complete = req_complete;
+    req.context  = context;
+
+	r = usb30_udc_request_queue(in, &req);
+	if (r < 0) {
+		dprintf(CRITICAL, "usb_write() queue failed. r = %d\n", r);
+		goto oops;
+	}
+	event_wait(&context->txn_done);
+
+	dprintf(SPEW, "usb_write(): DONE: len = %d req->length = %d str = %s\n",
+			len, req.length, (char *) buf);
+
 	if (context->txn_status < 0) {
-		dprintf(CRITICAL, "usb_read() transaction failed\n");
-		lkapi_gadget->notify(lkapi_gadget, context->event_error, NULL);
-		return;
+		dprintf(CRITICAL, "usb_write() transaction failed. txn_status = %d\n",
+				context->txn_status);
+		goto oops;
 	}
 
-	context->count += req->length;
-	context->bufptr += req->length;
-	context->len -= req->length;
+	return req.length;
 
-	// short transfer?
-	if (req->length != context->xfer) {
-		if (context->count <= 0) {
-			lkapi_gadget->notify(lkapi_gadget, context->event_error, NULL);
-		}
-		else {
-			// invalidate any cached buf data (controller updates main memory)
-			if(context->ept==out)
-				arch_invalidate_cache_range((addr_t)context->buffer, ROUNDUP(context->count, CACHE_LINE));
-			lkapi_gadget->notify(lkapi_gadget, context->event_success, &context->count);
-		}
-
-		return;
-	}
-
-	hsusb_usb_req_internal(context);
+oops:
+	context->errno = -1;
+	dprintf(CRITICAL, "usb_write(): DONE: ERROR: len = %d\n", len);
+	return -1;
 }
+#endif
 
-static void hsusb_usb_req_internal(udc_req_context_t* context) {
-	int rc;
-	struct udc_request *req = context->req;
+static int hsusb_usb_read(struct udc_gadget* udc_gadget, void *_buf, unsigned len)
+{
+	int r;
+	unsigned xfer;
+	unsigned char *buf = _buf;
+	int count = 0;
+    udc_gadget_context_t* context = udc_gadget->context;
+    struct udc_endpoint *in = udc_gadget->ept[0];
+    struct udc_endpoint *out = udc_gadget->ept[1];
+    struct udc_request *req = context->req;
 
-	if(context->len>0) {
-		// queue request
-		context->xfer = (context->len > MAX_USBFS_BULK_SIZE) ? MAX_USBFS_BULK_SIZE : context->len;
-		req->buf = context->bufptr;
-		req->length = context->xfer;
+	if (context->errno)
+		goto oops;
+
+	while (len > 0) {
+		xfer = (len > MAX_USBFS_BULK_SIZE) ? MAX_USBFS_BULK_SIZE : len;
+		req->buf = (unsigned char *)PA((addr_t)buf);
+		req->length = xfer;
 		req->complete = req_complete;
-		req->context = context;
-		rc = udc_request_queue(context->ept, req);
-		if (rc < 0) {
-			dprintf(CRITICAL, "udc_request_queue() failed\n");
-			lkapi_gadget->notify(lkapi_gadget, context->event_error, NULL);
+        req->context = context;
+		r = udc_request_queue(out, req);
+		if (r < 0) {
+			dprintf(INFO, "usb_read() queue failed\n");
+			goto oops;
 		}
+		event_wait(&context->txn_done);
+
+		if (context->txn_status < 0) {
+			dprintf(INFO, "usb_read() transaction failed\n");
+			goto oops;
+		}
+
+		count += req->length;
+		buf += req->length;
+		len -= req->length;
+
+		/* short transfer? */
+		if (req->length != xfer) break;
+	}
+	/*
+	 * Force reload of buffer from memory
+	 * since transaction is complete now.
+	 */
+	arch_invalidate_cache_range((addr_t)_buf, count);
+	return count;
+
+oops:
+	context->errno = -1;
+	return -1;
+}
+
+static int hsusb_usb_write(struct udc_gadget* udc_gadget, void *buf, unsigned len)
+{
+	int r;
+	uint32_t xfer;
+	unsigned char *_buf = buf;
+	int count = 0;
+    udc_gadget_context_t* context = udc_gadget->context;
+    struct udc_endpoint *in = udc_gadget->ept[0];
+    struct udc_endpoint *out = udc_gadget->ept[1];
+    struct udc_request *req = context->req;
+
+	if (context->errno)
+		goto oops;
+
+	/* flush buffer to main memory before giving to udc */
+	arch_clean_invalidate_cache_range((addr_t) buf, len);
+
+	while (len > 0) {
+		xfer = (len > MAX_USBFS_BULK_SIZE) ? MAX_USBFS_BULK_SIZE : len;
+		req->buf = (unsigned char *)PA((addr_t)_buf);
+		req->length = xfer;
+		req->complete = req_complete;
+        req->context = context;
+		r = udc_request_queue(in, req);
+		if (r < 0) {
+			dprintf(INFO, "usb_write() queue failed\n");
+			goto oops;
+		}
+		event_wait(&context->txn_done);
+		if (context->txn_status < 0) {
+			dprintf(INFO, "usb_write() transaction failed\n");
+			goto oops;
+		}
+
+		count += req->length;
+		_buf += req->length;
+		len -= req->length;
+
+		/* short transfer? */
+		if (req->length != xfer) break;
 	}
 
-	else {
-		// invalidate any cached buf data (controller updates main memory)
-		if(context->ept==out)
-			arch_invalidate_cache_range((addr_t)context->buffer, ROUNDUP(context->count, CACHE_LINE));
-		lkapi_gadget->notify(lkapi_gadget, context->event_success, &context->count);
-	}
+	return count;
+
+oops:
+	context->errno = -1;
+	return -1;
 }
 
-static int hsusb_usb_read(void* buffer, unsigned int len) {
-	memset(&udc_read_context, 0, sizeof(udc_req_context_t));
+static struct udc_device* usbgadget_internal_udc_device(lkapi_udc_device_t* lk_udc_device) {
+    struct udc_device* udc_device = calloc(sizeof(struct udc_device), 1);
+    if(!udc_device) return NULL;
 
-	// flush buffer to main memory before giving to udc
-	arch_clean_invalidate_cache_range((addr_t) buffer, ROUNDUP(len, CACHE_LINE));
-
-	udc_read_context.buffer = buffer;
-	udc_read_context.len = len;
-	udc_read_context.bufptr = buffer;
-	udc_read_context.count = 0;
-	udc_read_context.event_success = LKAPI_USB_GADGET_EVENT_READ_SUCCESS;
-	udc_read_context.event_error = LKAPI_USB_GADGET_EVENT_READ_ERROR;
-	udc_read_context.req = reqout;
-	udc_read_context.ept = out;
-
-	hsusb_usb_req_internal(&udc_read_context);
-	return 0;
-}
-
-static int hsusb_usb_write(void* buffer, unsigned int len) {
-	memset(&udc_write_context, 0, sizeof(udc_req_context_t));
-
-	udc_write_context.buffer = buffer;
-	udc_write_context.len = len;
-	udc_write_context.bufptr = buffer;
-	udc_write_context.count = 0;
-	udc_write_context.event_success = LKAPI_USB_GADGET_EVENT_WRITE_SUCCESS;
-	udc_write_context.event_error = LKAPI_USB_GADGET_EVENT_WRITE_ERROR;
-	udc_write_context.req = reqin;
-	udc_write_context.ept = in;
-
-	// flush buffer to main memory before giving to udc
-	arch_clean_invalidate_cache_range((addr_t) buffer, ROUNDUP(len, CACHE_LINE));
-
-	hsusb_usb_req_internal(&udc_write_context);
-	return 0;
-}
-
-static int api_usbgadget_init(lkapi_usb_gadget_device* device) {
-	/* target specific initialization before going into fastboot. */
-	target_fastboot_init();
-
-	udc_device.vendor_id = device->vendor_id;
-	udc_device.product_id = device->product_id;
-	udc_device.version_id = device->version_id;
-	udc_device.manufacturer = device->manufacturer;
-	udc_device.product = device->product;
-	udc_device.serialno = "EFIDroid";
+    udc_device->vendor_id = lk_udc_device->vendor_id;
+    udc_device->product_id = lk_udc_device->product_id;
+    udc_device->version_id = lk_udc_device->version_id;
+    udc_device->manufacturer = lk_udc_device->manufacturer;
+    udc_device->product = lk_udc_device->product;
+    udc_device->serialno = lk_udc_device->serialno;
 
 	if(!strcmp(target_usb_controller(), "dwc"))
 	{
 #ifdef USB30_SUPPORT
-		surf_udc_device.t_usb_if = target_usb30_init();
-
-		/* initialize udc functions to use dwc controller */
-		usb_if.udc_init            = usb30_udc_init;
-		usb_if.udc_register_gadget = usb30_udc_register_gadget;
-		usb_if.udc_start           = usb30_udc_start;
-		usb_if.udc_stop            = usb30_udc_stop;
-
-		usb_if.udc_endpoint_alloc  = usb30_udc_endpoint_alloc;
-		usb_if.udc_request_alloc   = usb30_udc_request_alloc;
-		usb_if.udc_request_free    = usb30_udc_request_free;
-
-		usb_if.usb_read            = usb30_usb_read;
-		usb_if.usb_write           = usb30_usb_write;
+		udc_device->t_usb_if = target_usb30_init();
 #else
-		return -1;
+		dprintf(CRITICAL, "USB30 needs to be enabled for this target.\n");
+		ASSERT(0);
+#endif
+	}
+
+    return udc_device;
+}
+
+static void udc_gadget_notify(struct udc_gadget *gadget, unsigned event) {
+    udc_gadget_context_t* context = gadget->context;
+    context->lk_udc_gadget->notify(context->lk_udc_gadget, event);
+}
+
+static struct udc_gadget* usbgadget_internal_udc_gadget(usb_controller_interface_t* usb_if, lkapi_udc_gadget_t* lk_udc_gadget) {
+    struct udc_gadget* udc_gadget = calloc(sizeof(struct udc_gadget), 1);
+    if(!udc_gadget) return NULL;
+
+    udc_gadget_context_t* gadget_context = calloc(sizeof(udc_gadget_context_t), 1);
+    if(!gadget_context) return NULL;
+
+    gadget_context->lk_udc_gadget = lk_udc_gadget;
+    gadget_context->req = usb_if->udc_request_alloc();
+	if (!gadget_context->req)
+		return NULL;
+
+	event_init(&gadget_context->txn_done, 0, EVENT_FLAG_AUTOUNSIGNAL);
+    gadget_context->errno = 0;
+
+    udc_gadget->notify = udc_gadget_notify;
+    udc_gadget->context = gadget_context;
+    udc_gadget->ifc_class = lk_udc_gadget->ifc_class;
+    udc_gadget->ifc_subclass = lk_udc_gadget->ifc_subclass;
+    udc_gadget->ifc_protocol = lk_udc_gadget->ifc_protocol;
+    udc_gadget->ifc_endpoints = lk_udc_gadget->ifc_endpoints;
+    udc_gadget->ifc_string = lk_udc_gadget->ifc_string;
+    udc_gadget->flags = lk_udc_gadget->flags;
+
+    struct udc_endpoint **endpoints = calloc(sizeof(struct udc_endpoint*), 2);
+    if(!udc_gadget) return NULL;
+
+	endpoints[0] = usb_if->udc_endpoint_alloc(UDC_TYPE_BULK_IN, 512);
+	if (!endpoints[0])
+		return NULL;
+	endpoints[1] = usb_if->udc_endpoint_alloc(UDC_TYPE_BULK_OUT, 512);
+	if (!endpoints[1])
+		return NULL;
+
+    udc_gadget->ept = endpoints;
+
+	if(!strcmp(target_usb_controller(), "dwc"))
+	{
+#ifdef USB30_SUPPORT
+		gadget_context->usb_read            = usb30_usb_read;
+		gadget_context->usb_write           = usb30_usb_write;
+#else
+		dprintf(CRITICAL, "USB30 needs to be enabled for this target.\n");
+		ASSERT(0);
+#endif
+	}
+	else
+	{
+		gadget_context->usb_read            = hsusb_usb_read;
+		gadget_context->usb_write           = hsusb_usb_write;
+	}
+
+    return udc_gadget;
+}
+
+static int usbgadget_iface_udc_init(lkapi_usbgadget_iface_t* dev, lkapi_udc_device_t *devinfo) {
+    usb_controller_interface_t* usb_if = dev->pdata;
+
+    struct udc_device* udc_device = usbgadget_internal_udc_device(devinfo);
+    if(!udc_device) return 1;
+
+    return usb_if->udc_init(udc_device);
+}
+
+static int usbgadget_gadget_usb_read(lkapi_udc_gadget_t* gadget, void *buf, unsigned len) {
+    struct udc_gadget* udc_gadget = gadget->pdata;
+    udc_gadget_context_t* context = udc_gadget->context;
+
+    return context->usb_read(udc_gadget, buf, len);
+}
+
+static int usbgadget_gadget_usb_write(lkapi_udc_gadget_t* gadget, void *buf, unsigned len) {
+    struct udc_gadget* udc_gadget = gadget->pdata;
+    udc_gadget_context_t* context = udc_gadget->context;
+
+    return context->usb_write(udc_gadget, buf, len);
+}
+
+static int usbgadget_iface_udc_register_gadget(lkapi_usbgadget_iface_t* dev, lkapi_udc_gadget_t *lkgadget) {
+    usb_controller_interface_t* usb_if = dev->pdata;
+
+    struct udc_gadget* gadget = usbgadget_internal_udc_gadget(usb_if, lkgadget);
+    if(!gadget) return 1;
+
+    lkgadget->pdata = gadget;
+    lkgadget->usb_read = usbgadget_gadget_usb_read;
+    lkgadget->usb_write = usbgadget_gadget_usb_write;
+
+    return usb_if->udc_register_gadget(gadget);
+}
+
+static int usbgadget_iface_udc_start(lkapi_usbgadget_iface_t* dev) {
+    usb_controller_interface_t* usb_if = dev->pdata;
+    return usb_if->udc_start();
+}
+
+static int usbgadget_iface_udc_stop(lkapi_usbgadget_iface_t* dev) {
+    usb_controller_interface_t* usb_if = dev->pdata;
+    return usb_if->udc_stop();
+}
+
+static lkapi_usbgadget_iface_t* api_usbgadget_get_interface(void) {
+    usb_controller_interface_t* usb_if = calloc(sizeof(usb_controller_interface_t), 1);
+    if(!usb_if) return NULL;
+
+	/* target specific initialization before going into fastboot. */
+	target_fastboot_init();
+
+	if(!strcmp(target_usb_controller(), "dwc"))
+	{
+#ifdef USB30_SUPPORT
+		/* initialize udc functions to use dwc controller */
+		usb_if->udc_init            = usb30_udc_init;
+		usb_if->udc_register_gadget = usb30_udc_register_gadget;
+		usb_if->udc_start           = usb30_udc_start;
+		usb_if->udc_stop            = usb30_udc_stop;
+
+		usb_if->udc_endpoint_alloc  = usb30_udc_endpoint_alloc;
+		usb_if->udc_request_alloc   = usb30_udc_request_alloc;
+		usb_if->udc_request_free    = usb30_udc_request_free;
+#else
+		dprintf(CRITICAL, "USB30 needs to be enabled for this target.\n");
+		ASSERT(0);
 #endif
 	}
 	else
 	{
 		/* initialize udc functions to use the default chipidea controller */
-		usb_if.udc_init            = udc_init;
-		usb_if.udc_register_gadget = udc_register_gadget;
-		usb_if.udc_start           = udc_start;
-		usb_if.udc_stop            = udc_stop;
+		usb_if->udc_init            = udc_init;
+		usb_if->udc_register_gadget = udc_register_gadget;
+		usb_if->udc_start           = udc_start;
+		usb_if->udc_stop            = udc_stop;
 
-		usb_if.udc_endpoint_alloc  = udc_endpoint_alloc;
-		usb_if.udc_request_alloc   = udc_request_alloc;
-		usb_if.udc_request_free    = udc_request_free;
-
-		usb_if.usb_read            = hsusb_usb_read;
-		usb_if.usb_write           = hsusb_usb_write;
+		usb_if->udc_endpoint_alloc  = udc_endpoint_alloc;
+		usb_if->udc_request_alloc   = udc_request_alloc;
+		usb_if->udc_request_free    = udc_request_free;
 	}
 
-	/* register udc device */
-	usb_if.udc_init(&udc_device);
+    lkapi_usbgadget_iface_t* lk_usb_if = calloc(sizeof(lkapi_usbgadget_iface_t), 1);
+    if(!lk_usb_if) return NULL;
 
-	return 0;
+    lk_usb_if->udc_init = usbgadget_iface_udc_init;
+    lk_usb_if->udc_register_gadget = usbgadget_iface_udc_register_gadget;
+
+    lk_usb_if->udc_start = usbgadget_iface_udc_start;
+    lk_usb_if->udc_stop = usbgadget_iface_udc_stop;
+    lk_usb_if->pdata = usb_if;
+
+    return lk_usb_if;
 }
-
-static int api_usbgadget_register_gadget(lkapi_usb_gadget_gadget* gadget) {
-	udc_gadget.notify = udc_status_notify;
-	udc_gadget.ifc_class = gadget->ifc_class;
-	udc_gadget.ifc_subclass = gadget->ifc_subclass;
-	udc_gadget.ifc_protocol = gadget->ifc_protocol;
-	udc_gadget.ifc_endpoints = 2;
-	udc_gadget.ifc_string = gadget->ifc_string;
-	udc_gadget.ept = fastboot_endpoints;
-
-	in = usb_if.udc_endpoint_alloc(UDC_TYPE_BULK_IN, 512);
-	if (!in)
-		goto fail_alloc_in;
-	out = usb_if.udc_endpoint_alloc(UDC_TYPE_BULK_OUT, 512);
-	if (!out)
-		goto fail_alloc_out;
-
-	fastboot_endpoints[0] = in;
-	fastboot_endpoints[1] = out;
-
-	reqin = usb_if.udc_request_alloc();
-	if (!reqin)
-		goto fail_alloc_reqin;
-
-	reqout = usb_if.udc_request_alloc();
-	if (!reqout)
-		goto fail_alloc_reqout;
-
-	/* register gadget */
-	if (usb_if.udc_register_gadget(&udc_gadget))
-		goto fail_udc_register;
-
-	lkapi_gadget = gadget;
-
-	return 0;
-
-fail_udc_register:
-	usb_if.udc_request_free(reqout);
-fail_alloc_reqout:
-	usb_if.udc_request_free(reqin);
-fail_alloc_reqin:
-	usb_if.udc_endpoint_free(out);
-fail_alloc_out:
-	usb_if.udc_endpoint_free(in);
-fail_alloc_in:
-	return -1;
-}
-
-static int api_usbgadget_start(void) {
-	return usb_if.udc_start();
-}
-
-static int api_usbgadget_stop(void) {
-	return usb_if.udc_stop();
-}
-
-static void* api_usbgadget_alloc(unsigned int size) {
-	return memalign(CACHE_LINE, ROUNDUP(size, CACHE_LINE));
-}
-
-static int api_usbgadget_free(void* buffer) {
-	free(buffer);
-	return 0;
-}
-
-static int api_usbgadget_read(void* buffer, unsigned int len) {
-	return usb_if.usb_read(buffer, len);
-}
-
-static int api_usbgadget_write(void* buffer, unsigned int len) {
-	return usb_if.usb_write(buffer, len);
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -956,14 +1116,5 @@ lkapi_t uefiapi = {
 	.event_wait = NULL,
 	.event_signal = NULL,
 
-#ifndef UEFIAPI_DISABLE_USB
-	.usbgadget_init = api_usbgadget_init,
-	.usbgadget_register_gadget = api_usbgadget_register_gadget,
-	.usbgadget_start = api_usbgadget_start,
-	.usbgadget_stop = api_usbgadget_stop,
-	.usbgadget_alloc = api_usbgadget_alloc,
-	.usbgadget_free = api_usbgadget_free,
-	.usbgadget_read = api_usbgadget_read,
-	.usbgadget_write = api_usbgadget_write,
-#endif
+    .usbgadget_get_interface = api_usbgadget_get_interface,
 };
