@@ -897,6 +897,10 @@ static struct udc_device* usbgadget_internal_udc_device(lkapi_udc_device_t* lk_u
 
 static void udc_gadget_notify(struct udc_gadget *gadget, unsigned event) {
     udc_gadget_context_t* context = gadget->context;
+
+    if(event==UDC_EVENT_ONLINE)
+      context->errno = 0;
+
     context->lk_udc_gadget->notify(context->lk_udc_gadget, event);
 }
 
