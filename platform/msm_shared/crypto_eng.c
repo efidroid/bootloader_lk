@@ -255,7 +255,19 @@ crypto_send_data(void *ctx_ptr, unsigned char *data_ptr,
 		memset(data, 0, sizeof(unsigned int));
 
 		if (sha1_ctx->saved_buff_indx)
-			buff_ptr = (sha1_ctx->saved_buff + bytes_to_write - 1);
+		{
+	        /* This condition will only be reached if bytes_to write
+				is less than sha block size */
+			if( bytes_to_write < CRYPTO_SHA_BLOCK_SIZE )
+				buff_ptr = (sha1_ctx->saved_buff + bytes_to_write - 1);
+			else
+			{
+				dprintf(CRITICAL,"crypto_send_data sw error 3\n");
+				*ret_status = CRYPTO_ERR_FAIL;
+				return;
+
+			}
+		}
 		else
 			buff_ptr =
 			    (((unsigned char *)data_ptr) + buff_size - 1);
