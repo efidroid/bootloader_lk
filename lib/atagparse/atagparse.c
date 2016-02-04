@@ -607,7 +607,9 @@ void atag_parse(void) {
 	}
 
 	dprintf(INFO, "cmdline=[%s]\n", command_line);
+#ifndef PLATFORM_MSM7X27A
 	dprintf(INFO, "[orig] platform_id=%d variant_id=%d soc_rev=%X\n", board_platform_id(), board_hardware_id(), board_soc_version());
+#endif
 
 	// add to global cmdline lib
 	cmdline_addall(command_line, true);
