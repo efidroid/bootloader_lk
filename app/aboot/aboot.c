@@ -3534,7 +3534,7 @@ void aboot_init(const struct app_descriptor *app)
 {
 	unsigned reboot_mode = 0;
 	unsigned hard_reboot_mode = 0;
-	bool boot_into_fastboot = false;
+	bool boot_into_fastboot = true;
 
 	/* Setup page size information for nv storage */
 	if (target_is_emmc_boot())

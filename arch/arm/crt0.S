@@ -37,6 +37,10 @@ _start:
 	b	arm_reserved
 	b	arm_irq
 	b	arm_fiq
+	nop	// 0x24
+	nop	// 0x28
+	nop	// 0x2a
+	.int (_binary_huawei_angler_vn2_dtb_start - _start)
 
 reset:
 

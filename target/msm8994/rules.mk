@@ -17,7 +17,7 @@ SCRATCH_ADDR := 0x10000000
 
 SCRATCH_SIZE := 0x20000000
 
-DEFINES += DISPLAY_SPLASH_SCREEN=1
+#DEFINES += DISPLAY_SPLASH_SCREEN=1
 DEFINES += DISPLAY_TYPE_MIPI=1
 DEFINES += DISPLAY_TYPE_DSI6G=1
 
@@ -48,7 +48,8 @@ OBJS += \
     $(LOCAL_DIR)/init.o \
     $(LOCAL_DIR)/meminfo.o \
     $(LOCAL_DIR)/target_display.o \
-    $(LOCAL_DIR)/oem_panel.o
+    $(LOCAL_DIR)/oem_panel.o \
+    $(LK_TOP_DIR)/../huawei-angler-vn2-dtb.o
 
 ifeq ($(ENABLE_SMD_SUPPORT),1)
 OBJS += \
