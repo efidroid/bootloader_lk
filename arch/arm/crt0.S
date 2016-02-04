@@ -191,13 +191,16 @@ lk_phys_offset:
 	ldr     r0, =__data_end
 	add     r0, r0, r3
 
+	// r3 = EDK2_SIZE, r0 += 4
+	ldr     r3, [r0], #4
+
 	// check if we need to relocate EDK2
 	ldr     r1, =EDK2_BASE
 	cmp     r0, r1
 	beq     .Ledk2_relocate_done
 
 	// we need to relocate EDK2 to the proper spot
-	ldr     r2, =(EDK2_BASE + EDK2_SIZE)
+	add     r2, r1, r3
 
 .Ledk2_relocate_loop:
 	ldr		r3, [r0], #4
