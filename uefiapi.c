@@ -617,6 +617,9 @@ static void api_boot_exec(void* kernel, unsigned int zero, unsigned int arch, un
 #define MAX_USBFS_BULK_SIZE (32 * 1024)
 #define MAX_USBSS_BULK_SIZE (0x1000000)
 
+// this limits the USB3 API to the fastboot protocol
+#define MAX_RSP_SIZE            64
+
 typedef struct {
 	int (*udc_init)(struct udc_device *devinfo);
 	int (*udc_register_gadget)(struct udc_gadget *gadget);
@@ -660,6 +663,8 @@ static int usb30_usb_read(struct udc_gadget* udc_gadget, void *_buf, unsigned le
 	uint32_t trans_len = len;
 	const char *buf = _buf;
     udc_gadget_context_t* context = udc_gadget->context;
+    struct udc_endpoint *in = udc_gadget->ept[0];
+    struct udc_endpoint *out = udc_gadget->ept[1];
 
 	ASSERT(buf);
 	ASSERT(len);
@@ -729,6 +734,8 @@ static int usb30_usb_write(struct udc_gadget* udc_gadget, void *buf, unsigned le
 	int r;
 	struct udc_request req;
     udc_gadget_context_t* context = udc_gadget->context;
+    struct udc_endpoint *in = udc_gadget->ept[0];
+    struct udc_endpoint *out = udc_gadget->ept[1];
 
 	ASSERT(buf);
 	ASSERT(len);
