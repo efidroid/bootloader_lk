@@ -3186,6 +3186,43 @@ void cmd_preflash(const char *arg, void *data, unsigned sz)
 	fastboot_okay("");
 }
 
+static unsigned hex2unsigned(const char *x)
+{
+    unsigned n = 0;
+
+    while(*x) {
+        switch(*x) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            n = (n << 4) | (*x - '0');
+            break;
+        case 'a': case 'b': case 'c':
+        case 'd': case 'e': case 'f':
+            n = (n << 4) | (*x - 'a' + 10);
+            break;
+        case 'A': case 'B': case 'C':
+        case 'D': case 'E': case 'F':
+            n = (n << 4) | (*x - 'A' + 10);
+            break;
+        default:
+            return n;
+        }
+        x++;
+    }
+
+    return n;
+}
+
+void cmd_oem_dump_ram(const char *arg, void *data, unsigned sz) {
+	unsigned char* p = (void*) hex2unsigned(arg+1);
+	char response[MAX_RSP_SIZE];
+	snprintf(response, sizeof(response), "%08x %02hhx %02hhx %02hhx %02hhx  %02hhx %02hhx %02hhx %02hhx  "
+						"%02hhx %02hhx %02hhx %02hhx  %02hhx %02hhx %02hhx %02hhx",
+		(unsigned int) p, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+	fastboot_info(response);
+	fastboot_okay("");
+}
+
 static uint8_t logo_header[LOGO_IMG_HEADER_SIZE];
 
 int splash_screen_check_header(logo_img_header *header)
@@ -3480,6 +3517,7 @@ void aboot_fastboot_register_commands(void)
 						{"oem disable-charger-screen", cmd_oem_disable_charger_screen},
 						{"oem off-mode-charge", cmd_oem_off_mode_charger},
 						{"oem select-display-panel", cmd_oem_select_display_panel},
+						{"oem dump-ram", cmd_oem_dump_ram},
 #endif
 						};
 
