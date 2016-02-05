@@ -3222,6 +3222,58 @@ void cmd_oem_dump_ram(const char *arg, void *data, unsigned sz) {
 	fastboot_info(response);
 	fastboot_okay("");
 }
+#define KEXEC_IND_MASK 0xf
+#define IND_DESTINATION (1 << 0)
+#define IND_INDIRECTION (1 << 1)
+#define IND_DONE	(1 << 2)
+#define IND_SOURCE	(1 << 3)
+void cmd_oem_hardboot_copy(const char *arg, void *data, unsigned sz) {
+	uint64_t* head = ((uint64_t*)(0x1fd00000 + 0x2000));
+	void* dest = NULL;
+	char response[MAX_RSP_SIZE];
+	for (;;) {
+		unsigned int entry = (unsigned int) *head++;
+		unsigned int value = entry & ~KEXEC_IND_MASK;
+		void* src = NULL;
+		switch (entry & KEXEC_IND_MASK) {
+			case IND_INDIRECTION:
+				head = (uint64_t*) value;
+				snprintf(response, sizeof(response),
+					"IND_INDIRECTION %p", head);
+				fastboot_info(response);
+				break;
+			case IND_DESTINATION:
+				dest = (void*) value;
+				snprintf(response, sizeof(response),
+					"IND_DESTINATION %p", dest);
+				fastboot_info(response);
+				break;
+			case IND_SOURCE:
+				src = (void*) value;
+				memcpy(dest, src, 4096);
+				dest += 4096;
+				break;
+			case IND_DONE:
+				break;
+		}
+		if ((entry & KEXEC_IND_MASK) == IND_DONE) break;
+	}
+	fastboot_okay("");
+}
+void cmd_oem_jump_to_kernel(const char *arg, void *data, unsigned sz) {
+	fastboot_okay("");
+	fastboot_stop();
+
+	boot_linux((void*) 0x80000, (void*) 0x1880000,
+		   (const char*) "", board_machtype(),
+		   (void*) 0x2000000, 0);
+}
+
+void cmd_oem_hardboot_set(const char *arg, void *data, unsigned sz) {
+	uint64_t p = hex2unsigned(arg+1);
+	*((uint64_t*)0x1fd00000) = p;
+	fastboot_okay("");
+}
 
 static uint8_t logo_header[LOGO_IMG_HEADER_SIZE];
 
@@ -3518,6 +3570,9 @@ void aboot_fastboot_register_commands(void)
 						{"oem off-mode-charge", cmd_oem_off_mode_charger},
 						{"oem select-display-panel", cmd_oem_select_display_panel},
 						{"oem dump-ram", cmd_oem_dump_ram},
+						{"oem hardboot-copy", cmd_oem_hardboot_copy},
+						{"oem jump-to-kernel", cmd_oem_jump_to_kernel},
+						{"oem hardboot-set", cmd_oem_hardboot_set},
 #endif
 						};
 
