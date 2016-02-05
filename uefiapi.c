@@ -412,7 +412,7 @@ static void api_reset_warm(const char* reason) {
 }
 
 static void api_reset_shutdown(const char* reason) {
-	platform_halt();
+	shutdown_device();
 }
 
 /////////////////////////////////////////////////////////////////////////
