@@ -403,15 +403,15 @@ static void api_lcd_shutdown(void) {
 
 #define NORMAL_MODE     0x77665501
 
-static void api_reset_cold(void) {
+static void api_reset_cold(const char* reason) {
 	reboot_device(NORMAL_MODE);
 }
 
-static void api_reset_warm(void) {
-	api_reset_cold();
+static void api_reset_warm(const char* reason) {
+	api_reset_cold(reason);
 }
 
-static void api_reset_shutdown(void) {
+static void api_reset_shutdown(const char* reason) {
 	platform_halt();
 }
 
