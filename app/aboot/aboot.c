@@ -3214,12 +3214,18 @@ static unsigned hex2unsigned(const char *x)
 }
 
 void cmd_oem_dump_ram(const char *arg, void *data, unsigned sz) {
-	unsigned char* p = (void*) hex2unsigned(arg+1);
+	char* sp = NULL;
+	const char* addrstr = strtok_r((char *)arg, " ", &sp);
+	const char* sizestr = strtok_r(NULL, " ", &sp);
+	unsigned char* p = (void*) hex2unsigned(addrstr);
+	unsigned int size = sizestr? hex2unsigned(sizestr): 0x10;
 	char response[MAX_RSP_SIZE];
-	snprintf(response, sizeof(response), "%08x %02hhx %02hhx %02hhx %02hhx  %02hhx %02hhx %02hhx %02hhx  "
+	for (unsigned int i = 0; i < size; i += 0x10, p += 0x10) {
+		snprintf(response, sizeof(response), "%08x %02hhx %02hhx %02hhx %02hhx  %02hhx %02hhx %02hhx %02hhx  "
 						"%02hhx %02hhx %02hhx %02hhx  %02hhx %02hhx %02hhx %02hhx",
 		(unsigned int) p, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
-	fastboot_info(response);
+		fastboot_info(response);
+	}
 	fastboot_okay("");
 }
 #define KEXEC_IND_MASK 0xf
