@@ -401,10 +401,27 @@ static void api_lcd_shutdown(void) {
 //                               RESET                                 //
 /////////////////////////////////////////////////////////////////////////
 
-#define NORMAL_MODE     0x77665501
+#define NORMAL_MODE          0x77665501
+#define RECOVERY_MODE        0x77665502
+#define FASTBOOT_MODE        0x77665500
 
 static void api_reset_cold(const char* reason) {
-	reboot_device(NORMAL_MODE);
+	uint32_t reboot_reason = 0;
+	if(reason) {
+		if(!strcmp(reason, "recovery"))
+			reboot_reason = RECOVERY_MODE;
+		else if(!strcmp(reason, "bootloader"))
+			reboot_reason = FASTBOOT_MODE;
+		else if(!strcmp(reason, "download")) {
+			if (set_download_mode(EMERGENCY_DLOAD)==0) {
+				reboot_device(DLOAD);
+			}
+			return;
+		}
+		else return;
+	}
+
+	reboot_device(reboot_reason);
 }
 
 static void api_reset_warm(const char* reason) {
