@@ -389,6 +389,11 @@ static lkapi_lcd_pixelformat_t api_lcd_get_pixelformat(void) {
 	}
 }
 
+static int api_lcd_needs_flush(void) {
+	struct fbcon_config* fbcon = fbcon_display();
+	return (fbcon->update_start || fbcon->update_done);
+}
+
 static void api_lcd_flush(void) {
 	fbcon_flush();
 }
@@ -1119,6 +1124,7 @@ lkapi_t uefiapi = {
 	.lcd_get_density = api_lcd_get_density,
 	.lcd_get_bpp = api_lcd_get_bpp,
 	.lcd_get_pixelformat = api_lcd_get_pixelformat,
+	.lcd_needs_flush = api_lcd_needs_flush,
 	.lcd_flush = api_lcd_flush,
 	.lcd_shutdown = api_lcd_shutdown,
 
