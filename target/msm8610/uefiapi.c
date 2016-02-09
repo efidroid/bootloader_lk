@@ -41,16 +41,12 @@ static int event_source_poll(key_event_source_t* source) {
 
 	value = target_volume_up();
 	if(keys_set_report_key(source, 1, &value)){
-		keys_post_event(0x1b, value);
-		keys_post_event(0x5b, value);
-		keys_post_event(0x41, value);
+		keys_post_event(KEY_VOLUMEUP, value);
 	}
 
 	value = target_volume_down();
 	if(keys_set_report_key(source, 2, &value)){
-		keys_post_event(0x1b, value);
-		keys_post_event(0x5b, value);
-		keys_post_event(0x42, value);
+		keys_post_event(KEY_VOLUMEDOWN, value);
 	}
 
 	return NO_ERROR;

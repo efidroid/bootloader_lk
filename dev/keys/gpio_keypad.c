@@ -494,14 +494,10 @@ report_qwerty_gpio_keypad(key_event_source_t* source)
 		if(keys_set_report_key(source, keypad->keymap[i], &value)) {
 			switch(keypad->keymap[i]) {
 				case KEY_VOLUMEUP:
-					keys_post_event(0x1b, value);
-					keys_post_event(0x5b, value);
-					keys_post_event(0x41, value);
+					keys_post_event(KEY_VOLUMEUP, value);
 					break;
 				case KEY_VOLUMEDOWN:
-					keys_post_event(0x1b, value);
-					keys_post_event(0x5b, value);
-					keys_post_event(0x42, value);
+					keys_post_event(KEY_VOLUMEDOWN, value);
 					break;
 			}
 		}
