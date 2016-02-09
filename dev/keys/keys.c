@@ -89,6 +89,8 @@ void keys_add_source(key_event_source_t* source) {
 
 int keys_post_event(uint16_t code, int16_t value)
 {
+	int i;
+
 	if (code >= MAX_KEYS) {
 		LTRACEF("Invalid keycode posted: %d\n", code);
 		return ERR_INVALID_ARGS;
@@ -99,19 +101,42 @@ int keys_post_event(uint16_t code, int16_t value)
 	else
 		bitmap_clear(key_bitmap, code);
 
-	// I guess we shouldn't ignore these
-	if(!value) return NO_ERROR;
-
-	// create event
-	key_event_t* event = malloc(sizeof(key_event_t));
-	event->code = code;
-	event->value = value;
-
-	// add event
-	list_add_tail(&event_queue, &event->node);
-
 	// signal
 	LTRACEF("key state change: %d %d\n", code, value);
+
+	if(!value) return NO_ERROR;
+
+	uint8_t seq[3];
+	uint8_t seqsz = 0;
+
+	if(code<=0xff) {
+		seq[seqsz++] = code;
+	}
+	else {
+		switch(code) {
+			case KEY_VOLUMEUP:
+			seq[seqsz++] = 0x1b;
+			seq[seqsz++] = 0x5b;
+			seq[seqsz++] = 0x41;
+			break;
+
+			case KEY_VOLUMEDOWN:
+			seq[seqsz++] = 0x1b;
+			seq[seqsz++] = 0x5b;
+			seq[seqsz++] = 0x42;
+			break;
+		}
+	}
+
+	for(i=0; i<seqsz; i++) {
+		// create event
+		key_event_t* event = malloc(sizeof(key_event_t));
+		event->code = seq[i];
+		event->value = value;
+
+		// add event
+		list_add_tail(&event_queue, &event->node);
+	}
 
 	return NO_ERROR;
 }
