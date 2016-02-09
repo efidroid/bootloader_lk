@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -160,8 +160,8 @@
 #define RPMB_SND_RCV_BUF_SZ         0x1
 
 /* QSEECOM: Secure app region notification */
-#define APP_REGION_ADDR 0x85E00000
-#define APP_REGION_SIZE 0x500000
+#define APP_REGION_ADDR 0x85B00000
+#define APP_REGION_SIZE 0x800000
 
 /* MDSS */
 #define MIPI_DSI_BASE               (0x1A98000)
