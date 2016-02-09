@@ -2771,6 +2771,14 @@ void cmd_oem_reboot_dload(const char *arg, void *data, unsigned sz)
 	}
 }
 
+void cmd_poweroff(const char *arg, void *data, unsigned sz)
+{
+    fastboot_info("You have 5s to unplug your USB cable :)");
+    fastboot_okay("");
+    mdelay(5000);
+    shutdown_device();
+}
+
 void cmd_oem_enable_charger_screen(const char *arg, void *data, unsigned size)
 {
 	dprintf(INFO, "Enabling charger screen check\n");
@@ -3428,6 +3436,7 @@ void aboot_fastboot_register_commands(void)
 											{"reboot-bootloader", cmd_reboot_bootloader},
 											{"oem reboot-recovery", cmd_oem_reboot_recovery},
 											{"oem reboot-dload", cmd_oem_reboot_dload},
+											{"oem poweroff", cmd_poweroff},
 											{"oem unlock", cmd_oem_unlock},
 											{"oem unlock-go", cmd_oem_unlock_go},
 											{"oem lock", cmd_oem_lock},
