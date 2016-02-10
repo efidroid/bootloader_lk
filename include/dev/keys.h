@@ -171,9 +171,16 @@ static inline int keys_set_report_key(key_event_source_t* source, uint16_t code,
 		case KEYSTATE_LONGPRESS_WAIT:
 			if(value) {
 				if(!source->keymap[code].longpress && source->keymap[code].time>=500) {
-					// report spacebar
-					keys_post_event(32, 1);
-					keys_post_event(32, 0);
+					if(keys_get_state(KEY_VOLUMEDOWN)) {
+						// report 's'
+						keys_post_event(0x73, 1);
+						keys_post_event(0x73, 0);
+					}
+					else {
+						// report spacebar
+						keys_post_event(32, 1);
+						keys_post_event(32, 0);
+					}
 
 					source->keymap[code].longpress=true;
 				}
