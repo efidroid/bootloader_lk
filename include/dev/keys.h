@@ -176,6 +176,11 @@ static inline int keys_set_report_key(key_event_source_t* source, uint16_t code,
 						keys_post_event(0x73, 1);
 						keys_post_event(0x73, 0);
 					}
+					else if(keys_get_state(KEY_VOLUMEUP)) {
+						// report 'e'
+						keys_post_event(0x65, 1);
+						keys_post_event(0x65, 0);
+					}
 					else {
 						// report spacebar
 						keys_post_event(32, 1);
