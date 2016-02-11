@@ -2757,7 +2757,7 @@ void cmd_oem_reboot_recovery(const char *arg, void *data, unsigned sz)
 	reboot_device(RECOVERY_MODE);
 }
 
-void cmd_oem_reboot_dload(const char *arg, void *data, unsigned sz)
+void cmd_oem_reboot_download(const char *arg, void *data, unsigned sz)
 {
 	fastboot_okay("");
 	if (set_download_mode(EMERGENCY_DLOAD))
@@ -3435,7 +3435,7 @@ void aboot_fastboot_register_commands(void)
 											{"reboot", cmd_reboot},
 											{"reboot-bootloader", cmd_reboot_bootloader},
 											{"oem reboot-recovery", cmd_oem_reboot_recovery},
-											{"oem reboot-dload", cmd_oem_reboot_dload},
+											{"oem reboot-download", cmd_oem_reboot_download},
 											{"oem poweroff", cmd_poweroff},
 											{"oem unlock", cmd_oem_unlock},
 											{"oem unlock-go", cmd_oem_unlock_go},
