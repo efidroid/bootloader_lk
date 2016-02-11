@@ -53,6 +53,7 @@ void fastboot_okay(const char *result);
 void fastboot_fail(const char *reason);
 void fastboot_info(const char *reason);
 void fastboot_send_buf(void* data, size_t size);
+void fastboot_send_textbuf(void* data, size_t size);
 
 
 #endif

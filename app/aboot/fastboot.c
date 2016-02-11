@@ -441,6 +441,24 @@ void fastboot_send_buf(void* _data, size_t size) {
 	}
 }
 
+void fastboot_send_textbuf(void* _data, size_t size) {
+	uint32_t i;
+	char buf[MAX_RSP_SIZE];
+	size_t pos = 0;
+	char* data = _data;
+
+	for(i=0; i<size; i++) {
+		char c = data[i];
+		buf[pos++] = c;
+
+		if(pos==sizeof(buf)-1-4 || c=='\n' || c=='\r') {
+			buf[pos] = 0;
+			fastboot_info(buf);
+			pos = 0;
+		}
+	}
+}
+
 static void getvar_all()
 {
 	struct fastboot_var *var;
