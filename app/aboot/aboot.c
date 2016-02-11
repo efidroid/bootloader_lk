@@ -2869,7 +2869,7 @@ void cmd_oem_devinfo(const char *arg, void *data, unsigned sz)
 #if WITH_DEBUG_LOG_BUF
 void cmd_oem_lk_log(const char *arg, void *data, unsigned sz)
 {
-	fastboot_send_buf(lk_log_getbuf(), lk_log_getsize());
+	fastboot_send_textbuf(lk_log_getbuf(), lk_log_getsize());
 	fastboot_okay("");
 }
 #endif
@@ -3404,7 +3404,7 @@ static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz) {
 
 
 		uint8_t* data = &rambuf->data[0];
-		fastboot_send_buf(data, rambuf->size);
+		fastboot_send_textbuf(data, rambuf->size);
 	}
 	else {
 		snprintf(buf, sizeof(buf), "last_kmsg not found at %p", rambuf);
