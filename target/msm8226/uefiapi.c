@@ -60,6 +60,8 @@ static key_event_source_t event_source = {
 //                            PLATFORM                                 //
 /////////////////////////////////////////////////////////////////////////
 
+extern struct mmc_device *dev;
+
 void api_platform_early_init(void) {
 	// from platform_early_init, but without GIC
 	board_init();
@@ -78,6 +80,14 @@ void api_platform_init(void) {
 	keys_init();
 	keys_add_source(&event_source);
 	event_source.keymap[0].enable_longpress = true;
+}
+
+void api_platform_uninit(void) {
+	// from target_uninit
+	mmc_put_card_to_sleep(dev);
+
+	// Disable HC mode before jumping to kernel
+	sdhci_mode_disable(&dev->host);
 }
 
 /////////////////////////////////////////////////////////////////////////
