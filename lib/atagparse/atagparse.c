@@ -568,6 +568,113 @@ out:
 }
 #endif
 
+#if DEVICE_TREE
+static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void* fdtsrc, int offsetsrc)
+{
+	int len;
+	int offset;
+	int ret;
+
+	offset = offsetsrc;
+	for (offset = fdt_first_property_offset(fdtsrc, offset);
+			(offset >= 0);
+			(offset = fdt_next_property_offset(fdtsrc, offset)))
+	{
+		const struct fdt_property *prop;
+
+		if (!(prop = fdt_get_property_by_offset(fdtsrc, offset, &len))) {
+			offset = -FDT_ERR_INTERNAL;
+			break;
+		}
+
+		const char* name = fdt_string(fdtsrc, fdt32_to_cpu(prop->nameoff));
+		dprintf(SPEW, "PROP: %s\n", name);
+
+		// blacklist our nodes
+		if(!strcmp(name, "bootargs"))
+			continue;
+		if(!strcmp(name, "linux,initrd-start"))
+			continue;
+		if(!strcmp(name, "linux,initrd-end"))
+			continue;
+
+		// set prop
+		ret = fdt_setprop(fdtdst, offsetdst, name, prop->data, len);
+		if(ret) {
+			dprintf(CRITICAL, "can't set prop: %s\n", fdt_strerror(ret));
+			continue;
+		}
+	}
+
+	return 0;
+}
+
+static int lkargs_fdt_insert_nodes(void *fdt, int target_offset) {
+	int depth;
+	int ret = 0;
+	uint32_t source_offset_chosen;
+	uint32_t target_offset_node;
+	int offset;
+
+	// get chosen node in source
+	ret = fdt_path_offset(tags_copy, "/chosen");
+	if (ret < 0) {
+		dprintf(CRITICAL, "Could not find chosen node.\n");
+		return ret;
+	}
+	source_offset_chosen = ret;
+
+	offset = source_offset_chosen;
+	for (depth = 0; (offset >= 0) && (depth >= 0);
+			offset = fdt_next_node(tags_copy, offset, &depth))
+	{
+		const char *name = fdt_get_name(tags_copy, offset, NULL);
+		dprintf(SPEW, "NODE: %s\n", name);
+
+		// get/create node
+		if(!strcmp(name, "chosen")) {
+			ret = target_offset;
+		}
+		else {
+			ret = fdt_subnode_offset(fdt, target_offset, name);
+			if (ret < 0) {
+				dprintf(SPEW, "creating node %s.\n", name);
+				ret = fdt_add_subnode(fdt, target_offset, name);
+				if (ret < 0) {
+					dprintf(CRITICAL, "can't create node %s: %s\n", name, fdt_strerror(ret));
+					continue;
+				}
+			}
+		}
+		target_offset_node = ret;
+
+		// insert all properties
+		lkargs_fdt_insert_properties(fdt, target_offset_node, tags_copy, offset);
+	}
+
+	return 0;
+}
+
+int lkargs_insert_chosen(void* fdt) {
+	int ret = 0;
+	uint32_t target_offset_chosen;
+
+	if(!tags_copy)
+		return 0;
+
+	// get chosen node
+	ret = fdt_path_offset(fdt, "/chosen");
+	if (ret < 0) {
+		dprintf(CRITICAL, "Could not find chosen node.\n");
+		return ret;
+	}
+	target_offset_chosen = ret;
+
+	// insert all nodes
+	return lkargs_fdt_insert_nodes(fdt, target_offset_chosen);
+	}
+#endif
+
 void atag_parse(void) {
 	dprintf(INFO, "bootargs: 0x%x 0x%x 0x%x 0x%x\n",
 		lk_boot_args[0],

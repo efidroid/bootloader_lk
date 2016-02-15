@@ -1361,6 +1361,8 @@ int update_device_tree(void *fdt, const char *cmdline,
 		}
 	}
 
+	lkargs_insert_chosen(fdt);
+
 	fdt_pack(fdt);
 
 #if ENABLE_PARTIAL_GOODS_SUPPORT
