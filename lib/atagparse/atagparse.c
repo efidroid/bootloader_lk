@@ -142,12 +142,43 @@ static int parse_atag(const struct tag *tag)
 	return t < t_end;
 }
 
+static struct tagtable* get_tagtable_entry(const struct tag *tag)
+{
+	struct tagtable *t;
+	struct tagtable *t_end = tagtable+ARRAY_SIZE(tagtable);
+
+	for (t = tagtable; t < t_end; t++) {
+		if (tag->hdr.tag == t->tag) {
+			return t;
+		}
+	}
+
+	return NULL;
+}
+
 static void parse_atags(const struct tag *t)
 {
 	for (; t->hdr.size; t = tag_next(t))
 		if (!parse_atag(t))
 			dprintf(INFO, "Ignoring unrecognised tag 0x%08x\n",
 				t->hdr.tag);
+}
+
+void* lkargs_atag_insert_unknown(void* tags) {
+	struct tag *tag = (struct tag *)tags;
+	const struct tag *t;
+
+	if(!tags_copy)
+		return tags;
+
+	for (t=tags_copy; t->hdr.size; t=tag_next(t)) {
+		if (!get_tagtable_entry(t)) {
+			memcpy(tag, t, t->hdr.size*sizeof(uint32_t));
+			tag = tag_next(tag);
+		}
+	}
+
+	return tag;
 }
 
 static unsigned *target_mem_atag_create(unsigned *ptr, uint32_t size, uint32_t addr)

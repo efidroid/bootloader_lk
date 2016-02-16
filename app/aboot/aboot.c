@@ -686,6 +686,7 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 	}
 
 	ptr = atag_cmdline(ptr, cmdline);
+	ptr = lkargs_atag_insert_unknown(ptr);
 	ptr = atag_end(ptr);
 }
 

@@ -19,5 +19,6 @@ bool lkargs_has_meminfo(void);
 unsigned *lkargs_gen_meminfo_atags(unsigned *ptr);
 uint32_t lkargs_gen_meminfo_fdt(void *fdt, uint32_t memory_node_offset);
 int lkargs_insert_chosen(void* fdt);
+void* lkargs_atag_insert_unknown(void* tags);
 
 #endif // ATAGPARSE_H
