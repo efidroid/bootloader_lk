@@ -34,6 +34,7 @@ MODULES += \
 DEFINES += \
 	SDRAM_SIZE=$(MEMSIZE) \
 	MEMBASE=$(MEMBASE) \
+	MEMSIZE=$(MEMSIZE) \
 	BASE_ADDR=$(BASE_ADDR) \
 	TAGS_ADDR=$(TAGS_ADDR) \
 	KERNEL_ADDR=$(KERNEL_ADDR) \
@@ -48,5 +49,10 @@ OBJS += \
 
 ifneq ($(DISPLAY_2NDSTAGE),1)
 OBJS += \
-    $(LOCAL_DIR)/target_display.o
+	$(LOCAL_DIR)/target_display.o
+endif
+
+ifdef WITH_KERNEL_UEFIAPI
+OBJS += \
+	$(LOCAL_DIR)/uefiapi.o
 endif
