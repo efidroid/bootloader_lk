@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -588,6 +588,7 @@
 #define HDMI_AUDIO_PKT_CTRL2    REG_HDMI(0x44)
 #define HDMI_ACR_PKT_CTRL       REG_HDMI(0x24)
 #define HDMI_INFOFRAME_CTRL0    REG_HDMI(0x2C)
+#define HDMI_INFOFRAME_CTRL1    REG_HDMI(0x30)
 #define HDMI_AUDIO_INFO0        REG_HDMI(0xE4)
 #define HDMI_AUDIO_INFO1        REG_HDMI(0xE8)
 #define HDMI_AUDIO_PKT_CTRL     REG_HDMI(0x20)
