@@ -87,6 +87,10 @@ __WEAK void reboot_device(unsigned reboot_reason)
 {
 }
 
+__WEAK void shutdown_device(void) {
+	dprintf(CRITICAL, "ERROR: shutdown_device is not implemented for this device \n");
+}
+
 __WEAK uint32_t is_user_force_reset(void)
 {
 	return 0;
