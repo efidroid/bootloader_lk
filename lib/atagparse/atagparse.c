@@ -205,6 +205,18 @@ unsigned *lkargs_gen_meminfo_atags(unsigned *ptr)
 	return ptr;
 }
 
+void* lkargs_get_mmap_callback(void* pdata, platform_mmap_cb_t cb) {
+	uint32_t i;
+
+	ASSERT(meminfo);
+
+	for(i=0; i<meminfo_count; i++) {
+		pdata = cb(pdata, (paddr_t) meminfo[i].start, (size_t)meminfo[i].size, false);
+	}
+
+	return pdata;
+}
+
 bool lkargs_has_meminfo(void) {
 	return !!meminfo;
 }
