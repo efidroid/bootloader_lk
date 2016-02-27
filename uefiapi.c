@@ -461,26 +461,10 @@ static int api_rtc_settime(unsigned int time) {
 //                              MMAP                                   //
 /////////////////////////////////////////////////////////////////////////
 
-#include <smem.h>
-
-typedef void* (*platform_mmap_cb_t)(void* pdata, unsigned long addr, unsigned long size, int reserved);
+#include <platform.h>
 
 __WEAK void* platform_get_mmap(void* pdata, platform_mmap_cb_t cb) {
-	uint32_t i;
-	struct smem_ram_ptable ram_ptable;
-
-	// Make sure RAM partition table is initialized
-	ASSERT(smem_ram_ptable_init(&ram_ptable));
-	for(i=0; i<ram_ptable.len; i++) {
-		struct smem_ram_ptn part = ram_ptable.parts[i];
-
-		if(part.category==SDRAM && part.type==SYS_MEMORY) {
-			/* Pass along all other usable memory regions to Linux */
-			pdata = cb(pdata, (paddr_t) part.start, (size_t)part.size, false);
-		}
-	}
-
-	return pdata;
+	return lkargs_get_mmap_callback(pdata, (platform_mmap_cb_t)cb);
 }
 
 static void* api_mmap_get_dram(void* pdata, lkapi_mmap_cb_t cb) {
