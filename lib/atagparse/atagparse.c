@@ -97,15 +97,20 @@ static int parse_atag_core(const struct tag *tag)
 	return 0;
 }
 
+static void add_meminfo(uint32_t start, uint32_t size) {
+	meminfo = realloc(meminfo, (++meminfo_count)*sizeof(*meminfo));
+	ASSERT(meminfo);
+
+	meminfo[meminfo_count-1].start = start;
+	meminfo[meminfo_count-1].size = size;
+}
+
 static int parse_atag_mem32(const struct tag *tag)
 {
 	dprintf(INFO, "0x%08x-0x%08x\n", tag->u.mem.start, tag->u.mem.start+tag->u.mem.size);
 
-	meminfo = realloc(meminfo, (++meminfo_count)*sizeof(*meminfo));
-	ASSERT(meminfo);
+	add_meminfo(tag->u.mem.start, tag->u.mem.size);
 
-	meminfo[meminfo_count-1].start = tag->u.mem.start;
-	meminfo[meminfo_count-1].size = tag->u.mem.size;
 	return 0;
 }
 
@@ -543,6 +548,7 @@ static int parse_fdt(void* fdt)
 				uint32_t size = dt_mem_next_cell(&reg);
 
 				dprintf(INFO, "0x%08x-0x%08x\n", base, base+size);
+				add_meminfo(base, size);
 			}
 		}
 	}
