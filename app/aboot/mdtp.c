@@ -58,7 +58,7 @@ static int mdtp_tzbsp_enc_hash_DIP(DIP_t *dec_dip, DIP_t *enc_dip);
 uint32_t g_mdtp_version = (((MDTP_MAJOR_VERSION << 16) & 0xFFFF0000) | (MDTP_MINOR_VERSION & 0x0000FFFF));
 
 int scm_random(uint32_t * rbuf, uint32_t  r_len);
-int check_aboot_addr_range_overlap(uint32_t start, uint32_t size);
+extern int check_aboot_addr_range_overlap(uintptr_t start, uint32_t size);
 
 /********************************************************************************/
 
@@ -249,7 +249,7 @@ static int verify_partition_block_hash(char *name,
 
 	/* initiating parameters for hash calculation using HW crypto */
 	target_crypto_init_params();
-	if (check_aboot_addr_range_overlap((uint32_t)buf, ROUNDUP(MDTP_FWLOCK_BLOCK_SIZE, block_size)))
+	if (check_aboot_addr_range_overlap((uintptr_t)buf, ROUNDUP(MDTP_FWLOCK_BLOCK_SIZE, block_size)))
 	{
 		dprintf(CRITICAL, "mdtp: verify_partition_block_hash: %s: image buffer address overlaps with aboot addresses.\n", name);
 		return -1;
