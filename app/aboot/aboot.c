@@ -202,6 +202,8 @@ struct verified_boot_state_name vbsn[] =
 #define DELAY_WAIT 30000
 static unsigned page_size = 0;
 static unsigned page_mask = 0;
+static unsigned mmc_blocksize = 0;
+static unsigned mmc_blocksize_mask = 0;
 static char ffbm_mode_string[FFBM_MODE_BUF_SIZE];
 static bool boot_into_ffbm;
 static char target_boot_params[64];
@@ -2520,7 +2522,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 			}
 
 			size = partition_get_size(index);
-			if (ROUND_TO_PAGE(sz,511) > size) {
+			if (ROUND_TO_PAGE(sz, mmc_blocksize_mask) > size) {
 				fastboot_fail("size too large");
 				return;
 			}
@@ -3551,6 +3553,8 @@ void aboot_init(const struct app_descriptor *app)
 	{
 		page_size = mmc_page_size();
 		page_mask = page_size - 1;
+		mmc_blocksize = mmc_get_device_blocksize();
+		mmc_blocksize_mask = mmc_blocksize - 1;
 	}
 	else
 	{
