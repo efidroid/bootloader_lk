@@ -40,7 +40,7 @@ void debug_dump_memory_words(void *mem, int len);
 
 void debug_set_trace_level(int trace_type, int level);
 
-void platform_halt(void);
+void platform_halt(void) __NO_RETURN;
 
 #if defined(__cplusplus)
 }
