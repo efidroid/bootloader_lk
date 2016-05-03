@@ -4,6 +4,9 @@
  * according to the OpenSSL license [found in ../../LICENSE].
  * ====================================================================
  */
+
+#pragma GCC diagnostic ignored "-Wunused-value"
+
 #include <openssl/opensslconf.h>
 #if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA256)
 
