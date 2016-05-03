@@ -424,8 +424,6 @@ void display_image_on_screen()
 		fbimg->header.height = SPLASH_IMAGE_HEIGHT;
 #if DISPLAY_TYPE_MIPI
 		fbimg->image = (unsigned char *)imageBuffer_rgb888;
-		if (config->bpp == 16)
-			fbimg->image = (unsigned char *)imageBuffer;
 #else
 		fbimg->image = (unsigned char *)imageBuffer;
 #endif
@@ -469,7 +467,7 @@ void fbcon_putImage(struct fbimage *fbimg, bool flag)
 	if(fbimg) {
 		logo_base = (unsigned char *)fbimg->image;
 	}
-	if (bytes_per_bpp == 3 || bytes_per_bpp == 2)
+	if (bytes_per_bpp == 3)
 	{
 		if(flag && header) {
 			if (header->width == config->width && header->height == config->height)
