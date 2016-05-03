@@ -163,7 +163,7 @@ struct clk *clk_get_parent(struct clk *clk);
  *
  * Returns success (0) or negative errno.
  */
-int clk_get_set_enable(char *id, unsigned long rate, bool enable);
+int clk_get_set_enable(const char *id, unsigned long rate, bool enable);
 
 struct clk_lookup {
 	const char		*con_id;

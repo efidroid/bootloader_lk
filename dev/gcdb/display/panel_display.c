@@ -59,7 +59,7 @@ static int dsi_platform_base_offset_adjust(uint32_t base)
 }
 
 static int dsi_panel_ctl_base_setup(struct msm_panel_info *pinfo,
-	char *panel_destination)
+	const char *panel_destination)
 {
 	int base_offset = 0, base1_offset = 0;
 

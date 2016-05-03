@@ -32,7 +32,7 @@
 #include <dev/pm8921_pwm.h>
 
 
-static char *clks[NUM_CLOCKS] = {
+static const char *clks[NUM_CLOCKS] = {
 	"1K", "32768", "19.2M"
 };
 

@@ -146,7 +146,7 @@ char *_CONF_get_string(const CONF *conf, const char *section, const char *name)
 				if (p != NULL) return(p);
 				}
 			}
-		vv.section="default";
+		vv.section=strdup("default");
 		vv.name=(char *)name;
 		v=lh_CONF_VALUE_retrieve(conf->data,&vv);
 		if (v != NULL)

@@ -110,7 +110,7 @@ static int aboot_save_boot_hash_mmc(uint32_t image_addr, uint32_t image_size);
 typedef void (*fastboot_cmd_fn) (const char *, void *, unsigned);
 
 struct fastboot_cmd_desc {
-	char * name;
+	const char * name;
 	fastboot_cmd_fn cb;
 };
 

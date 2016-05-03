@@ -388,13 +388,13 @@ SEND_RECOVERY_MSG:
 
 static int emmc_set_recovery_msg(struct recovery_message *out)
 {
-	char *ptn_name = "misc";
+	const char *ptn_name = "misc";
 	unsigned long long ptn = 0;
 	unsigned int size = ROUND_TO_PAGE(sizeof(*out),511);
 	unsigned char data[size];
 	int index = INVALID_PTN;
 
-	index = partition_get_index((const char *) ptn_name);
+	index = partition_get_index(ptn_name);
 	ptn = partition_get_offset(index);
 	mmc_set_lun(partition_get_lun(index));
 	if(ptn == 0) {
@@ -411,13 +411,13 @@ static int emmc_set_recovery_msg(struct recovery_message *out)
 
 static int emmc_get_recovery_msg(struct recovery_message *in)
 {
-	char *ptn_name = "misc";
+	const char *ptn_name = "misc";
 	unsigned long long ptn = 0;
 	unsigned int size;
 	int index = INVALID_PTN;
 
 	size = mmc_get_device_blocksize();
-	index = partition_get_index((const char *) ptn_name);
+	index = partition_get_index(ptn_name);
 	if (index < 0)
 	{
 		dprintf(CRITICAL, "%s: Partition not found\n", ptn_name);

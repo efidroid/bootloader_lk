@@ -130,7 +130,7 @@ static int str2nameval(const char* str, char** name, char** value) {
 }
 
 void cmdline_addall(const char* _cmdline, bool overwrite) {
-	char* sep = " ";
+	const char* sep = " ";
 
 	char* cmdline = strdup(_cmdline);
 	if(!cmdline) return;
