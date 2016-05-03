@@ -1782,7 +1782,7 @@ static int write_allow_oem_unlock(bool allow_unlock)
 
 	/*is_allow_unlock is a bool value stored at the LSB of last byte*/
 	buf[blocksize-1] = allow_unlock;
-	if (mmc_write(ptn + offset, blocksize, buf))
+	if (mmc_write(ptn + offset, blocksize, (void*)buf))
 	{
 		dprintf(CRITICAL, "Writing MMC failed\n");
 		return -1;
