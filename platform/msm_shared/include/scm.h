@@ -379,7 +379,7 @@ uint8_t switch_ce_chn_cmd(enum ap_ce_channel_type channel);
 int mdtp_cipher_dip_cmd(uint8_t *in_buf, uint32_t in_buf_size, uint8_t *out_buf,
                           uint32_t out_buf_size, uint32_t direction);
 
-void set_tamper_fuse_cmd();
+void set_tamper_fuse_cmd(void);
 
 /**
  * Reads the row data of the specified QFPROM row address.
@@ -394,14 +394,14 @@ void set_tamper_fuse_cmd();
  */
 int qfprom_read_row_cmd(uint32_t row_address, uint32_t addr_type, uint32_t *row_data, uint32_t *qfprom_api_status);
 
-int scm_halt_pmic_arbiter();
+int scm_halt_pmic_arbiter(void);
 int scm_call_atomic2(uint32_t svc, uint32_t cmd, uint32_t arg1, uint32_t arg2);
 int restore_secure_cfg(uint32_t id);
 
 void scm_elexec_call(paddr_t kernel_entry, paddr_t dtb_offset);
-void *get_canary();
+void *get_canary(void);
 /* API to configure XPU violations as fatal */
-int scm_xpu_err_fatal_init();
+int scm_xpu_err_fatal_init(void);
 
 /* APIs to support ARM scm standard
  * Takes arguments : x0-x5 and returns result
@@ -454,11 +454,11 @@ struct scm_response {
 /* Perform any scm init needed before making scm calls
  * Used for checking if armv8 SCM support present
  */
-void scm_init();
-bool is_secure_boot_enable();
+void scm_init(void);
+bool is_secure_boot_enable(void);
 
 /* Is armv8 supported */
-bool is_scm_armv8_support();
+bool is_scm_armv8_support(void);
 
 int scm_dload_mode(int mode);
 #endif

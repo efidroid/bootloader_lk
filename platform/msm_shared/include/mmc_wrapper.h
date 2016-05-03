@@ -34,7 +34,7 @@
 #define BOARD_KERNEL_PAGESIZE                2048
 /* Wrapper APIs */
 
-struct mmc_device *get_mmc_device();
+struct mmc_device *get_mmc_device(void);
 uint32_t mmc_get_psn(void);
 
 uint32_t mmc_read(uint64_t data_addr, uint32_t *out, uint32_t data_len);
@@ -42,9 +42,9 @@ uint32_t mmc_write(uint64_t data_addr, uint32_t data_len, void *in);
 uint32_t mmc_erase_card(uint64_t, uint64_t);
 uint64_t mmc_get_device_capacity(void);
 uint32_t mmc_erase_card(uint64_t addr, uint64_t len);
-uint32_t mmc_get_device_blocksize();
-uint32_t mmc_page_size();
-void mmc_device_sleep();
+uint32_t mmc_get_device_blocksize(void);
+uint32_t mmc_page_size(void);
+void mmc_device_sleep(void);
 void mmc_set_lun(uint8_t lun);
 uint8_t mmc_get_lun(void);
 void  mmc_read_partition_table(uint8_t arg);

@@ -405,10 +405,10 @@ struct fbcon_config* fbcon_display(void)
 }
 
 
-extern struct fbimage* fetch_image_from_partition();
+extern struct fbimage* fetch_image_from_partition(void);
 void fbcon_putImage(struct fbimage *fbimg, bool flag);
 
-void display_image_on_screen()
+void display_image_on_screen(void)
 {
 	struct fbimage default_fbimg, *fbimg;
 	bool flag = true;

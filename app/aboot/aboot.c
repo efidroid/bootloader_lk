@@ -927,7 +927,7 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 #endif
 }
 
-static bool check_format_bit()
+static bool check_format_bit(void)
 {
 	bool ret = false;
 	int index;
@@ -970,7 +970,7 @@ static bool check_format_bit()
 	return ret;
 }
 
-void boot_verifier_init()
+void boot_verifier_init(void)
 {
 
 	uint32_t boot_state;
@@ -1914,14 +1914,14 @@ void read_device_info(device_info *dev)
 	}
 }
 
-void reset_device_info()
+void reset_device_info(void)
 {
 	dprintf(ALWAYS, "reset_device_info called.");
 	device.is_tampered = 0;
 	write_device_info(&device);
 }
 
-void set_device_root()
+void set_device_root(void)
 {
 	dprintf(ALWAYS, "set_device_root called.");
 	device.is_tampered = 1;
@@ -3110,7 +3110,7 @@ void cmd_preflash(const char *arg, void *data, unsigned sz)
 	fastboot_okay("");
 }
 
-struct fbimage* splash_screen_flash();
+struct fbimage* splash_screen_flash(void);
 
 int splash_screen_check_header(struct fbimage *logo)
 {
@@ -3121,7 +3121,7 @@ int splash_screen_check_header(struct fbimage *logo)
 	return 0;
 }
 
-struct fbimage* splash_screen_flash()
+struct fbimage* splash_screen_flash(void)
 {
 	struct ptentry *ptn;
 	struct ptable *ptable;
@@ -3177,7 +3177,7 @@ err:
 	return NULL;
 }
 
-struct fbimage* splash_screen_mmc()
+struct fbimage* splash_screen_mmc(void)
 {
 	int index = INVALID_PTN;
 	unsigned long long ptn = 0;
@@ -3249,7 +3249,7 @@ err:
 }
 
 
-struct fbimage* fetch_image_from_partition()
+struct fbimage* fetch_image_from_partition(void)
 {
 	if (target_is_emmc_boot()) {
 		return splash_screen_mmc();
@@ -3923,7 +3923,7 @@ normal_boot:
 #endif
 }
 
-uint32_t get_page_size()
+uint32_t get_page_size(void)
 {
 	return page_size;
 }

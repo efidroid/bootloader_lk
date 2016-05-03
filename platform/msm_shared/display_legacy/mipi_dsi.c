@@ -125,7 +125,7 @@ struct mipi_dsi_panel_config *get_panel_info(void)
 	return NULL;
 }
 
-int dsi_cmd_dma_trigger_for_panel()
+int dsi_cmd_dma_trigger_for_panel(void)
 {
 	unsigned long ReadValue;
 	unsigned long count = 0;
@@ -822,7 +822,7 @@ int mipi_dsi_cmd_mode_config(unsigned short disp_width,
 	return NO_ERROR;
 }
 
-int mipi_dsi_on()
+int mipi_dsi_on(void)
 {
 	int ret = NO_ERROR;
 	unsigned long ReadValue;
@@ -845,7 +845,7 @@ int mipi_dsi_on()
 	return ret;
 }
 
-int mipi_dsi_off()
+int mipi_dsi_off(void)
 {
 	writel(0x01010101, DSI_INT_CTRL);
 	writel(0x13FF3BFF, DSI_ERR_INT_MASK0);
@@ -860,7 +860,7 @@ int mipi_dsi_off()
 	return NO_ERROR;
 }
 
-int mipi_cmd_trigger()
+int mipi_cmd_trigger(void)
 {
 	writel(0x1, DSI_CMD_MODE_MDP_SW_TRIGGER);
 

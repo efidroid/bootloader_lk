@@ -72,7 +72,7 @@ static int msm_fb_alloc(struct fbcon_config *fb)
 	return NO_ERROR;
 }
 
-int msm_display_config()
+int msm_display_config(void)
 {
 	int ret = NO_ERROR;
 	struct msm_panel_info *pinfo;
@@ -137,7 +137,7 @@ msm_display_config_out:
 	return ret;
 }
 
-int msm_display_on()
+int msm_display_on(void)
 {
 	int ret = NO_ERROR;
 	struct msm_panel_info *pinfo;
@@ -245,7 +245,7 @@ msm_display_init_out:
 	return ret;
 }
 
-int msm_display_off()
+int msm_display_off(void)
 {
 	int ret = NO_ERROR;
 	struct msm_panel_info *pinfo;
@@ -262,7 +262,7 @@ int msm_display_off()
 		break;
 	case MIPI_VIDEO_PANEL:
 		dprintf(INFO, "Turn off MIPI_VIDEO_PANEL.\n");
-		ret = mdp_dsi_video_off();
+		ret = mdp_dsi_video_off(pinfo);
 		if (ret)
 			goto msm_display_off_out;
 		ret = mipi_dsi_off();

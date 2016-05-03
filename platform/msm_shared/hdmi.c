@@ -91,7 +91,7 @@ void hdmi_msm_set_mode(int on)
 	}
 }
 
-struct hdmi_disp_mode_timing_type *hdmi_common_init_panel_info()
+struct hdmi_disp_mode_timing_type *hdmi_common_init_panel_info(void)
 {
 	return &hdmi_timing_default;
 }
@@ -119,7 +119,7 @@ void hdmi_msm_panel_init(struct msm_panel_info *pinfo)
 	pinfo->hdmi.v_pulse_width = hdmi_timing_default.vsync_width;
 }
 
-void hdmi_frame_ctrl_reg()
+void hdmi_frame_ctrl_reg(void)
 {
 	uint32_t hdmi_frame_ctrl;
 
@@ -129,7 +129,7 @@ void hdmi_frame_ctrl_reg()
 	writel(hdmi_frame_ctrl, HDMI_FRAME_CTRL);
 }
 
-void hdmi_video_setup()
+void hdmi_video_setup(void)
 {
 	uint32_t hsync_total = 0;
 	uint32_t vsync_total = 0;
@@ -317,7 +317,7 @@ int hdmi_msm_turn_on(void)
 	return 0;
 }
 
-int hdmi_dtv_init()
+int hdmi_dtv_init(void)
 {
 	uint32_t hsync_period;
 	uint32_t hsync_ctrl;
@@ -446,7 +446,7 @@ int hdmi_dtv_init()
 	return 0;
 }
 
-void hdmi_display_shutdown()
+void hdmi_display_shutdown(void)
 {
 	writel(0x0, MDP_BASE + DTV_BASE);
 	writel(0x8, MDP_BASE + 0x0038);

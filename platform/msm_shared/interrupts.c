@@ -37,7 +37,7 @@
 #include <uefiapi.h>
 #endif
 
-extern int target_supports_qgic();
+extern int target_supports_qgic(void);
 
 enum handler_return platform_irq(struct arm_iframe *frame)
 {

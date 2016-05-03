@@ -96,7 +96,7 @@ __WEAK void ce_clock_init(void)
 {
 }
 
-__WEAK addr_t get_bs_info_addr()
+__WEAK addr_t get_bs_info_addr(void)
 {
 	return 0;
 }
@@ -117,17 +117,17 @@ __WEAK int get_target_boot_params(const char *cmdline, const char *part,
 	return -1;
 }
 
-__WEAK uint32_t platform_get_smem_base_addr()
+__WEAK uint32_t platform_get_smem_base_addr(void)
 {
 	return (uint32_t)MSM_SHARED_BASE;
 }
 
-__WEAK uint32_t platform_boot_dev_isemmc()
+__WEAK uint32_t platform_boot_dev_isemmc(void)
 {
         return 1;
 }
 
-__WEAK uint32_t platform_get_boot_dev()
+__WEAK uint32_t platform_get_boot_dev(void)
 {
         return 0;
 }
@@ -137,21 +137,21 @@ __WEAK int boot_device_mask(int val)
 	return ((val & 0x3E) >> 1);
 }
 
-__WEAK uint32_t platform_detect_panel()
+__WEAK uint32_t platform_detect_panel(void)
 {
 	return 0;
 }
 
-__WEAK uint32_t use_hsonly_mode()
+__WEAK uint32_t use_hsonly_mode(void)
 {
 	return 0;
 }
 
-__WEAK uint32_t check_alarm_boot()
+__WEAK uint32_t check_alarm_boot(void)
 {
 	return 0;
 }
-__WEAK uint32_t platform_get_max_periph()
+__WEAK uint32_t platform_get_max_periph(void)
 {
 	return 128;
 }

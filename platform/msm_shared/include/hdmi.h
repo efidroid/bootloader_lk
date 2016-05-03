@@ -52,11 +52,11 @@
              (BVAL(n_msb, n_lsb, ~(n-m)) | BVAL(d_msb, d_lsb, (d-1)) \
              | BVAL(s_msb, s_lsb, s))
 
-extern int pm8901_mpp_enable();
-extern int pm8901_vs_enable();
-extern int pm8058_ldo_set_voltage();
-extern int pm8058_vreg_enable();
-extern void apq8064_ext_3p3V_enable();
+extern int pm8901_mpp_enable(void);
+extern int pm8901_vs_enable(void);
+extern int pm8058_ldo_set_voltage(void);
+extern int pm8058_vreg_enable(void);
+extern void apq8064_ext_3p3V_enable(void);
 void gpio_tlmm_config(uint32_t gpio, uint8_t func,
 		      uint8_t dir, uint8_t pull,
 		      uint8_t drvstr, uint32_t enable);

@@ -712,8 +712,8 @@ int mipi_dsi_video_mode_config(unsigned short disp_width,
 		unsigned low_pwr_stop_mode,
 		unsigned char eof_bllp_pwr,
 		unsigned char interleav);
-int mipi_dsi_on();
-int mipi_dsi_off();
+int mipi_dsi_on(void);
+int mipi_dsi_off(void);
 int mipi_dsi_cmds_tx(struct mipi_dsi_cmd *cmds, int count);
 int mipi_dsi_cmds_rx(char **rp, int len);
 int mipi_cmd_trigger(void);

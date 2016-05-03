@@ -169,9 +169,9 @@ int partition_get_index(const char *name);
 unsigned long long partition_get_size(int index);
 unsigned long long partition_get_offset(int index);
 uint8_t partition_get_lun(int index);
-unsigned int partition_read_table();
+unsigned int partition_read_table(void);
 unsigned int write_partition(unsigned size, unsigned char *partition);
-bool partition_gpt_exists();
+bool partition_gpt_exists(void);
 unsigned partition_get_count(void);
 const char* partition_get_name(int index);
 /* Return the partition offset & size to app layer

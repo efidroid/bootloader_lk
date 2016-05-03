@@ -459,7 +459,7 @@ void fastboot_send_textbuf(void* _data, size_t size) {
 	}
 }
 
-static void getvar_all()
+static void getvar_all(void)
 {
 	struct fastboot_var *var;
 	char getvar_all[64];

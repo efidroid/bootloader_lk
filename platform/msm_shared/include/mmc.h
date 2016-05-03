@@ -642,13 +642,13 @@ unsigned mmc_get_psn(void);
 unsigned int mmc_erase_card(unsigned long long data_addr,
 			    unsigned long long data_len);
 
-void mmc_mclk_reg_wr_delay();
-void mmc_boot_mci_clk_enable();
-void mmc_boot_mci_clk_disable();
-uint64_t mmc_get_device_capacity();
+void mmc_mclk_reg_wr_delay(void);
+void mmc_boot_mci_clk_enable(void);
+void mmc_boot_mci_clk_disable(void);
+uint64_t mmc_get_device_capacity(void);
 uint32_t mmc_get_device_blocksize(void);
 void mmc_put_card_to_sleep(struct mmc_device *dev);
 void mmc_set_lun(uint8_t lun);
-uint32_t mmc_page_size();
+uint32_t mmc_page_size(void);
 #endif
 #endif

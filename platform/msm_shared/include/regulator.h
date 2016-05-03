@@ -63,7 +63,7 @@
 #define LNBB_CLK_ID                            0x8
 #define RPM_CLK_BUFFER_PIN_CONTROL_ENABLE_NONE 0x0
 
-void regulator_enable();
-void regulator_disable();
+void regulator_enable(void);
+void regulator_disable(void);
 
 #endif

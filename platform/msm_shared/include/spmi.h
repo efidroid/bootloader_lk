@@ -136,7 +136,7 @@ struct pmic_arb_param{
 	uint8_t size;
 };
 
-typedef void (*spmi_callback)();
+typedef void (*spmi_callback)(void);
 
 void spmi_init(uint32_t, uint32_t);
 unsigned int pmic_arb_write_cmd(struct pmic_arb_cmd *cmd,
