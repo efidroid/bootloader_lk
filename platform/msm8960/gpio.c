@@ -35,6 +35,8 @@
 #include <sys/types.h>
 #include <smem.h>
 
+uint8_t platform_pmic_type(uint32_t pmic_type);
+
 void gpio_tlmm_config(uint32_t gpio, uint8_t func,
 		      uint8_t dir, uint8_t pull,
 		      uint8_t drvstr, uint32_t enable)
@@ -234,7 +236,7 @@ static struct pm8xxx_gpio_init pm8917_keypad_gpios[] = {
 	PM8XXX_GPIO_INPUT(PM_GPIO(37), PM_GPIO_PULL_UP_30),
 };
 
-void msm8960_keypad_gpio_init()
+void msm8960_keypad_gpio_init(void)
 {
 	int i = 0;
 	int num = 0;
@@ -248,7 +250,7 @@ void msm8960_keypad_gpio_init()
 	}
 }
 
-void msm8930_keypad_gpio_init()
+void msm8930_keypad_gpio_init(void)
 {
 	int i = 0;
 	int num = 0;
@@ -272,7 +274,7 @@ void msm8930_keypad_gpio_init()
 	}
 }
 
-void apq8064_keypad_gpio_init()
+void apq8064_keypad_gpio_init(void)
 {
 	int i = 0;
 	int num = 0;
@@ -321,7 +323,7 @@ static struct pm8xxx_gpio_init pm8921_display_gpios_apq[] = {
 	PM8921_GPIO_OUTPUT_BUFCONF(PM_GPIO(25), 1, LOW, CMOS),
 };
 
-void apq8064_display_gpio_init()
+void apq8064_display_gpio_init(void)
 {
 		int i = 0;
 		int num = 0;

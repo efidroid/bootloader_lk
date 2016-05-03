@@ -464,7 +464,6 @@ scan_qwerty_gpio_keypad(struct timer *timer, time_t now, void *arg)
 		}
 	}
 
-done:
 	event_signal(&qwerty_keypad->full_scan, false);
 	return INT_RESCHEDULE;
 }

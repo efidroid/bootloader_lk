@@ -41,12 +41,27 @@
 #include <err.h>
 #include <msm_panel.h>
 #include <arch/ops.h>
+#include <mdp5.h>
 
 extern void mdp_disable(void);
 extern int mipi_dsi_cmd_config(struct fbcon_config mipi_fb_cfg,
 			       unsigned short num_of_lanes);
 extern void mdp_shutdown(void);
 extern void mdp_start_dma(void);
+extern int mdp_setup_dma_p_video_mode(unsigned short disp_width,
+				unsigned short disp_height,
+				unsigned short img_width,
+				unsigned short img_height,
+				unsigned short hsync_porch0_fp,
+				unsigned short hsync_porch0_bp,
+				unsigned short vsync_porch0_fp,
+				unsigned short vsync_porch0_bp,
+				unsigned short hsync_width,
+				unsigned short vsync_width,
+				unsigned long input_img_addr,
+				unsigned short img_width_full_size,
+				unsigned short pack_pattern,
+				unsigned char ystride);
 
 #if DISPLAY_MIPI_PANEL_TOSHIBA
 static struct fbcon_config mipi_fb_cfg = {
@@ -145,11 +160,11 @@ int mipi_dsi_cmds_tx(struct mipi_dsi_cmd *cmds, int count)
 	uint32_t off;
 
 	/* Align pload at 8 byte boundry */
-	off = pload;
+	off = (uint32_t)pload;
 	off &= 0x07;
 	if (off)
 		off = 8 - off;
-	off += pload;
+	off += (uint32_t)pload;
 
 	cm = cmds;
 	for (i = 0; i < count; i++) {
@@ -360,7 +375,7 @@ config_dsi_video_mode(unsigned short disp_width, unsigned short disp_height,
 	       DSI_VIDEO_MODE_ACTIVE_V);
 
 	writel(((img_height + vsync_porch0_fp + vsync_porch0_bp) << 16)
-	       | img_width + hsync_porch0_fp + hsync_porch0_bp,
+	       | (img_width + hsync_porch0_fp + hsync_porch0_bp),
 	       DSI_VIDEO_MODE_TOTAL);
 
 	writel((hsync_width << 16) | 0, DSI_VIDEO_MODE_HSYNC);
@@ -578,6 +593,7 @@ void mipi_dsi_shutdown(void)
 	}
 }
 
+#if 0
 struct fbcon_config *mipi_init(void)
 {
 	int status = 0;
@@ -615,6 +631,7 @@ struct fbcon_config *mipi_init(void)
 
 	return &mipi_fb_cfg;
 }
+#endif
 
 int mipi_config(struct msm_fb_panel_data *panel)
 {

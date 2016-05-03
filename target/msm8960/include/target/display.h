@@ -29,6 +29,8 @@
 #ifndef _TARGET_MSM8960_DISPLAY_H
 #define _TARGET_MSM8960_DISPLAY_H
 
+#include <mipi_dsi.h>
+
 #define MIPI_FB_ADDR  0x89000000
 
 /* Toshiba MDT61 Mipi Panel */
@@ -48,5 +50,6 @@
 extern int mipi_dsi_phy_init(struct mipi_dsi_panel_config *);
 extern void mdp_setup_mdt61_video_dsi_config(void);
 extern void config_mdt61_dsi_video_mode(void);
+int target_cont_splash_screen(void);
 
 #endif

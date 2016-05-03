@@ -47,7 +47,7 @@
 
 static struct panel_config truly_wvga_video_panel_data = {
   "qcom,mdss_dsi_truly_wvga_video", "dsi:0:", "qcom,mdss-dsi-panel",
-  10, 0, "DISPLAY_1", 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+  10, 0, "DISPLAY_1", 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
 };
 
 /*---------------------------------------------------------------------------*/
@@ -260,8 +260,8 @@ static char truly_wvga_videooff_cmd1[] = {
 
 
 static struct mipi_dsi_cmd truly_wvga_video_off_command[] = {
-{ 0x4 , truly_wvga_videooff_cmd0},
-{ 0x4 , truly_wvga_videooff_cmd1}
+{ 0x4 , truly_wvga_videooff_cmd0, 0},
+{ 0x4 , truly_wvga_videooff_cmd1, 0}
 };
 #define TRULY_WVGA_VIDEO_OFF_COMMAND 2
 

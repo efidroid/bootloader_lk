@@ -342,5 +342,9 @@ void config_mmss_clk(uint32_t ns,
              uint32_t ns_addr, uint32_t md_addr, uint32_t cc_addr);
 void config_mdp_lut_clk(void);
 void mdp_clock_init(void);
+void clock_config_mmc(uint32_t interface, uint32_t freq);
+void clock_init_mmc(uint32_t interface);
+void clock_config_i2c(uint8_t id, uint32_t freq);
+void clock_config_uart_dm(uint8_t id);
 
 #endif

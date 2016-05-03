@@ -53,9 +53,9 @@
 
 static struct mmc_device *dev;
 
-extern void dmb(void);
 extern void msm8960_keypad_init(void);
 extern void msm8930_keypad_init(void);
+extern void apq8064_keypad_init(void);
 extern void panel_backlight_on(void);
 
 static unsigned mmc_sdc_base[] =

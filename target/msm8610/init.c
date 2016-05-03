@@ -51,6 +51,7 @@
 #include <platform/clock.h>
 #include <platform/timer.h>
 #include <crypto5_wrapper.h>
+#include <sdhci_msm.h>
 
 #if LONG_PRESS_POWER_ON
 #include <shutdown_detect.h>

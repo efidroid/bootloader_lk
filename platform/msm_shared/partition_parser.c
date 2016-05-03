@@ -1185,5 +1185,5 @@ unsigned partition_get_count(void)
 }
 
 const char* partition_get_name(int index) {
-	return partition_entries[index].name;
+	return (const char*)partition_entries[index].name;
 }

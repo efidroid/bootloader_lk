@@ -36,6 +36,7 @@
 #include <arch/arm/dcc.h>
 #include <dev/fbcon.h>
 #include <dev/uart.h>
+#include <dev/keys.h>
 #include <platform/timer.h>
 #include <platform.h>
 

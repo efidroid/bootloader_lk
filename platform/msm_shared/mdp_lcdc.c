@@ -55,11 +55,11 @@ int mdp_lcdc_config(struct msm_panel_info *pinfo,
 	struct lcdc_panel_info *lcdc = NULL;
 
 	if (pinfo == NULL)
-		return;
+		return ERR_INVALID_ARGS;
 
 	lcdc =  &(pinfo->lcdc);
 	if (lcdc == NULL)
-		return;
+		return ERR_INVALID_ARGS;
 
 	mdp_rev = mdp_get_revision();
 
@@ -71,7 +71,7 @@ int mdp_lcdc_config(struct msm_panel_info *pinfo,
 			pinfo->yres + lcdc->yres_pad);
 
 	/* write fb addr in MDP_DMA_P_BUF_ADDR */
-	writel(fb->base, MDP_DMA_P_BUF_ADDR);
+	writel((uint32_t)fb->base, MDP_DMA_P_BUF_ADDR);
 
 	/* write active region size*/
 	writel(mdp_rgb_size, MDP_DMA_P_SIZE);

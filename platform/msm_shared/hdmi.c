@@ -357,13 +357,13 @@ int hdmi_dtv_init()
 	writel(0xff0000, MDP_BASE + 0xb0078);
 
 	// overlay rgb setup RGB2
-	rgb_base = MDP_BASE + MDP4_RGB_BASE;
+	rgb_base = (void*)(MDP_BASE + MDP4_RGB_BASE);
 	rgb_base += (MDP4_RGB_OFF * 1);
 	writel(((timing->height << 16) | timing->width), rgb_base + 0x0000);
 	writel(0x0, rgb_base + 0x0004);
 	writel(((timing->height << 16) | timing->width), rgb_base + 0x0008);
 	writel(0x0, rgb_base + 0x000c);
-	writel(timing->base, rgb_base + 0x0010);	//FB address
+	writel((uint32_t)timing->base, rgb_base + 0x0010);	//FB address
 	writel((timing->width * timing->bpp / 8), rgb_base + 0x0040);
 	writel(0x2443F, rgb_base + 0x0050);	//format
 	writel(0x20001, rgb_base + 0x0054);	//pattern
@@ -384,13 +384,13 @@ int hdmi_dtv_init()
 	data = readl(MDP_BASE + 0x10100);
 
 	// Overlay cfg
-	overlay_base = MDP_BASE + MDP4_OVERLAYPROC1_BASE;
+	overlay_base = (void*)(MDP_BASE + MDP4_OVERLAYPROC1_BASE);
 
 	writel(0x0, MDP_BASE + 0x0038);	//EXternal interface select
 
 	data = ((timing->height << 16) | timing->width);
 	writel(data, overlay_base + 0x0008);
-	writel(timing->base, overlay_base + 0x000c);
+	writel((uint32_t)timing->base, overlay_base + 0x000c);
 	writel((timing->width * timing->bpp / 8), overlay_base + 0x0010);
 	writel(0x10, overlay_base + 0x104);
 	writel(0x10, overlay_base + 0x124);

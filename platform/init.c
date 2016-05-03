@@ -24,6 +24,7 @@
  */
 #include <err.h>
 #include <debug.h>
+#include <rand.h>
 #include <platform.h>
 #include <boot_stats.h>
 #include <platform/iomap.h>

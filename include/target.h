@@ -25,6 +25,8 @@
 #ifndef __TARGET_H
 #define __TARGET_H
 
+#include <stdlib.h>
+
 /* Target helper functions exposed to USB driver */
 typedef struct {
 	void (*mux_config) ();
@@ -63,6 +65,7 @@ uint32_t is_user_force_reset(void);
 bool target_display_panel_node(char *pbuf, uint16_t buf_size);
 void target_display_init(const char *panel_name);
 void target_display_shutdown(void);
+int target_display_get_base_offset(uint32_t base);
 
 uint32_t target_get_boot_device();
 

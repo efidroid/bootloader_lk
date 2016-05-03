@@ -24,6 +24,7 @@
  */
 #include <err.h>
 #include <debug.h>
+#include <platform.h>
 #include <target.h>
 #include <compiler.h>
 #include <dload_util.h>

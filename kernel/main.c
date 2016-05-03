@@ -30,6 +30,7 @@
 #include <platform.h>
 #include <target.h>
 #include <lib/heap.h>
+#include <lib/bio.h>
 #include <kernel/thread.h>
 #include <kernel/timer.h>
 #include <kernel/dpc.h>

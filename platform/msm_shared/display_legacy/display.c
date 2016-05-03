@@ -28,9 +28,12 @@
 
 #include <debug.h>
 #include <err.h>
+#include <malloc.h>
 #include <msm_panel.h>
 #include <mdp4.h>
 #include <mipi_dsi.h>
+#include <hdmi.h>
+#include <platform.h>
 
 #ifndef DISPLAY_TYPE_HDMI
 static int hdmi_dtv_init(void)

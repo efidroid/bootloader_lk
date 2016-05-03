@@ -76,7 +76,7 @@ static unsigned NAND_CFG0_RAW, NAND_CFG1_RAW;
 static unsigned ECC_BCH_CFG;
 
 static uint32_t enable_bch_ecc;
-static unsigned int *bbtbl;
+static int *bbtbl;
 
 #define CFG1_WIDE_FLASH (1U << 1)
 
@@ -3321,7 +3321,7 @@ static struct ptable *flash_ptable = NULL;
 
 void flash_init(void)
 {
-	int i = 0;
+	unsigned int i = 0;
 	ASSERT(flash_ptable == NULL);
 
 	flash_ptrlist = memalign(32, 1024);
@@ -3344,7 +3344,7 @@ void flash_init(void)
 	}
 	/* Create a bad block table */
 	bbtbl =
-	    (unsigned int *)malloc(sizeof(unsigned int) *
+	    (int *)malloc(sizeof(int) *
 				   flash_info.num_blocks);
 	for (i = 0; i < flash_info.num_blocks; i++)
 		bbtbl[i] = -1;

@@ -30,6 +30,7 @@
 #include <reg.h>
 #include <platform/iomap.h>
 #include <platform/clock.h>
+#include <platform/timer.h>
 #include <uart_dm.h>
 #include <gsbi.h>
 #include <mmc.h>

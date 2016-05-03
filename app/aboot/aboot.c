@@ -306,11 +306,11 @@ static void ptentry_to_tag(unsigned **ptr, struct ptentry *ptn)
 	*ptr += sizeof(struct atag_ptbl_entry) / sizeof(unsigned);
 }
 
-unsigned char *update_cmdline(const char * cmdline)
+char *update_cmdline(const char * cmdline)
 {
 	int cmdline_len = 0;
 	int have_cmdline = 0;
-	unsigned char *cmdline_final = NULL;
+	char *cmdline_final = NULL;
 	int pause_at_bootup = 0;
 	bool warm_boot = false;
 	bool gpt_exists = partition_gpt_exists();
@@ -442,9 +442,9 @@ unsigned char *update_cmdline(const char * cmdline)
 
 	if (cmdline_len > 0) {
 		const char *src;
-		unsigned char *dst;
+		char *dst;
 
-		cmdline_final = (unsigned char*) malloc((cmdline_len + 4) & (~3));
+		cmdline_final = (char*) malloc((cmdline_len + 4) & (~3));
 		ASSERT(cmdline_final != NULL);
 		memset((void *)cmdline_final, 0, sizeof(*cmdline_final));
 		dst = cmdline_final;
@@ -715,7 +715,7 @@ void boot_linux(void *kernel, unsigned *tags,
 		const char *cmdline, unsigned machtype,
 		void *ramdisk, unsigned ramdisk_size)
 {
-	unsigned char *final_cmdline;
+	char *final_cmdline;
 #if DEVICE_TREE
 	int ret = 0;
 #endif
@@ -727,18 +727,18 @@ void boot_linux(void *kernel, unsigned *tags,
 	ramdisk = (void *)PA((addr_t)ramdisk);
 
 	final_cmdline = update_cmdline((const char*)cmdline);
-	cmdline_addall((char*)final_cmdline, false);
+	cmdline_addall(final_cmdline, false);
 	free(final_cmdline);
 
 	int len = cmdline_length();
 	final_cmdline = malloc(len);
-	cmdline_generate((char*)final_cmdline, len);
+	cmdline_generate(final_cmdline, len);
 
 #if DEVICE_TREE
 	dprintf(INFO, "Updating device tree: start\n");
 
 	/* Update the Device Tree */
-	ret = update_device_tree((void *)tags,(const char *)final_cmdline, ramdisk, ramdisk_size);
+	ret = update_device_tree((void *)tags, final_cmdline, ramdisk, ramdisk_size);
 	if(ret)
 	{
 		dprintf(CRITICAL, "ERROR: Updating Device Tree Failed \n");
