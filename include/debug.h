@@ -63,7 +63,7 @@ int dgetc(char *c, bool wait);
 int dtstc(void);
 
 /* systemwide halts */
-void halt(void);
+void halt(void) __NO_RETURN;
 
 void dump_frame(void *frame);
 
@@ -79,7 +79,7 @@ uint32_t lastkmsg_get_size(void);
 void lastkmsg_init(void);
 #endif
 
-void _panic(void *caller, const char *fmt, ...) __PRINTFLIKE(2, 3);
+void _panic(void *caller, const char *fmt, ...) __PRINTFLIKE(2, 3) __NO_RETURN;
 #define panic(x...) _panic(__GET_CALLER(), x)
 
 #define PANIC_UNIMPLEMENTED panic("%s unimplemented\n", __PRETTY_FUNCTION__)
