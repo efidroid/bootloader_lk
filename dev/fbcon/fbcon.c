@@ -2,7 +2,7 @@
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,7 +11,7 @@
  *    notice, this list of conditions and the following disclaimer.
  *  * Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the 
+ *    the documentation and/or other materials provided with the
  *    distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -21,7 +21,7 @@
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
  * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
@@ -59,6 +59,7 @@ static struct fbcon_config *config = NULL;
 #define RGB565_YELLOW		0xffe0
 #define RGB565_ORANGE		0xfd20
 #define RGB565_RED		0xf800
+#define RGB565_GREEN		0x3666
 
 #define RGB888_BLACK            0x000000
 #define RGB888_WHITE            0xffffff
@@ -68,6 +69,7 @@ static struct fbcon_config *config = NULL;
 #define RGB888_YELLOW           0xffff00
 #define RGB888_ORANGE           0xffa500
 #define RGB888_RED              0xff0000
+#define RGB888_GREEN            0x00ff00
 
 #define FONT_WIDTH		5
 #define FONT_HEIGHT		12
@@ -89,7 +91,7 @@ static struct fb_color		fb_color_formats_555[] = {
 					[FBCON_YELLOW_MSG] = {RGB565_YELLOW, RGB565_BLACK},
 					[FBCON_ORANGE_MSG] = {RGB565_ORANGE, RGB565_BLACK},
 					[FBCON_RED_MSG] = {RGB565_RED, RGB565_BLACK},
-					[FBCON_LINE_COLOR] = {RGB565_WHITE, RGB565_WHITE},
+					[FBCON_GREEN_MSG] = {RGB565_GREEN, RGB565_BLACK},
 					[FBCON_SELECT_MSG_BG_COLOR] = {RGB565_WHITE, RGB565_BLUE}};
 
 static struct fb_color		fb_color_formats_888[] = {
@@ -100,7 +102,7 @@ static struct fb_color		fb_color_formats_888[] = {
 					[FBCON_YELLOW_MSG] = {RGB888_YELLOW, RGB888_BLACK},
 					[FBCON_ORANGE_MSG] = {RGB888_ORANGE, RGB888_BLACK},
 					[FBCON_RED_MSG] = {RGB888_RED, RGB888_BLACK},
-					[FBCON_LINE_COLOR] = {RGB888_WHITE, RGB888_WHITE},
+					[FBCON_GREEN_MSG] = {RGB888_GREEN, RGB888_BLACK},
 					[FBCON_SELECT_MSG_BG_COLOR] = {RGB888_WHITE, RGB888_BLUE}};
 
 
@@ -234,20 +236,21 @@ static void fbcon_scroll_up(void)
 	fbcon_flush();
 }
 
-void fbcon_draw_line()
+void fbcon_draw_line(uint32_t type)
 {
 	char *pixels;
-	uint32_t bg_color, tmp_color;
+	uint32_t line_color, tmp_color;
 	int i, j;
 
-	bg_color = fb_color_formats[FBCON_LINE_COLOR].bg;
+	/* set line's color via diffrent type */
+	line_color = fb_color_formats[type].fg;
 
 	pixels = config->base;
 	pixels += cur_pos.y * ((config->bpp / 8) * FONT_HEIGHT * config->width);
 	pixels += cur_pos.x * ((config->bpp / 8) * (FONT_WIDTH + 1));
 
 	for (i = 0; i < (int)config->width; i++) {
-		tmp_color = bg_color;
+		tmp_color = line_color;
 		for (j = 0; j < (int)(config->bpp / 8); j++) {
 			*pixels = (unsigned char) tmp_color;
 			tmp_color = tmp_color >> 8;

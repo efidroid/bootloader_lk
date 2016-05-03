@@ -351,8 +351,7 @@ int target_panel_clock(uint8_t enable, struct msm_panel_info *pinfo)
 		goto clks_disable;
 	}
 
-	mdss_dsi_auto_pll_20nm_config(pinfo->mipi.pll_0_base,
-		pinfo->mipi.pll_1_base, pll_data);
+	mdss_dsi_auto_pll_20nm_config(pinfo);
 
 	if (!dsi_pll_20nm_enable_seq(pinfo->mipi.pll_0_base)) {
 		ret = ERROR;

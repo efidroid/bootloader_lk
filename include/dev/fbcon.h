@@ -2,7 +2,7 @@
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,7 +11,7 @@
  *    notice, this list of conditions and the following disclaimer.
  *  * Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the 
+ *    the documentation and/or other materials provided with the
  *    distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -21,7 +21,7 @@
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
  * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
@@ -47,9 +47,7 @@ enum fbcon_msg_type {
 	FBCON_YELLOW_MSG,
 	FBCON_ORANGE_MSG,
 	FBCON_RED_MSG,
-
-	/* type for line color */
-	FBCON_LINE_COLOR,
+	FBCON_GREEN_MSG,
 
 	/* and the select message's background */
 	FBCON_SELECT_MSG_BG_COLOR,
@@ -91,7 +89,7 @@ void fbcon_flush(void);
 void fbcon_putc_factor(char c, int type, unsigned scale_factor);
 void fbcon_draw_msg_background(unsigned y_start, unsigned y_end,
 	uint32_t paint, int update);
-void fbcon_draw_line(void);
+void fbcon_draw_line(uint32_t type);
 uint32_t fbcon_get_current_line(void);
 uint32_t fbcon_get_current_bg(void);
 uint32_t fbcon_get_max_x(void);

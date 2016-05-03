@@ -2,7 +2,7 @@
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -634,6 +634,7 @@ uint32_t smem_get_ram_ptable_version(void);
 uint32_t smem_get_ram_ptable_len(void);
 void* smem_get_alloc_entry(smem_mem_type_t type, uint32_t* size);
 uint32_t get_ddr_start();
+size_t smem_get_hw_platform_name(void *buf, uint32_t buf_size);
 
 const char* smem_attr2str(int i);
 const char* smem_category2str(int i);
