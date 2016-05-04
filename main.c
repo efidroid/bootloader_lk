@@ -34,12 +34,13 @@ int critical_section_count = 1;
 void kmain(void) __NO_RETURN __EXTERNALLY_VISIBLE;
 void kmain(void)
 {
-	void (*entry)(void*) __NO_RETURN = (void*)(EDK2_BASE);
+    void (*entry)(void *) __NO_RETURN = (void *)(EDK2_BASE);
 
-	// BOOT :D
-	entry(&uefiapi);
+    // BOOT :D
+    entry(&uefiapi);
 }
 
-void thread_sleep(time_t delay) {
+void thread_sleep(time_t delay)
+{
     mdelay(delay);
 }

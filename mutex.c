@@ -44,12 +44,12 @@
 void mutex_init(mutex_t *m)
 {
 #if MUTEX_CHECK
-//	ASSERT(m->magic != MUTEX_MAGIC);
+//  ASSERT(m->magic != MUTEX_MAGIC);
 #endif
 
-	m->magic = MUTEX_MAGIC;
-	m->count = 0;
-	m->holder = 0;
+    m->magic = MUTEX_MAGIC;
+    m->count = 0;
+    m->holder = 0;
 }
 
 /**
@@ -61,14 +61,14 @@ void mutex_init(mutex_t *m)
 void mutex_destroy(mutex_t *m)
 {
 #if MUTEX_CHECK
-	ASSERT(m->magic == MUTEX_MAGIC);
+    ASSERT(m->magic == MUTEX_MAGIC);
 #endif
 
-	m->magic = 0;
-	m->count = 0;
-    
-    if(m->count-- > 0)
-    	exit_critical_section();
+    m->magic = 0;
+    m->count = 0;
+
+    if (m->count-- > 0)
+        exit_critical_section();
 }
 
 /**
@@ -81,17 +81,17 @@ void mutex_destroy(mutex_t *m)
  */
 status_t mutex_acquire(mutex_t *m)
 {
-	status_t ret = NO_ERROR;
+    status_t ret = NO_ERROR;
 
-	enter_critical_section();
+    enter_critical_section();
 
 #if MUTEX_CHECK
-	ASSERT(m->magic == MUTEX_MAGIC);
+    ASSERT(m->magic == MUTEX_MAGIC);
 #endif
 
-	m->count++;
+    m->count++;
 
-	return ret;
+    return ret;
 }
 
 /**
@@ -100,13 +100,13 @@ status_t mutex_acquire(mutex_t *m)
 status_t mutex_release(mutex_t *m)
 {
 #if MUTEX_CHECK
-	ASSERT(m->magic == MUTEX_MAGIC);
+    ASSERT(m->magic == MUTEX_MAGIC);
 #endif
 
-	m->count--;
+    m->count--;
 
-	exit_critical_section();
+    exit_critical_section();
 
-	return NO_ERROR;
+    return NO_ERROR;
 }
 
