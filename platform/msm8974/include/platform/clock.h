@@ -105,6 +105,7 @@ void platform_clock_init(void);
 void clock_init_mmc(uint32_t interface);
 void clock_config_mmc(uint32_t interface, uint32_t freq);
 void clock_config_uart_dm(uint8_t id);
+void clock_config_blsp_i2c(uint8_t blsp_id, uint8_t qup_id);
 void hsusb_clock_init(void);
 void clock_config_ce(uint8_t instance);
 void mdp_clock_init(void);

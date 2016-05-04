@@ -29,12 +29,14 @@
 #include <debug.h>
 #include <platform/iomap.h>
 #include <platform/irqs.h>
+#include <platform/timer.h>
 #include <reg.h>
 #include <target.h>
 #include <platform.h>
 #include <dload_util.h>
 #include <uart_dm.h>
 #include <mmc_sdhci.h>
+#include <sdhci_msm.h>
 #include <platform/clock.h>
 #include <platform/gpio.h>
 #include <spmi.h>
@@ -154,7 +156,7 @@ void target_early_init(void)
 }
 
 /* Return 1 if vol_up pressed */
-int target_volume_up()
+int target_volume_up(void)
 {
 	uint8_t status = 0;
 
@@ -170,13 +172,13 @@ int target_volume_up()
 }
 
 /* Return 1 if vol_down pressed */
-uint32_t target_volume_down()
+uint32_t target_volume_down(void)
 {
 	/* Volume down button tied in with PMIC RESIN. */
 	return pm8x41_resin_status();
 }
 
-static void target_keystatus()
+static void target_keystatus(void)
 {
 	keys_init();
 
@@ -188,7 +190,7 @@ static void target_keystatus()
 }
 
 /* Set up params for h/w CRYPTO_ENGINE. */
-void target_crypto_init_params()
+void target_crypto_init_params(void)
 {
 	struct crypto_init_params ce_params;
 
@@ -214,7 +216,7 @@ void target_crypto_init_params()
 	crypto_init_params(&ce_params);
 }
 
-void target_sdc_init()
+void target_sdc_init(void)
 {
 	struct mmc_config_data config = {0};
 
@@ -309,7 +311,7 @@ void target_detect(struct board_data *board)
 	*/
 }
 
-bool target_is_cdp_qvga()
+bool target_is_cdp_qvga(void)
 {
 	return board_hardware_subtype() == HW_PLATFORM_SUBTYPE_QVGA;
 }
@@ -415,7 +417,7 @@ void reboot_device(unsigned reboot_reason)
 }
 
 /* Configure PMIC and Drop PS_HOLD for shutdown */
-void shutdown_device()
+void shutdown_device(void)
 {
 	dprintf(CRITICAL, "Going down for shutdown.\n");
 
@@ -484,7 +486,7 @@ void target_usb_init(void)
 	writel(val, USB_USBCMD);
 }
 
-uint8_t target_panel_auto_detect_enabled()
+uint8_t target_panel_auto_detect_enabled(void)
 {
 	uint8_t ret = 0;
 	uint32_t hw_subtype = board_hardware_subtype();
@@ -511,7 +513,7 @@ uint8_t target_panel_auto_detect_enabled()
 
 static uint8_t splash_override;
 /* Returns 1 if target supports continuous splash screen. */
-int target_cont_splash_screen()
+int target_cont_splash_screen(void)
 {
         uint8_t splash_screen = 0;
         if(!splash_override) {
@@ -556,7 +558,7 @@ unsigned target_pause_for_battery_charge(void)
 		return 0;
 }
 
-unsigned target_baseband()
+unsigned target_baseband(void)
 {
 	return board_baseband();
 }
@@ -606,7 +608,7 @@ static void set_sdc_power_ctrl(uint8_t slot)
 	tlmm_set_pull_ctrl(sdc1_pull_cfg, ARRAY_SIZE(sdc1_pull_cfg));
 }
 
-void *target_mmc_device()
+void *target_mmc_device(void)
 {
 	return (void *) dev;
 }

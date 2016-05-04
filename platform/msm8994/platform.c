@@ -176,7 +176,7 @@ uint32_t platform_get_sclk_count(void)
 	return readl(MPM2_MPM_SLEEP_TIMETICK_COUNT_VAL);
 }
 
-int platform_is_msm8994()
+int platform_is_msm8994(void)
 {
 	uint32_t platform = board_platform_id();
 	if ((platform == APQ8094) || (platform == MSM8994))
@@ -185,7 +185,7 @@ int platform_is_msm8994()
 		return 0;
 }
 
-int platform_is_msm8992()
+int platform_is_msm8992(void)
 {
 	int ret;
 
@@ -202,7 +202,7 @@ int platform_is_msm8992()
 	return ret;
 }
 
-addr_t get_bs_info_addr()
+addr_t get_bs_info_addr(void)
 {
 	if (platform_is_msm8994())
 		return ((addr_t)BS_INFO_ADDR);

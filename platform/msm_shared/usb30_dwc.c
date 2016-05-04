@@ -59,14 +59,14 @@
 #define ERR(...) dprintf(ALWAYS, __VA_ARGS__)
 
 /* debug only: enum string lookup for debug purpose */
-char* ss_link_state_lookup[20];
-char* hs_link_state_lookup[20];
-char* event_lookup_device[20];
-char* event_lookup_ep[20];
-char* dev_ctrl_state_lookup[20];
-char* ep_state_lookup[20];
-char* speed_lookup[20];
-char* cmd_lookup[20];
+const char* ss_link_state_lookup[20];
+const char* hs_link_state_lookup[20];
+const char* event_lookup_device[20];
+const char* event_lookup_ep[20];
+const char* dev_ctrl_state_lookup[20];
+const char* ep_state_lookup[20];
+const char* speed_lookup[20];
+const char* cmd_lookup[20];
 
 /* debug only: initialize the enum lookup */
 void dwc_debug_lookup_init(void)

@@ -110,7 +110,7 @@ int rpm_smd_send_data(uint32_t *data, uint32_t len, msg_type type)
 uint32_t rpm_smd_recv_data(uint32_t* len)
 {
 	rpm_ack_msg *resp;
-	msg_type type;
+	msg_type type = 0;
 	uint32_t ret = 0;
 	/* As per the current design rpm response does not exceed 20 bytes */
 	uint32_t response[5];

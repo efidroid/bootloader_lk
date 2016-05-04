@@ -46,6 +46,6 @@ void mdp_clock_init(void);
 void clock_ce_enable(uint8_t instance);
 void clock_ce_disable(uint8_t instance);
 void clock_usb30_init(void);
-void clock_reset_usb_phy();
+void clock_reset_usb_phy(void);
 
 #endif

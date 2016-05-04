@@ -35,6 +35,7 @@
 #include <platform/iomap.h>
 #include <platform/clock.h>
 #include <platform/timer.h>
+#include <arch/defines.h>
 
 #include "msm_panel.h"
 
@@ -258,6 +259,7 @@ struct edp_aux_ctrl {
 void edp_phy_pll_reset(void);
 void edp_mainlink_reset(void);
 void edp_aux_reset(void);
+void edp_aux_enable(void);
 void edp_phy_powerup(int enable);
 void edp_lane_power_ctrl(int max_lane, int up);
 
@@ -269,9 +271,11 @@ void edp_hw_powerup(int enable);
 void edp_config_clk(void);
 void edp_unconfig_clk(void);
 void edp_phy_misc_cfg(void);
+void edp_phy_vm_pe_init(void);
 int edp_on(void);
 int edp_off(void);
 int edp_config(void *pdata);
+void edp_isr_poll(void);
 void mdss_edp_dpcd_cap_read(void);
 void mdss_edp_dpcd_status_read(void);
 void mdss_edp_edid_read(void);

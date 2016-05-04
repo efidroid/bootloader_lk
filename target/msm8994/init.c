@@ -97,7 +97,7 @@ struct mmc_device *dev;
 struct ufs_dev ufs_device;
 
 extern void ulpi_write(unsigned val, unsigned reg);
-extern int platform_is_msm8994();
+extern int platform_is_msm8994(void);
 
 void target_early_init(void)
 {
@@ -107,7 +107,7 @@ void target_early_init(void)
 }
 
 /* Return 1 if vol_up pressed */
-int target_volume_up()
+int target_volume_up(void)
 {
 	static uint8_t first_time = 0;
 	uint8_t status = 0;
@@ -135,12 +135,12 @@ int target_volume_up()
 }
 
 /* Return 1 if vol_down pressed */
-uint32_t target_volume_down()
+uint32_t target_volume_down(void)
 {
 	return pm8x41_resin_status();
 }
 
-static void target_keystatus()
+static void target_keystatus(void)
 {
 	keys_init();
 
@@ -288,7 +288,7 @@ static void set_sdc_power_ctrl(uint8_t slot)
 	tlmm_set_pull_ctrl(sdc1_rclk_cfg, ARRAY_SIZE(sdc1_rclk_cfg));
 }
 
-void target_sdc_init()
+void target_sdc_init(void)
 {
 	struct mmc_config_data config = {0};
 
@@ -325,7 +325,7 @@ void target_sdc_init()
 	}
 }
 
-void *target_mmc_device()
+void *target_mmc_device(void)
 {
 	if (platform_boot_dev_isemmc())
 		return (void *) dev;
@@ -430,7 +430,7 @@ void target_detect(struct board_data *board)
 
 static uint8_t splash_override;
 /* Returns 1 if target supports continuous splash screen. */
-int target_cont_splash_screen()
+int target_cont_splash_screen(void)
 {
 	uint8_t splash_screen = 0;
 	if(!splash_override) {
@@ -477,7 +477,7 @@ void target_baseband_detect(struct board_data *board)
 		ASSERT(0);
 	};
 }
-unsigned target_baseband()
+unsigned target_baseband(void)
 {
 	return board_baseband();
 }
@@ -544,7 +544,7 @@ int emmc_recovery_init(void)
 	return _emmc_recovery_init();
 }
 
-target_usb_iface_t* target_usb30_init()
+target_usb_iface_t* target_usb30_init(void)
 {
 	target_usb_iface_t *t_usb_iface;
 
@@ -561,7 +561,7 @@ target_usb_iface_t* target_usb30_init()
 }
 
 /* identify the usb controller to be used for the target */
-const char * target_usb_controller()
+const char * target_usb_controller(void)
 {
     if(board_hardware_id() == HW_PLATFORM_DRAGON)
 	    return "ci";
@@ -569,7 +569,7 @@ const char * target_usb_controller()
 }
 
 /* mux hs phy to route to dwc controller */
-static void phy_mux_configure_with_tcsr()
+static void phy_mux_configure_with_tcsr(void)
 {
 	/* As per the hardware team, set the mux for snps controller */
 	RMWREG32(TCSR_PHSS_USB2_PHY_SEL, 0x0, 0x1, 0x1);
@@ -584,13 +584,13 @@ void target_usb_phy_mux_configure(void)
 	}
 }
 
-uint32_t target_override_pll()
+uint32_t target_override_pll(void)
 {
 	return 1;
 }
 
 /* Set up params for h/w CE. */
-void target_crypto_init_params()
+void target_crypto_init_params(void)
 {
 	struct crypto_init_params ce_params;
 
@@ -625,7 +625,7 @@ crypto_engine_type board_ce_type(void)
 	return CRYPTO_ENGINE_TYPE_HW;
 }
 
-void shutdown_device()
+void shutdown_device(void)
 {
 	dprintf(CRITICAL, "Going down for shutdown.\n");
 
@@ -642,7 +642,7 @@ void shutdown_device()
 	ASSERT(0);
 }
 
-uint32_t target_ddr_cfg_val()
+uint32_t target_ddr_cfg_val(void)
 {
 	return DDR_CFG_DLY_VAL;
 }

@@ -36,8 +36,6 @@
 #include <baseband.h>
 #include <platform.h>
 
-#define MB (1024u * 1024u)
-
 #define PHYS_MEM_ADDR 0x80000000
 
 typedef struct {

@@ -38,6 +38,8 @@
 #include <blsp_qup.h>
 #include <pm8x41.h>
 
+extern int platform_is_8974(void);
+
 void hsusb_clock_init(void)
 {
 	int ret;

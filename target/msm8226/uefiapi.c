@@ -15,6 +15,7 @@
 #include <platform/clock.h>
 #include <platform/gpio.h>
 #include <partition_parser.h>
+#include <sdhci_msm.h>
 
 #include <uefiapi.h>
 

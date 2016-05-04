@@ -32,7 +32,7 @@
 #include <debug.h>
 #include <qtimer.h>
 
-__WEAK int platform_is_msm8994()
+__WEAK int platform_is_msm8994(void)
 {
 	return 0;
 }

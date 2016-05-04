@@ -225,7 +225,7 @@ int mdss_edp_phy_pll_ready(void)
         }
 
         if(cnt == 0) {
-                dprintf("%s: PLL NOT ready\n", __func__);
+                dprintf(SPEW, "%s: PLL NOT ready\n", __func__);
                 return 0;
         }
         else

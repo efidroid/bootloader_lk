@@ -132,18 +132,18 @@ uint32_t platform_get_sclk_count(void)
 	return readl(MPM2_MPM_SLEEP_TIMETICK_COUNT_VAL);
 }
 
-addr_t get_bs_info_addr()
+addr_t get_bs_info_addr(void)
 {
 	return BS_INFO_ADDR;
 }
 
-uint32_t platform_get_qmp_rev()
+uint32_t platform_get_qmp_rev(void)
 {
 	return readl(USB3_PHY_REVISION_ID3) << 24 | readl(USB3_PHY_REVISION_ID2) << 16 |
 		   readl(USB3_PHY_REVISION_ID1) << 8 | readl(USB3_PHY_REVISION_ID0);
 }
 
-uint32_t platform_get_max_periph()
+uint32_t platform_get_max_periph(void)
 {
 	return 256;
 }

@@ -619,7 +619,7 @@ err:
 	return ret;
 }
 
-static int qseecom_load_commonlib_image(char * app_name)
+static int qseecom_load_commonlib_image(const char * app_name)
 {
 	int index = INVALID_PTN;
 	unsigned long long ptn = 0;

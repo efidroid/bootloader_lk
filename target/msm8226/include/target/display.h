@@ -122,4 +122,11 @@ enum target_subtype {
 	HW_PLATFORM_SUBTYPE_G_QVGA = 5,
 };
 
+uint8_t target_panel_auto_detect_enabled(void);
+int target_display_pre_on(void);
+int target_display_pre_off(void);
+int target_display_post_on(void);
+int target_display_post_off(void);
+int target_cont_splash_screen(void);
+
 #endif
