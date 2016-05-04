@@ -25,6 +25,7 @@
 #include <compiler.h>
 #include <sys/types.h>
 #include <uefiapi.h>
+#include <platform/timer.h>
 
 /* the global critical section count */
 int critical_section_count = 1;
