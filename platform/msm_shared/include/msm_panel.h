@@ -377,6 +377,7 @@ struct labibb_desc {
 	char pwr_up_delay; /* ndx to => 1250, 2500, 5000 and 10000 us */
 	char pwr_down_delay; /* ndx to => 1250, 2500, 5000 and 10000 us */
 	char ibb_discharge_en;
+	bool swire_control;
 };
 
 struct msm_panel_info {
