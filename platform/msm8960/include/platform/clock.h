@@ -336,6 +336,9 @@ struct pll_rate {
 #define DSI_MD_VAL            0x000003FB
 #define DSI_CC_VAL            0x00000080
 
+void mmss_clock_init(void);
+void mmss_clock_disable(void);
+void liquid_mmss_clock_init(void);
 void config_mmss_clk(uint32_t ns,
              uint32_t md,
              uint32_t cc,

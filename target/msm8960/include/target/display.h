@@ -47,6 +47,9 @@
 #define MIPI_VSYNC_BACK_PORCH_LINES  2
 #define MIPI_VSYNC_FRONT_PORCH_LINES 7
 
+void mipi_chimei_video_wxga_init(struct msm_panel_info *pinfo);
+void lvds_chimei_wxga_init(struct msm_panel_info *pinfo);
+void mipi_toshiba_video_wsvga_init(struct msm_panel_info *pinfo);
 extern int mipi_dsi_phy_init(struct mipi_dsi_panel_config *);
 extern void mdp_setup_mdt61_video_dsi_config(void);
 extern void config_mdt61_dsi_video_mode(void);

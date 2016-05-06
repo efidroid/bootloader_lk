@@ -31,14 +31,19 @@
 #include <dev/pm8921.h>
 #include <board.h>
 #include <mdp4.h>
+#include <hdmi.h>
 #include <target/display.h>
 #include <target/board.h>
+#include <platform/clock.h>
+#include <platform/gpio.h>
+#include <platform/timer.h>
 
 static struct msm_fb_panel_data panel;
 static uint8_t display_enable;
 
 extern int msm_display_init(struct msm_fb_panel_data *pdata);
-extern int msm_display_off();
+extern int msm_display_off(void);
+extern void hdmi_power_init(void);
 
 static int apq8064_lvds_panel_power(int enable)
 {
@@ -270,7 +275,7 @@ void target_display_init(const char *panel_name)
 		 */
 		panel.clk_func = msm8960_liquid_mipi_panel_clock;
 		panel.power_func = msm8960_liquid_mipi_panel_power;
-		panel.fb.base = MIPI_FB_ADDR;
+		panel.fb.base = (void*)MIPI_FB_ADDR;
 		panel.fb.width =  panel.panel_info.xres;
 		panel.fb.height =  panel.panel_info.yres;
 		panel.fb.stride =  panel.panel_info.xres;
@@ -282,7 +287,7 @@ void target_display_init(const char *panel_name)
 		lvds_chimei_wxga_init(&(panel.panel_info));
 		panel.clk_func = apq8064_lvds_clock;
 		panel.power_func = apq8064_lvds_panel_power;
-		panel.fb.base = 0x80B00000;
+		panel.fb.base = (void*)0x80B00000;
 		panel.fb.width =  panel.panel_info.xres;
 		panel.fb.height =  panel.panel_info.yres;
 		panel.fb.stride =  panel.panel_info.xres;
@@ -294,7 +299,7 @@ void target_display_init(const char *panel_name)
 		mipi_toshiba_video_wsvga_init(&(panel.panel_info));
 		panel.clk_func = fusion3_mtp_clock;
 		panel.power_func = fusion3_mtp_panel_power;
-		panel.fb.base = 0x89000000;
+		panel.fb.base = (void*)0x89000000;
 		panel.fb.width =  panel.panel_info.xres;
 		panel.fb.height =  panel.panel_info.yres;
 		panel.fb.stride =  panel.panel_info.xres;
@@ -308,7 +313,7 @@ void target_display_init(const char *panel_name)
 		mipi_toshiba_video_wsvga_init(&(panel.panel_info));
 		panel.clk_func = msm8960_mipi_panel_clock;
 		panel.power_func = msm8960_mipi_panel_power;
-		panel.fb.base = 0x89000000;
+		panel.fb.base = (void*)0x89000000;
 		panel.fb.width =  panel.panel_info.xres;
 		panel.fb.height =  panel.panel_info.yres;
 		panel.fb.stride =  panel.panel_info.xres;
@@ -323,7 +328,7 @@ void target_display_init(const char *panel_name)
 
 		panel.clk_func   = mpq8064_hdmi_panel_clock;
 		panel.power_func = mpq8064_hdmi_panel_power;
-		panel.fb.base    = 0x89000000;
+		panel.fb.base    = (void*)0x89000000;
 		panel.fb.width   = panel.panel_info.xres;
 		panel.fb.height  = panel.panel_info.yres;
 		panel.fb.stride  = panel.panel_info.xres;

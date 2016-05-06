@@ -69,6 +69,8 @@ void hdmi_msm_init_phy(void);
 void hdmi_display_shutdown(void);
 void hdmi_msm_reset_core(void);
 void hdmi_set_fb_addr(void *addr);
+void hdmi_app_clk_init(int);
+void hdmi_msm_panel_init(struct msm_panel_info *pinfo);
 
 struct hdmi_disp_mode_timing_type {
 	uint32_t height;

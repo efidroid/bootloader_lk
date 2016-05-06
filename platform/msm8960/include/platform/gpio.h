@@ -62,5 +62,6 @@ void gpio_set(uint32_t gpio, uint32_t dir);
 void msm8960_keypad_gpio_init(void);
 void msm8930_keypad_gpio_init(void);
 void apq8064_keypad_gpio_init(void);
+void apq8064_display_gpio_init(void);
 
 #endif

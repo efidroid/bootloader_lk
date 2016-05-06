@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <list.h>
 #include <platform.h>
+#include <assert.h>
 
 /* these are just the ascii values for the chars */
 #define KEY_0		0x30
