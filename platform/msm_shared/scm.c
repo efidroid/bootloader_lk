@@ -1072,6 +1072,8 @@ int scm_random(uint32_t * rbuf, uint32_t  r_len)
 		scm_arg.x2 = (uint32_t) rbuf;
 		scm_arg.x3 = r_len;
 
+		arch_clean_invalidate_cache_range((addr_t) rbuf, r_len);
+
 		ret = scm_call2(&scm_arg, NULL);
 		if (!ret)
 			arch_clean_invalidate_cache_range((addr_t) rbuf, r_len);
