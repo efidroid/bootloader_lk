@@ -739,9 +739,15 @@ int udc_init(struct udc_device *dev)
 		/* language 0x0409 is US English */
 		struct udc_descriptor *desc =
 		    udc_descriptor_alloc(TYPE_STRING, 0, 4);
-		desc->data[2] = 0x09;
-		desc->data[3] = 0x04;
-		udc_descriptor_register(desc);
+		if (desc)
+		{
+			desc->data[2] = 0x09;
+			desc->data[3] = 0x04;
+			udc_descriptor_register(desc);
+		} else {
+			dprintf(CRITICAL, "Failed to allocate descriptor\n");
+			ASSERT(0);
+		}
 	}
 
 	the_device = dev;
