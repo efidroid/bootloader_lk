@@ -40,6 +40,9 @@
 #include <platform/timer.h>
 #include <sys/types.h>
 
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wshift-negative-value"
+
 extern void dmb(void);
 
 static int xo_clk_enable(struct clk *clk)
