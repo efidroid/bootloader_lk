@@ -42,7 +42,7 @@
 #include <kernel/dpc.h>
 #include <platform.h>
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #define THREAD_CHECKS 1
 #endif
 

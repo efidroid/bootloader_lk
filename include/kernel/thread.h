@@ -205,7 +205,7 @@ int wait_queue_wake_all(wait_queue_t *, bool reschedule, status_t wait_queue_err
 status_t thread_unblock_from_wait_queue(thread_t *t, bool reschedule, status_t wait_queue_error);
 
 /* thread level statistics */
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #define THREAD_STATS 1
 #else
 #define THREAD_STATS 0

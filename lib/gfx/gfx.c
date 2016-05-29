@@ -536,7 +536,7 @@ void gfx_draw_pattern_white(void)
 
 #if defined(WITH_LIB_CONSOLE)
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #include <lib/console.h>
 
 static int cmd_gfx(int argc, const cmd_args *argv);

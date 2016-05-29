@@ -44,7 +44,7 @@ static int cmd_threadstats(int argc, const cmd_args *argv);
 static int cmd_threadload(int argc, const cmd_args *argv);
 
 STATIC_COMMAND_START
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 STATIC_COMMAND("threads", "list kernel threads", &cmd_threads)
 #endif
 #if THREAD_STATS
@@ -53,7 +53,7 @@ STATIC_COMMAND("threadload", "toggle thread load display", &cmd_threadload)
 #endif
 STATIC_COMMAND_END(kernel);
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 static int cmd_threads(int argc, const cmd_args *argv)
 {
 	printf("thread list:\n");
