@@ -34,7 +34,7 @@
 #include <kernel/mutex.h>
 #include <kernel/thread.h>
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #define MUTEX_CHECK 1
 #endif
 

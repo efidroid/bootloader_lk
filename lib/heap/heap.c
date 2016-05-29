@@ -427,7 +427,7 @@ void heap_init(void)
 //	heap_test();
 }
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #if WITH_LIB_CONSOLE
 
 #include <lib/console.h>
