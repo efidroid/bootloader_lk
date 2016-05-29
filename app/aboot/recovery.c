@@ -52,7 +52,6 @@
 #define UPDATE_STATUS	2
 #define ROUND_TO_PAGE(x,y) (((x) + (y)) & (~(y)))
 
-static const int MISC_PAGES = 3;			// number of pages to save
 static const int MISC_COMMAND_PAGE = 1;		// bootloader command is this page
 static char buf[4096];
 
