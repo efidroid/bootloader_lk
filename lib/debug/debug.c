@@ -99,12 +99,21 @@ static int _dprintf_output_func(char c, void *state)
 	return INT_MAX;
 }
 
-int _dprintf(const char *fmt, ...)
+int _dprintf(int level, const char *fmt, ...)
 {
 	char ts_buf[13];
 	int err;
 
-	snprintf(ts_buf, sizeof(ts_buf), "[%u] ",(unsigned int)current_time());
+	char levelchar;
+	switch(level) {
+		case ALWAYS: levelchar='A';break;
+		case CRITICAL: levelchar='E';break;
+		case INFO: levelchar='I';break;
+		case SPEW: levelchar='D';break;
+		default: levelchar='?';break;
+	}
+
+	snprintf(ts_buf, sizeof(ts_buf), "%c/[%u] ", levelchar, (unsigned int)current_time());
 	dputs(ALWAYS, ts_buf);
 
 	va_list ap;
@@ -173,7 +182,7 @@ static int cmd_memtest(int argc, const cmd_args *argv);
 static int cmd_copy_mem(int argc, const cmd_args *argv);
 
 STATIC_COMMAND_START
-#if DEBUGLEVEL > 0
+#if DEBUGLEVEL > CRITICAL
 	{ "dw", "display memory in words", &cmd_display_mem },
 	{ "dh", "display memory in halfwords", &cmd_display_mem },
 	{ "db", "display memory in bytes", &cmd_display_mem },
@@ -185,7 +194,7 @@ STATIC_COMMAND_START
 	{ "fb", "fill range of memory by byte", &cmd_fill_mem },
 	{ "mc", "copy a range of memory", &cmd_copy_mem },
 #endif
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 	{ "mtest", "simple memory test", &cmd_memtest },
 #endif
 STATIC_COMMAND_END(mem);
