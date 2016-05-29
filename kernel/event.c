@@ -44,7 +44,7 @@
 #include <err.h>
 #include <kernel/event.h>
 
-#if DEBUGLEVEL > 1
+#if DEBUGLEVEL > INFO
 #define EVENT_CHECK 1
 #endif
 
