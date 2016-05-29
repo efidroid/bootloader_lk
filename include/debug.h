@@ -42,20 +42,20 @@ extern "C" {
 #endif
 
 /* debug levels */
-#define CRITICAL 0
 #define ALWAYS 0
-#define INFO 1
-#define SPEW 2
+#define CRITICAL 1
+#define INFO 2
+#define SPEW 3
 
 /* output */
 void _dputc(char c); // XXX for now, platform implements
 int _dputs(const char *str);
-int _dprintf(const char *fmt, ...) __PRINTFLIKE(1, 2);
+int _dprintf(int level, const char *fmt, ...) __PRINTFLIKE(2, 3);
 int _dvprintf(const char *fmt, va_list ap);
 
 #define dputc(level, str) do { if ((level) <= DEBUGLEVEL) { _dputc(str); } } while (0)
 #define dputs(level, str) do { if ((level) <= DEBUGLEVEL) { _dputs(str); } } while (0)
-#define dprintf(level, x...) do { if ((level) <= DEBUGLEVEL) { _dprintf(x); } } while (0)
+#define dprintf(level, x...) do { if ((level) <= DEBUGLEVEL) { _dprintf((level), x); } } while (0)
 #define dvprintf(level, x...) do { if ((level) <= DEBUGLEVEL) { _dvprintf(x); } } while (0)
 
 /* input */

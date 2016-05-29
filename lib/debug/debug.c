@@ -99,12 +99,21 @@ static int _dprintf_output_func(char c, void *state)
 	return INT_MAX;
 }
 
-int _dprintf(const char *fmt, ...)
+int _dprintf(int level, const char *fmt, ...)
 {
 	char ts_buf[13];
 	int err;
 
-	snprintf(ts_buf, sizeof(ts_buf), "[%u] ",(unsigned int)current_time());
+	char levelchar;
+	switch(level) {
+		case ALWAYS: levelchar='A';break;
+		case CRITICAL: levelchar='E';break;
+		case INFO: levelchar='I';break;
+		case SPEW: levelchar='D';break;
+		default: levelchar='?';break;
+	}
+
+	snprintf(ts_buf, sizeof(ts_buf), "%c/[%u] ", levelchar, (unsigned int)current_time());
 	dputs(ALWAYS, ts_buf);
 
 	va_list ap;
