@@ -563,77 +563,11 @@ static void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size)
 //                              BOOT                                   //
 /////////////////////////////////////////////////////////////////////////
 
+#include <board.h>
+
 #define IS_ARM64(ptr) (ptr->magic_64 == KERNEL64_HDR_MAGIC) ? true : false
 
 typedef void entry_func_ptr(unsigned, unsigned, unsigned *);
-
-void generate_atags(unsigned *ptr, const char *cmdline, void *ramdisk, unsigned ramdisk_size);
-unsigned char *update_cmdline(const char *cmdline);
-
-#if DEVICE_TREE
-#include <libfdt.h>
-#include <dev_tree.h>
-
-static int load_dtb(unsigned int tags_addr, unsigned int tags_size)
-{
-    struct dt_table *table;
-    struct dt_entry dt_entry;
-    uint32_t dt_hdr_size;
-    unsigned int dtb_size = 0;
-    unsigned char *best_match_dt_addr = NULL;
-
-    /* offset now point to start of dt.img */
-    table = (struct dt_table *)(tags_addr);
-
-    if (dev_tree_validate(table, 2048, &dt_hdr_size) != 0) {
-        dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
-        return -1;
-    }
-    /* Find index of device tree within device tree table */
-    if (dev_tree_get_entry_info(table, &dt_entry) != 0) {
-        dprintf(CRITICAL, "ERROR: Getting device tree address failed\n");
-        return -1;
-    }
-
-    best_match_dt_addr = (unsigned char *)tags_addr + dt_entry.offset;
-    dtb_size = dt_entry.size;
-
-    /* Read device device tree in the "tags_add */
-    memmove((void *) tags_addr, (void *)best_match_dt_addr, dtb_size);
-
-    /* Everything looks fine. Return success. */
-    return 0;
-}
-#endif
-
-static int api_boot_create_tags(const char *cmdline, unsigned int ramdisk_addr, unsigned int ramdisk_size,
-                                unsigned int tags_addr, unsigned int tags_size)
-{
-    char *final_cmdline;
-    cmdline_addall(cmdline, false);
-
-    int len = cmdline_length();
-    final_cmdline = malloc(len);
-    cmdline_generate(final_cmdline, len);
-
-    dprintf(INFO, "cmdline: %s\n", final_cmdline);
-
-#if DEVICE_TREE
-    int ret = load_dtb(tags_addr, tags_size);
-    if (ret) return -1;
-
-    ret = update_device_tree((void *)tags_addr, final_cmdline, (void *)ramdisk_addr, ramdisk_size);
-    return ret;
-#else
-    generate_atags((unsigned *)tags_addr, final_cmdline, (void *)ramdisk_addr, ramdisk_size);
-#endif
-    return 0;
-}
-
-static unsigned int api_boot_machine_type(void)
-{
-    return board_machtype();
-}
 
 static void api_boot_update_addrs(unsigned int *kernel, unsigned int *ramdisk, unsigned int *tags)
 {
@@ -657,6 +591,56 @@ static void api_boot_exec(void *kernel, unsigned int zero, unsigned int arch, un
         /* Jump to a 32bit kernel */
         entry(zero, arch, (unsigned *)tags);
 }
+
+static unsigned int api_boot_get_machine_type(void) {
+    return board_target_id();
+}
+
+static const char* api_boot_get_cmdline_extension(void) {
+    return lkargs_get_command_line();
+}
+
+unsigned int api_boot_get_pmic_target(unsigned short num_ent) {
+    return board_pmic_target(num_ent);
+}
+
+unsigned int api_boot_get_platform_id(void) {
+    if(lkargs_has_board_info())
+        return lkargs_get_platform_id();
+    else
+        return board_platform_id();
+}
+
+unsigned int api_boot_get_hardware_id(void) {
+    if(lkargs_has_board_info())
+        return lkargs_get_variant_id();
+    else
+        return board_hardware_id();
+}
+
+unsigned int api_boot_get_hardware_subtype(void) {
+    return board_hardware_subtype();
+}
+
+unsigned int api_boot_get_soc_version(void) {
+    if(lkargs_has_board_info())
+        return lkargs_get_soc_rev();
+    else
+        return board_soc_version();
+}
+
+unsigned int api_boot_get_target_id(void) {
+    return board_target_id();
+}
+
+unsigned int api_boot_get_foundry_id(void) {
+    return board_foundry_id();
+}
+
+unsigned int api_boot_get_hlos_subtype(void) {
+    return target_get_hlos_subtype();
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                           USB GADGET                                //
@@ -1172,10 +1156,20 @@ lkapi_t uefiapi = {
     .mmap_get_mappings = api_mmap_get_mappings,
     .mmap_get_lk_range = api_mmap_get_lk_range,
 
-    .boot_create_tags = api_boot_create_tags,
-    .boot_machine_type = api_boot_machine_type,
     .boot_update_addrs = api_boot_update_addrs,
     .boot_exec = api_boot_exec,
+
+    .boot_get_machine_type = api_boot_get_machine_type,
+    .boot_get_cmdline_extension = api_boot_get_cmdline_extension,
+
+    .boot_get_pmic_target = api_boot_get_pmic_target,
+    .boot_get_platform_id = api_boot_get_platform_id,
+    .boot_get_hardware_id = api_boot_get_hardware_id,
+    .boot_get_hardware_subtype = api_boot_get_hardware_subtype,
+    .boot_get_soc_version = api_boot_get_soc_version,
+    .boot_get_target_id = api_boot_get_target_id,
+    .boot_get_foundry_id = api_boot_get_foundry_id,
+    .boot_get_hlos_subtype = api_boot_get_hlos_subtype,
 
     .event_init = NULL,
     .event_destroy = NULL,
