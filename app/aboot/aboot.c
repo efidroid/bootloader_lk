@@ -3100,7 +3100,7 @@ void cmd_flashing_unlock_critical(const char *arg, void *data, unsigned sz)
 #if WITH_DEBUG_LOG_BUF
 void cmd_oem_lk_log(const char *arg, void *data, unsigned sz)
 {
-	fastboot_send_textbuf(lk_log_getbuf(), lk_log_getsize());
+	fastboot_send_string_human(lk_log_getbuf(), lk_log_getsize());
 	fastboot_okay("");
 }
 #endif
@@ -3658,12 +3658,22 @@ static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz) {
 
 
 		uint8_t* data = &rambuf->data[0];
-		fastboot_send_textbuf(data, rambuf->size);
+		fastboot_send_string_human(data, rambuf->size);
 	}
 	else {
 		snprintf(buf, sizeof(buf), "last_kmsg not found at %p", rambuf);
 		fastboot_info(buf);
 	}
+
+	fastboot_okay("");
+}
+
+static void cmd_oem_dumpatags(const char *arg, void *data, unsigned sz) {
+	void* tags = lkargs_get_tags_backup();
+	size_t tags_size = lkargs_get_tags_backup_size();
+
+	if(tags && tags_size)
+		fastboot_send_buf(tags, tags_size);
 
 	fastboot_okay("");
 }
@@ -3714,6 +3724,7 @@ void aboot_fastboot_register_commands(void)
 						{"oem dump-partitiontable", cmd_oem_dump_partitiontable},
 						{"oem last_kmsg", cmd_oem_lastkmsg},
 						{"oem memfill", cmd_oem_memfill},
+						{"oem dump-atags", cmd_oem_dumpatags},
 #endif
 						};
 

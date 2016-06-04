@@ -36,6 +36,7 @@
 #include <kernel/thread.h>
 #include <kernel/event.h>
 #include <dev/udc.h>
+#include <lib/base64.h>
 #include "fastboot.h"
 
 #ifdef USB30_SUPPORT
@@ -428,7 +429,7 @@ void fastboot_okay(const char *info)
 	fastboot_ack("OKAY", info);
 }
 
-void fastboot_send_buf(void* _data, size_t size) {
+void fastboot_send_string(void* _data, size_t size) {
 	uint32_t i;
 	char buf[MAX_RSP_SIZE];
 	uint8_t* data = _data;
@@ -441,7 +442,7 @@ void fastboot_send_buf(void* _data, size_t size) {
 	}
 }
 
-void fastboot_send_textbuf(void* _data, size_t size) {
+void fastboot_send_string_human(void* _data, size_t size) {
 	uint32_t i;
 	char buf[MAX_RSP_SIZE];
 	size_t pos = 0;
@@ -457,6 +458,25 @@ void fastboot_send_textbuf(void* _data, size_t size) {
 			pos = 0;
 		}
 	}
+}
+
+void fastboot_send_buf(const void* data, size_t size) {
+	size_t b64_data_size = BASE64_ENCODED_SIZE(size);
+	char* b64_data = malloc(b64_data_size);
+	if(!b64_data) {
+		fastboot_fail("out of memory");
+		return;
+	}
+
+	int ret = b64_ntop (data, size, b64_data, b64_data_size);
+	if(ret<=0) {
+		fastboot_fail("encoding error");
+		return;
+	}
+
+	fastboot_send_string(b64_data, ret);
+
+	free(b64_data);
 }
 
 static void getvar_all(void)
