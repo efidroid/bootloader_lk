@@ -14,6 +14,8 @@ uint32_t lkargs_get_platform_id(void);
 uint32_t lkargs_get_variant_id(void);
 uint32_t lkargs_get_soc_rev(void);
 lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void);
+void* lkargs_get_tags_backup(void);
+size_t lkargs_get_tags_backup_size(void);
 bool lkargs_has_board_info(void);
 void atag_parse(void);
 

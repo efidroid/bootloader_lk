@@ -20,7 +20,8 @@ typedef struct {
 extern uint32_t lk_boot_args[4];
 
 // atags backup
-static void* tags_copy = NULL;
+static void*  tags_copy = NULL;
+static size_t tags_size = 0;
 
 // parsed data: common
 static uint32_t machinetype = 0;
@@ -58,13 +59,20 @@ lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void) {
 	return uefi_bootmode;
 }
 
+void* lkargs_get_tags_backup(void) {
+    return tags_copy;
+}
+size_t lkargs_get_tags_backup_size(void) {
+    return tags_size;
+}
+
 // backup functions
 static int save_atags(const struct tag *tags)
 {
 	const struct tag *t = tags;
 	for (; t->hdr.size; t = tag_next(t));
 	t++;
-	uint32_t tags_size = ((uint32_t)t)-((uint32_t)tags);
+	tags_size = ((uint32_t)t)-((uint32_t)tags);
 
 	tags_copy = malloc(tags_size);
 	if(!tags_copy) {
@@ -76,10 +84,15 @@ static int save_atags(const struct tag *tags)
 	return 0;
 }
 
+int atags_check_header(void* tags) {
+    struct tag *atags = (struct tag *)tags;
+    return atags->hdr.tag!=ATAG_CORE;
+}
+
 #if DEVICE_TREE
 static int save_fdt(void* fdt)
 {
-	uint32_t tags_size = fdt_totalsize(fdt);
+	tags_size = fdt_totalsize(fdt);
 	tags_copy = malloc(tags_size);
 	if(!tags_copy) {
 		dprintf(CRITICAL, "Error saving fdt!\n");
@@ -173,13 +186,13 @@ void* lkargs_atag_insert_unknown(void* tags) {
 	struct tag *tag = (struct tag *)tags;
 	const struct tag *t;
 
-	if(!tags_copy)
-		return tags;
+	if(!tags_copy || atags_check_header(tags_copy))
+		return tag;
 
 	for (t=tags_copy; t->hdr.size; t=tag_next(t)) {
 		if (!get_tagtable_entry(t)) {
-			memcpy(tag, t, t->hdr.size*sizeof(uint32_t));
 			tag = tag_next(tag);
+			memcpy(tag, t, t->hdr.size*sizeof(uint32_t));
 		}
 	}
 
@@ -708,7 +721,7 @@ int lkargs_insert_chosen(void* fdt) {
 	int ret = 0;
 	uint32_t target_offset_chosen;
 
-	if(!tags_copy)
+	if(!tags_copy || fdt_check_header(tags_copy))
 		return 0;
 
 	// get chosen node
@@ -751,9 +764,9 @@ void atag_parse(void) {
 #endif
 
 	// atags
-	if (atags->hdr.tag == ATAG_CORE) {
-		save_atags(atags);
-		parse_atags(atags);
+	if (!atags_check_header(tags)) {
+		save_atags(tags);
+		parse_atags(tags);
 	}
 
 	// unknown
