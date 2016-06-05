@@ -15,6 +15,8 @@
 #include <platform/timer.h>
 #include <platform/gpio.h>
 #include <partition_parser.h>
+#include <rpm-smd.h>
+#include <regulator.h>
 
 #include <uefiapi.h>
 
@@ -62,6 +64,14 @@ static key_event_source_t event_source = {
 
 extern struct mmc_device *dev;
 
+static void rpm_smd_init_once(void) {
+	static int initialized = 0;
+	if(!initialized) {
+		rpm_smd_init();
+		initialized = 1;
+	}
+}
+
 void api_platform_early_init(void) {
 	// from platform_early_init, but without GIC
 	board_init();
@@ -97,6 +107,9 @@ void api_platform_uninit(void) {
 void target_sdc_init(void);
 
 int api_mmc_init(void) {
+	// we can't do this in platform_init because this needs interrupts
+	rpm_smd_init_once();
+
 	target_sdc_init();
 	return 0;
 }
