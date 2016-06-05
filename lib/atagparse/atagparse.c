@@ -526,12 +526,45 @@ static struct dt_entry* get_dt_entry(void *dtb, uint32_t dtb_size)
 	return cur_dt_entry;
 }
 
-static uint32_t dt_mem_next_cell(const uint32_t **cellp)
-{
-	const uint32_t *p = *cellp;
+static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t* out_size_cell_size) {
+	int rc;
+	int len;
+	const uint32_t *valp;
+	uint32_t offset;
+	uint32_t addr_cell_size = 0;
+	uint32_t size_cell_size = 0;
 
-	(*cellp)++;
-	return fdt32_to_cpu(*p);
+	// get root node offset
+	rc = fdt_path_offset(fdt, "/");
+	if (rc<0) return -1;
+	offset = rc;
+
+	// find the #address-cells size
+	valp = fdt_getprop(fdt, offset, "#address-cells", &len);
+	if (len<=0 || !valp) {
+		if (len == -FDT_ERR_NOTFOUND)
+			addr_cell_size = 2;
+		else return -1;
+	}
+	else {
+		addr_cell_size = fdt32_to_cpu(*valp);
+	}
+
+	// find the #size-cells size
+	valp = fdt_getprop(fdt, offset, "#size-cells", &len);
+	if (len<=0 || !valp) {
+		if (len == -FDT_ERR_NOTFOUND)
+			size_cell_size = 2;
+		else return -1;
+	}
+	else {
+		size_cell_size = fdt32_to_cpu(*valp);
+	}
+
+	*out_addr_cell_size = addr_cell_size;
+	*out_size_cell_size = size_cell_size;
+
+	return 0;
 }
 
 static int parse_fdt(void* fdt)
@@ -549,23 +582,46 @@ static int parse_fdt(void* fdt)
 	else {
 		offset = ret;
 
+		uint32_t addr_cell_size = 1;
+		uint32_t size_cell_size = 1;
+		fdt_get_cell_sizes(fdt, &addr_cell_size, &size_cell_size);
+		if(addr_cell_size>2 || size_cell_size>2) {
+			dprintf(CRITICAL, "unsupported cell sizes\n");
+			goto next;
+		}
+
 		// get reg node
 		const uint32_t* reg = fdt_getprop(fdt, offset, "reg", &len);
-		const uint32_t* reg_end = (uint32_t*)((uint8_t*)reg)+len;
 		if(!reg) {
 			dprintf(CRITICAL, "Could not find reg node.\n");
 		}
 		else {
-			while(reg<reg_end-sizeof(uint32_t)*3) {
-				uint32_t base = dt_mem_next_cell(&reg);
-				uint32_t size = dt_mem_next_cell(&reg);
+			uint32_t regpos = 0;
+			while(regpos<len/sizeof(uint32_t)) {
+				uint64_t base = fdt32_to_cpu(reg[regpos++]);
+				if(addr_cell_size==2) {
+					base = base<<32;
+					base = fdt32_to_cpu(reg[regpos++]);
+				}
 
-				dprintf(INFO, "0x%08x-0x%08x\n", base, base+size);
-				add_meminfo(base, size);
+				uint64_t size = fdt32_to_cpu(reg[regpos++]);
+				if(size_cell_size==2) {
+					size = size<<32;
+					size = fdt32_to_cpu(reg[regpos++]);
+				}
+
+				dprintf(INFO, "0x%016llx-0x%016llx\n", base, base+size);
+				if(base>0xffffffff || size>0xffffffff) {
+					dprintf(CRITICAL, "address range exceeds 32bit address space\n");
+				}
+				else {
+					add_meminfo((uint32_t)base, (uint32_t)size);
+				}
 			}
 		}
 	}
 
+next:
 	// get chosen node
 	ret = fdt_path_offset(fdt, "/chosen");
 	if (ret < 0)
