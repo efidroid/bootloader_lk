@@ -168,6 +168,7 @@ endif
 ALLOBJS := $(addprefix $(BUILDDIR)/,$(ALLOBJS))
 SHIMOBJS := $(addprefix $(BUILDDIR)/,$(SHIMOBJS))
 SHIMPATCHOBJS := $(filter-out $(SHIMOBJS),$(ALLOBJS))
+ALLOBJS_PATCHED := $(addsuffix .patched.o,$(SHIMPATCHOBJS)) $(SHIMOBJS)
 
 DEPS := $(ALLOBJS:%o=%d)
 
