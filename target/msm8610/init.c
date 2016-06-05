@@ -52,6 +52,8 @@
 #include <platform/timer.h>
 #include <crypto5_wrapper.h>
 #include <sdhci_msm.h>
+#include <rpm-smd.h>
+#include <regulator.h>
 
 #if LONG_PRESS_POWER_ON
 #include <shutdown_detect.h>
@@ -196,6 +198,8 @@ void target_init(void)
 	dprintf(INFO, "target_init()\n");
 
 	spmi_init(PMIC_ARB_CHANNEL_NUM, PMIC_ARB_OWNER_ID);
+
+	rpm_smd_init();
 
 	target_keystatus();
 
