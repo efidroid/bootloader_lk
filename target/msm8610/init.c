@@ -51,6 +51,7 @@
 #include <platform/clock.h>
 #include <platform/timer.h>
 #include <crypto5_wrapper.h>
+#include <rpm-smd.h>
 
 #if LONG_PRESS_POWER_ON
 #include <shutdown_detect.h>
@@ -192,6 +193,8 @@ void target_init(void)
 
 	spmi_init(PMIC_ARB_CHANNEL_NUM, PMIC_ARB_OWNER_ID);
 
+	rpm_smd_init();
+
 	target_keystatus();
 
 	target_sdc_init();
@@ -223,6 +226,8 @@ void target_uninit(void)
 
 	/* Disable HC mode before jumping to kernel */
 	sdhci_mode_disable(&dev->host);
+
+	rpm_smd_uninit();
 }
 
 #define SSD_CE_INSTANCE         1
