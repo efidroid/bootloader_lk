@@ -143,10 +143,16 @@ static void target_keystatus(void)
 		keys_post_event(KEY_VOLUMEUP, 1);
 }
 
+__WEAK int target_sdc_pre_init_actions(void) {
+	return 0;
+}
+
 void target_sdc_init(void)
 {
 	struct mmc_config_data config;
 	struct mmc_device *tmpdev;
+
+	target_sdc_pre_init_actions();
 
 	config.bus_width = DATA_BUS_WIDTH_8BIT;
 	config.max_clk_rate = MMC_CLK_200MHZ;
