@@ -3335,7 +3335,7 @@ void get_baseband_version(unsigned char *buf)
 	return;
 }
 
-bool is_device_locked()
+bool is_device_locked(void)
 {
 	return device.is_unlocked ? false:true;
 }
