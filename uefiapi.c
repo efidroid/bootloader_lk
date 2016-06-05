@@ -600,6 +600,16 @@ static const char* api_boot_get_cmdline_extension(void) {
     return lkargs_get_command_line();
 }
 
+static void* api_boot_extend_atags(void *atags) {
+    return lkargs_atag_insert_unknown(atags);
+}
+
+static void api_boot_extend_fdt(void *fdt) {
+#if DEVICE_TREE
+    lkargs_insert_chosen(fdt);
+#endif
+}
+
 unsigned int api_boot_get_pmic_target(unsigned short num_ent) {
     return board_pmic_target(num_ent);
 }
@@ -1161,6 +1171,8 @@ lkapi_t uefiapi = {
 
     .boot_get_machine_type = api_boot_get_machine_type,
     .boot_get_cmdline_extension = api_boot_get_cmdline_extension,
+    .boot_extend_atags = api_boot_extend_atags,
+    .boot_extend_fdt = api_boot_extend_fdt,
 
     .boot_get_pmic_target = api_boot_get_pmic_target,
     .boot_get_platform_id = api_boot_get_platform_id,
