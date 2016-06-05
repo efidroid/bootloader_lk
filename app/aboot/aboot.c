@@ -3650,8 +3650,15 @@ static void cmd_oem_memfill(const char *arg, void *data, unsigned sz) {
 
 static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz) {
 	char buf[MAX_RSP_SIZE];
+	uint32_t addr;
 
-	struct persistent_ram_buffer* rambuf = (void*)hex2unsigned(arg);
+#ifdef PERSISTENT_RAM_ADDR
+	addr = PERSISTENT_RAM_ADDR;
+#else
+	addr = hex2unsigned(arg);
+#endif
+
+	struct persistent_ram_buffer* rambuf = (void*)addr;
 	if(rambuf->sig==PERSISTENT_RAM_SIG) {
 		snprintf(buf, sizeof(buf), "found last_kmsg at %p", rambuf);
 		fastboot_info(buf);
