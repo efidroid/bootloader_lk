@@ -1989,7 +1989,7 @@ uint32_t mmc_sdhci_read(struct mmc_device *dev, void *dest,
 	 * convert the block address to byte address before
 	 * sending the command
 	 */
-	if (card->type == MMC_TYPE_STD_MMC)
+	if (card->type != MMC_TYPE_MMCHC && card->type != MMC_CARD_TYPE_SDHC)
 		cmd.argument = blk_addr * card->block_size;
 	else
 		cmd.argument = blk_addr;
@@ -2059,7 +2059,7 @@ uint32_t mmc_sdhci_write(struct mmc_device *dev, void *src,
 	 * convert the block address to byte address before
 	 * sending the command
 	 */
-	if (card->type == MMC_TYPE_STD_MMC)
+	if (card->type != MMC_TYPE_MMCHC && card->type != MMC_CARD_TYPE_SDHC)
 		cmd.argument = blk_addr * card->block_size;
 	else
 		cmd.argument = blk_addr;
@@ -2119,7 +2119,7 @@ static uint32_t mmc_send_erase_grp_start(struct mmc_device *dev, uint32_t erase_
 	 * convert the block address to byte address before
 	 * sending the command
 	 */
-	if (card->type == MMC_TYPE_STD_MMC)
+	if (card->type != MMC_TYPE_MMCHC && card->type != MMC_CARD_TYPE_SDHC)
 		cmd.argument = erase_start * card->block_size;
 	else
 		cmd.argument = erase_start;
@@ -2162,7 +2162,7 @@ static uint32_t mmc_send_erase_grp_end(struct mmc_device *dev, uint32_t erase_en
 	 * convert the block address to byte address before
 	 * sending the command
 	 */
-	if (card->type == MMC_TYPE_STD_MMC)
+	if (card->type != MMC_TYPE_MMCHC && card->type != MMC_CARD_TYPE_SDHC)
 		cmd.argument = erase_end * card->block_size;
 	else
 		cmd.argument = erase_end;
@@ -2442,7 +2442,7 @@ uint32_t mmc_set_clr_power_on_wp_user(struct mmc_device *dev, uint32_t addr, uin
 		* convert the block address to byte address before
 		* sending the command
 		*/
-		if (card->type == MMC_TYPE_STD_MMC)
+		if (card->type != MMC_TYPE_MMCHC && card->type != MMC_CARD_TYPE_SDHC)
 			cmd.argument = (addr + (i * wp_grp_size)) * card->block_size;
 		else
 			cmd.argument = addr + (i * wp_grp_size);
