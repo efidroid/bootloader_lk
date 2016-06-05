@@ -615,16 +615,20 @@ unsigned int api_boot_get_pmic_target(unsigned short num_ent) {
 }
 
 unsigned int api_boot_get_platform_id(void) {
+#if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_platform_id();
     else
+#endif
         return board_platform_id();
 }
 
 unsigned int api_boot_get_hardware_id(void) {
+#if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_variant_id();
     else
+#endif
         return board_hardware_id();
 }
 
@@ -633,9 +637,11 @@ unsigned int api_boot_get_hardware_subtype(void) {
 }
 
 unsigned int api_boot_get_soc_version(void) {
+#if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_soc_rev();
     else
+#endif
         return board_soc_version();
 }
 
