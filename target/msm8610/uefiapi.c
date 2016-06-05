@@ -98,6 +98,8 @@ void api_platform_uninit(void) {
 
 	// Disable HC mode before jumping to kernel
 	sdhci_mode_disable(&dev->host);
+
+	rpm_smd_uninit();
 }
 
 /////////////////////////////////////////////////////////////////////////

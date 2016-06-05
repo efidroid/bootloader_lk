@@ -238,6 +238,8 @@ void target_uninit(void)
 
 	/* Disable HC mode before jumping to kernel */
 	sdhci_mode_disable(&dev->host);
+
+	rpm_smd_uninit();
 }
 
 #define SSD_CE_INSTANCE         1
