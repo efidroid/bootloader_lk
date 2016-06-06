@@ -334,6 +334,7 @@ static void bio_foreach_cb(void *_pdata, const char *name)
 
     if (pdata->list) {
         int dev = pdata->count++;
+        pdata->list[dev].id = -1;
         pdata->list[dev].type = is_vnor?LKAPI_BIODEV_TYPE_VNOR:LKAPI_BIODEV_TYPE_MMC;
         pdata->list[dev].block_size = bdev->block_size;
         pdata->list[dev].num_blocks = bdev->block_count;
@@ -341,6 +342,10 @@ static void bio_foreach_cb(void *_pdata, const char *name)
         pdata->list[dev].init = api_bio_init;
         pdata->list[dev].read = api_bio_read;
         pdata->list[dev].write = api_bio_write;
+
+        uint32_t namelen = strlen(name);
+        if(namelen>=3 && name[0]=='h' && name[1]=='d')
+            pdata->list[dev].id = atoi(name+2);
     }
 
     else {
