@@ -727,7 +727,8 @@ bool target_display_panel_node(char *pbuf, uint16_t buf_size)
 	char vic_buf[HDMI_VIC_LEN] = "0";
 
 	if ((!strcmp(oem.panel, HDMI_PANEL_NAME)) || \
-		((!strlen(oem.panel)) && (board_hardware_id() == HW_PLATFORM_SBC))) {
+		((!strlen(oem.panel)) && ((board_hardware_id() == HW_PLATFORM_SBC) ||
+		(platform_is_apq8096_mediabox())))) {
 		if (buf_size < (prefix_string_len + LK_OVERRIDE_PANEL_LEN +
 				strlen(HDMI_CONTROLLER_STRING))) {
 			dprintf(CRITICAL, "command line argument is greater than buffer size\n");
@@ -779,7 +780,8 @@ void target_display_init(const char *panel_name)
 			oem.panel);
 		return;
 	} else if ((!strcmp(oem.panel, HDMI_PANEL_NAME)) || \
-		((!strlen(oem.panel)) && (board_hardware_id() == HW_PLATFORM_SBC))) {
+		((!strlen(oem.panel)) && ((board_hardware_id() == HW_PLATFORM_SBC) ||
+		(platform_is_apq8096_mediabox())))) {
 		dprintf(INFO, "%s: HDMI is primary\n", __func__);
 		mdss_hdmi_display_init(MDP_REV_50, (void *) HDMI_FB_ADDR);
 		return;
@@ -800,7 +802,8 @@ void target_display_shutdown(void)
 {
 	struct oem_panel_data oem = mdss_dsi_get_oem_data();
 	if ((!strcmp(oem.panel, HDMI_PANEL_NAME)) || \
-		((!strlen(oem.panel)) && (board_hardware_id() == HW_PLATFORM_SBC))) {
+		((!strlen(oem.panel)) && ((board_hardware_id() == HW_PLATFORM_SBC) ||
+		(platform_is_apq8096_mediabox())))) {
 		msm_display_off();
 	} else {
 		gcdb_display_shutdown();
