@@ -78,7 +78,6 @@ void api_platform_init(void) {
 //                            BlockIO                                  //
 /////////////////////////////////////////////////////////////////////////
 
-extern char sn_buf[13];
 static struct mmc_device *dev;
 
 static unsigned mmc_sdc_base[] =
@@ -100,9 +99,6 @@ int api_mmc_init(void) {
 			ASSERT(0);
 		}
 	}
-
-	target_serialno((unsigned char *) sn_buf);
-	dprintf(SPEW,"serial number: %s\n",sn_buf);
 
 	return 0;
 }
