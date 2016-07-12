@@ -50,6 +50,18 @@ struct list_node* lkargs_get_command_line_list(void) {
 	return &cmdline_list;
 }
 
+const char* lkargs_get_panel_name(const char* key) {
+    const char* value = cmdline_get(&cmdline_list, key);
+    if(!value) return NULL;
+
+    const char* name;
+    const char* pch=strrchr(value,':');
+    if(!pch) name = pch;
+    else name = pch+1;
+
+    return name;
+}
+
 #if DEVICE_TREE
 uint32_t lkargs_get_platform_id(void) {
 	return platform_id;

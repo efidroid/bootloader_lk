@@ -11,6 +11,7 @@ typedef enum {
 uint32_t lkargs_get_machinetype(void);
 const char* lkargs_get_command_line(void);
 struct list_node* lkargs_get_command_line_list(void);
+const char* lkargs_get_panel_name(const char* key);
 uint32_t lkargs_get_platform_id(void);
 uint32_t lkargs_get_variant_id(void);
 uint32_t lkargs_get_soc_rev(void);
