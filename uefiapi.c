@@ -847,7 +847,6 @@ static int hsusb_usb_read(struct udc_gadget *udc_gadget, void *_buf, unsigned le
     unsigned char *buf = _buf;
     int count = 0;
     udc_gadget_context_t *context = udc_gadget->context;
-    struct udc_endpoint *in = udc_gadget->ept[0];
     struct udc_endpoint *out = udc_gadget->ept[1];
     struct udc_request *req = context->req;
 
@@ -899,7 +898,6 @@ static int hsusb_usb_write(struct udc_gadget *udc_gadget, void *buf, unsigned le
     int count = 0;
     udc_gadget_context_t *context = udc_gadget->context;
     struct udc_endpoint *in = udc_gadget->ept[0];
-    struct udc_endpoint *out = udc_gadget->ept[1];
     struct udc_request *req = context->req;
 
     if (context->errno)
