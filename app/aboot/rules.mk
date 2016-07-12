@@ -11,6 +11,7 @@ MODULES += lib/base64
 
 OBJS += \
 	$(LOCAL_DIR)/aboot.o \
+	$(LOCAL_DIR)/fastboot_commands.o \
 	$(LOCAL_DIR)/fastboot.o \
 	$(LOCAL_DIR)/recovery.o
 
