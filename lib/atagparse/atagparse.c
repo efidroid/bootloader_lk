@@ -26,14 +26,17 @@ static size_t tags_size = 0;
 // parsed data: common
 static uint32_t machinetype = 0;
 static char* command_line = NULL;
+static struct list_node cmdline_list;
 static lkargs_uefi_bootmode uefi_bootmode = LKARGS_UEFI_BM_NORMAL;
 static meminfo_t* meminfo = NULL;
 static size_t meminfo_count = 0;
 // parsed data: fdt
+#if DEVICE_TREE
 static uint32_t platform_id = 0;
 static uint32_t variant_id = 0;
 static uint32_t soc_rev = 0;
 static bool has_board_info = false;
+#endif
 
 uint32_t lkargs_get_machinetype(void) {
 	return machinetype;
@@ -43,6 +46,11 @@ const char* lkargs_get_command_line(void) {
 	return command_line;
 }
 
+struct list_node* lkargs_get_command_line_list(void) {
+	return &cmdline_list;
+}
+
+#if DEVICE_TREE
 uint32_t lkargs_get_platform_id(void) {
 	return platform_id;
 }
@@ -54,6 +62,7 @@ uint32_t lkargs_get_variant_id(void) {
 uint32_t lkargs_get_soc_rev(void) {
 	return soc_rev;
 }
+#endif
 
 lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void) {
 	return uefi_bootmode;
@@ -802,14 +811,13 @@ void atag_parse(void) {
 	);
 
 	// init cmdline lib
-	cmdline_init();
+	cmdline_init(&cmdline_list);
 
 	// machine type
 	machinetype = lk_boot_args[1];
 	dprintf(INFO, "machinetype: %u\n", machinetype);
 
 	void* tags = (void*)lk_boot_args[2];
-	struct tag *atags = (struct tag *)tags;
 
 #if DEVICE_TREE
 	// fdt
@@ -837,16 +845,16 @@ void atag_parse(void) {
 #endif
 
 	// add to global cmdline lib
-	cmdline_addall(command_line, true);
+	cmdline_addall(&cmdline_list, command_line, true);
 
 	// get bootmode
-	const char* bootmode = cmdline_get("uefi.bootmode");
+	const char* bootmode = cmdline_get(&cmdline_list, "uefi.bootmode");
 	if(bootmode) {
 		dprintf(INFO, "uefi.bootmode = [%s]\n", bootmode);
 
 		if(!strcmp(bootmode, "recovery"))
 			uefi_bootmode = LKARGS_UEFI_BM_RECOVERY;
 
-		cmdline_remove("uefi.bootmode");
+		cmdline_remove(&cmdline_list, "uefi.bootmode");
 	}
 }

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <list.h>
+#include <cmdline.h>
 
 typedef struct cmdline_item {
 	struct list_node node;
@@ -10,11 +11,9 @@ typedef struct cmdline_item {
 	char* value;
 } cmdline_item_t;
 
-static struct list_node cmdline_list;
-
-static cmdline_item_t* cmdline_get_internal(const char* name) {
+static cmdline_item_t* cmdline_get_internal(struct list_node* list, const char* name) {
 	cmdline_item_t *item;
-	list_for_every_entry(&cmdline_list, item, cmdline_item_t, node) {
+	list_for_every_entry(list, item, cmdline_item_t, node) {
 		if(!strcmp(name, item->name))
 			return item;
 	}
@@ -22,12 +21,12 @@ static cmdline_item_t* cmdline_get_internal(const char* name) {
 	return NULL;
 }
 
-bool cmdline_has(const char* name) {
-	return !!cmdline_get_internal(name);
+bool cmdline_has(struct list_node* list, const char* name) {
+	return !!cmdline_get_internal(list, name);
 }
 
-const char* cmdline_get(const char* name) {
-	cmdline_item_t* item = cmdline_get_internal(name);
+const char* cmdline_get(struct list_node* list, const char* name) {
+	cmdline_item_t* item = cmdline_get_internal(list, name);
 
 	if(!item)
 		return NULL;
@@ -35,8 +34,8 @@ const char* cmdline_get(const char* name) {
 	return item->value;
 }
 
-void cmdline_add(const char* name, const char* value, bool overwrite) {
-	cmdline_item_t* item = cmdline_get_internal(name);
+void cmdline_add(struct list_node* list, const char* name, const char* value, bool overwrite) {
+	cmdline_item_t* item = cmdline_get_internal(list, name);
 	if(item) {
 		if(!overwrite) return;
 
@@ -50,11 +49,11 @@ void cmdline_add(const char* name, const char* value, bool overwrite) {
 	item->name = strdup(name);
 	item->value = value?strdup(value):NULL;
 
-	list_add_tail(&cmdline_list, &item->node);
+	list_add_tail(list, &item->node);
 }
 
-void cmdline_remove(const char* name) {
-	cmdline_item_t* item = cmdline_get_internal(name);
+void cmdline_remove(struct list_node* list, const char* name) {
+	cmdline_item_t* item = cmdline_get_internal(list, name);
 	if(item) {
 		list_delete(&item->node);
 		free(item->name);
@@ -63,31 +62,34 @@ void cmdline_remove(const char* name) {
 	}
 }
 
-size_t cmdline_length(void) {
+size_t cmdline_length(struct list_node* list) {
 	size_t len = 0;
 
 	cmdline_item_t *item;
-	list_for_every_entry(&cmdline_list, item, cmdline_item_t, node) {
+	list_for_every_entry(list, item, cmdline_item_t, node) {
+		// leading space
 		if(len!=0) len++;
+		// name
 		len+=strlen(item->name);
+		// '=' and value
 		if(item->value)
 			len+= 1 + strlen(item->value);
 	}
 
 	// 0 terminator
-	len++;
+	if(len>0) len++;
 
 	return len;
 }
 
-size_t cmdline_generate(char* buf, size_t bufsize) {
+size_t cmdline_generate(struct list_node* list, char* buf, size_t bufsize) {
 	size_t len = 0;
 
 	if(bufsize>0)
 		buf[0] = 0;
 
 	cmdline_item_t *item;
-	list_for_every_entry(&cmdline_list, item, cmdline_item_t, node) {
+	list_for_every_entry(list, item, cmdline_item_t, node) {
 		if(len!=0) buf[len++] = ' ';
 		len+=strlcpy(buf+len, item->name, bufsize-len);
 
@@ -129,7 +131,7 @@ static int str2nameval(const char* str, char** name, char** value) {
 	return 0;
 }
 
-void cmdline_addall(const char* _cmdline, bool overwrite) {
+void cmdline_addall(struct list_node* list, const char* _cmdline, bool overwrite) {
 	const char* sep = " ";
 
 	char* cmdline = strdup(_cmdline);
@@ -137,21 +139,44 @@ void cmdline_addall(const char* _cmdline, bool overwrite) {
 
 	char *pch = strtok(cmdline, sep);
 	while (pch != NULL) {
+		// parse
 		char* name = NULL;
 		char* value = NULL;
 		str2nameval(pch, &name, &value);
 
-		cmdline_add(name, value, overwrite);
-		free(name);
-		if(value) free(value);
+		// add
+		cmdline_add(list, name, value, overwrite);
 
+		// free
+		free(name);
+		free(value);
+
+		// next
 		pch = strtok(NULL, sep);
 	}
 
 	free(cmdline);
 }
 
-void cmdline_init(void)
+void cmdline_addall_list(struct list_node* list_dst, struct list_node* list_src, bool overwrite) {
+	cmdline_item_t *item;
+	list_for_every_entry(list_src, item, cmdline_item_t, node) {
+		cmdline_add(list_dst, item->name, item->value, overwrite);
+	}
+}
+
+void cmdline_init(struct list_node* list)
 {
-	list_initialize(&cmdline_list);
+	list_initialize(list);
+}
+
+void cmdline_free(struct list_node* list)
+{
+	while(!list_is_empty(list)) {
+		cmdline_item_t* item = list_remove_tail_type(list, cmdline_item_t, node);
+
+		free(item->name);
+		free(item->value);
+		free(item);
+	}
 }
