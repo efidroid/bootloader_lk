@@ -74,10 +74,7 @@
 #include <lib/bio.h>
 #endif
 
-#include <cmdline.h>
 #include <atagparse.h>
-
-#include <cmdline.h>
 
 #include "image_verify.h"
 #include "recovery.h"
@@ -727,12 +724,6 @@ void boot_linux(void *kernel, unsigned *tags,
 	ramdisk = (void *)PA((addr_t)ramdisk);
 
 	final_cmdline = update_cmdline((const char*)cmdline);
-	cmdline_addall(final_cmdline, false);
-	free(final_cmdline);
-
-	int len = cmdline_length();
-	final_cmdline = malloc(len);
-	cmdline_generate(final_cmdline, len);
 
 #if DEVICE_TREE
 	dprintf(INFO, "Updating device tree: start\n");
