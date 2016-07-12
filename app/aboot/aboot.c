@@ -71,6 +71,7 @@
 #endif
 
 #include <atagparse.h>
+#include <cmdline.h>
 
 #include "image_verify.h"
 #include "recovery.h"
@@ -719,7 +720,25 @@ void boot_linux(void *kernel, unsigned *tags,
 
 	ramdisk = (void *)PA((addr_t)ramdisk);
 
-	final_cmdline = update_cmdline((const char*)cmdline);
+	if(lkargs_get_command_line()) {
+		// create cmdline list
+		struct list_node list;
+		cmdline_init(&list);
+		cmdline_addall(&list, cmdline, true);
+		cmdline_addall_list(&list, lkargs_get_command_line_list(), true);
+
+		// generate cmdline
+		size_t cmdline_len = cmdline_length(&list);
+		final_cmdline = malloc(cmdline_len);
+		ASSERT(final_cmdline);
+		cmdline_generate(&list, final_cmdline, cmdline_len);
+
+		// cleanup
+		cmdline_free(&list);
+	}
+	else {
+		final_cmdline = update_cmdline((const char*)cmdline);
+	}
 
 #if DEVICE_TREE
 	dprintf(INFO, "Updating device tree: start\n");
