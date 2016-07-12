@@ -78,6 +78,10 @@ static void api_common_platform_early_init(void)
 
     // INIT
     api_platform_init();
+
+#if DEBUG_ENABLE_UEFI_FBCON
+    target_display_init("");
+#endif
 }
 
 __WEAK void api_platform_uninit(void)
@@ -384,7 +388,9 @@ static unsigned long long api_lcd_get_vram_size(void)
 
 static int api_lcd_init(void)
 {
+#if !DEBUG_ENABLE_UEFI_FBCON
     target_display_init("");
+#endif
     return 0;
 }
 
