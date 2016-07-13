@@ -27,7 +27,7 @@
 
 #include <dload_util.h>
 
-typedef void* (*platform_mmap_cb_t)(void* pdata, paddr_t addr, size_t size, bool reserved);
+typedef void* (*platform_mmap_cb_t)(void* pdata, uint64_t addr, uint64_t size, bool reserved);
 
 #define PA(x) platform_get_virt_to_phys_mapping(x)
 #define VA(x) platform_get_phys_to_virt_mapping(x)
