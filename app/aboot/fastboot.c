@@ -455,7 +455,7 @@ void fastboot_send_string_human(void* _data, size_t size) {
 		char c = data[i];
 		buf[pos++] = c;
 
-		if(pos==sizeof(buf)-1-4 || c=='\n' || c=='\r') {
+		if(pos==sizeof(buf)-1-4 || i==size-1 || c=='\n' || c=='\r') {
 			buf[pos] = 0;
 			fastboot_info(buf);
 			pos = 0;
