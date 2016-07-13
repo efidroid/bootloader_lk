@@ -35,6 +35,10 @@
 #include <kernel/dpc.h>
 #include <boot_stats.h>
 
+#if WITH_LIB_BIO
+#include <lib/bio.h>
+#endif
+
 extern void *__ctor_list;
 extern void *__ctor_end;
 extern int __bss_start;
