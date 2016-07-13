@@ -1188,3 +1188,12 @@ int partition_read_only(int index)
 {
 	 return partition_entries[index].attribute_flag >> PART_ATT_READONLY_OFFSET;
 }
+
+unsigned partition_get_count(void)
+{
+	return partition_count;
+}
+
+const char* partition_get_name(int index) {
+	return (const char*)partition_entries[index].name;
+}
