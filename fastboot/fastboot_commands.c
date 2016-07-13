@@ -129,28 +129,30 @@ static char* get_human_size(double size, char *buf) {
 
 static void cmd_oem_ram_ptable(const char *arg, void *data, unsigned sz)
 {
-	struct smem_ram_ptable ram_ptable;
 	unsigned int i;
-	char buf[MAX_RSP_SIZE];
+	ram_partition ptn_entry;
+	char buf[200];
 
 	// Make sure RAM partition table is initialized
-	if(!smem_ram_ptable_init(&ram_ptable)) {
+	if(!smem_ram_ptable_init_v1()) {
 		fastboot_fail("error reading RAM ptable");
 		return;
 	}
 
 	// print header
-	fastboot_info("ID\tAddress              \t  Size\tAttr\tCat\tDomain\tType\tParts");
+	fastboot_send_string_human("ID\tAddress                              \t  Size\tAttr\tCat\tDomain\tType\tParts\n", 0);
 
 	// print table
-	for(i = 0; i<ram_ptable.len; i++) {
+	for(i = 0; i<smem_get_ram_ptable_len(); i++) {
+		smem_get_ram_ptable_entry(&ptn_entry, i);
+
 		char sizebuf[1024];
-		snprintf(buf, sizeof(buf), "%u:\t0x%08x-0x%08x\t%s\t%s\t%s\t%s\t%s\t%u", i,
-				ram_ptable.parts[i].start, ram_ptable.parts[i].start+ram_ptable.parts[i].size,
-				get_human_size(ram_ptable.parts[i].size, sizebuf), smem_attr2str(ram_ptable.parts[i].attr),
-				smem_category2str(ram_ptable.parts[i].category), smem_domain2str(ram_ptable.parts[i].domain),
-				smem_type2str(ram_ptable.parts[i].type), ram_ptable.parts[i].num_partitions);
-		fastboot_info(buf);
+		snprintf(buf, sizeof(buf), "%u:\t0x%016llx-0x%016llx\t%s\t%s\t%s\t%s\t%s\t%u\n", i,
+				ptn_entry.start, ptn_entry.start+ptn_entry.size,
+				get_human_size(ptn_entry.size, sizebuf), smem_attr2str(ptn_entry.attr),
+				smem_category2str(ptn_entry.category), smem_domain2str(ptn_entry.domain),
+				smem_type2str(ptn_entry.type), ptn_entry.num_partitions);
+		fastboot_send_string_human(buf, 0);
 	}
 
 	fastboot_okay("");
