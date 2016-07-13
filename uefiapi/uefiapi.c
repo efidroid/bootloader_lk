@@ -528,7 +528,7 @@ typedef struct {
     lkapi_mmap_mappings_cb_t cb;
 } dram_cb_arg_t;
 
-static void *add_dram_callback(void *pdata, unsigned long addr, unsigned long size, int reserved)
+static void *add_dram_callback(void *pdata, unsigned long long addr, unsigned long long size, int reserved)
 {
     dram_cb_arg_t *arg = pdata;
     if (!reserved)
