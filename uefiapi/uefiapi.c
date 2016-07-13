@@ -564,10 +564,16 @@ static void *api_mmap_get_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)
     return pdata;
 }
 
-static void api_mmap_get_lk_range(unsigned long *addr, unsigned long *size)
+__WEAK void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb) {
+    return pdata;
+}
+
+static void *api_mmap_get_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
 {
-    *addr = MEMBASE;
-    *size = MEMSIZE;
+    pdata = cb(pdata, MEMBASE, MEMSIZE);
+    pdata = api_mmap_get_platform_lkmem(pdata, cb);
+
+    return pdata;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1179,7 +1185,7 @@ lkapi_t uefiapi = {
 
     .mmap_get_dram = api_mmap_get_dram,
     .mmap_get_mappings = api_mmap_get_mappings,
-    .mmap_get_lk_range = api_mmap_get_lk_range,
+    .mmap_get_lkmem = api_mmap_get_lkmem,
 
     .boot_update_addrs = api_boot_update_addrs,
     .boot_exec = api_boot_exec,
