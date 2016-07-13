@@ -12,8 +12,8 @@
 #endif
 
 typedef struct {
-    uint32_t start;
-    uint32_t size;
+    uint64_t start;
+    uint64_t size;
 } meminfo_t;
 
 // lk boot args
@@ -131,7 +131,7 @@ static int parse_atag_core(const struct tag *tag)
 	return 0;
 }
 
-static void add_meminfo(uint32_t start, uint32_t size) {
+static void add_meminfo(uint64_t start, uint64_t size) {
 	meminfo = realloc(meminfo, (++meminfo_count)*sizeof(*meminfo));
 	ASSERT(meminfo);
 
@@ -143,7 +143,7 @@ static int parse_atag_mem32(const struct tag *tag)
 {
 	dprintf(INFO, "0x%08x-0x%08x\n", tag->u.mem.start, tag->u.mem.start+tag->u.mem.size);
 
-	add_meminfo(tag->u.mem.start, tag->u.mem.size);
+	add_meminfo((uint64_t)tag->u.mem.start, (uint64_t)tag->u.mem.size);
 
 	return 0;
 }
@@ -237,8 +237,8 @@ unsigned *lkargs_gen_meminfo_atags(unsigned *ptr)
 	for (i = 0; i < meminfo_count; i++)
 	{
 		ptr = target_mem_atag_create(ptr,
-					meminfo[i].size,
-					meminfo[i].start);
+					(uint32_t)meminfo[i].size,
+					(uint32_t)meminfo[i].start);
 	}
 
 	return ptr;
@@ -250,7 +250,7 @@ void* lkargs_get_mmap_callback(void* pdata, platform_mmap_cb_t cb) {
 	ASSERT(meminfo);
 
 	for(i=0; i<meminfo_count; i++) {
-		pdata = cb(pdata, (paddr_t) meminfo[i].start, (size_t)meminfo[i].size, false);
+		pdata = cb(pdata, meminfo[i].start, meminfo[i].size, false);
 	}
 
 	return pdata;
@@ -636,7 +636,7 @@ static int parse_fdt(void* fdt)
 					dprintf(CRITICAL, "address range exceeds 32bit address space\n");
 				}
 				else {
-					add_meminfo((uint32_t)base, (uint32_t)size);
+					add_meminfo(base, size);
 				}
 			}
 		}
