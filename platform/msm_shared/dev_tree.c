@@ -40,6 +40,33 @@
 #include <target.h>
 #include <partial_goods.h>
 
+#if WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
+
+static uint32_t hook_platform_id(void) {
+	if(lkargs_has_board_info())
+		return lkargs_get_platform_id();
+	else	return board_platform_id();
+}
+
+static uint32_t hook_hardware_id(void) {
+	if(lkargs_has_board_info())
+		return lkargs_get_variant_id();
+	else	return board_hardware_id();
+}
+
+static uint32_t hook_soc_version(void) {
+	if(lkargs_has_board_info())
+		return lkargs_get_soc_rev();
+	else	return board_soc_version();
+}
+
+#define board_platform_id hook_platform_id
+#define board_hardware_id hook_hardware_id
+#define board_soc_version hook_soc_version
+
+#endif
+
 struct dt_entry_v1
 {
 	uint32_t platform_id;
@@ -1320,6 +1347,11 @@ int update_device_tree(void *fdt, const char *cmdline,
 
 	offset = ret;
 
+#ifdef WITH_LIB_ATAGPARSE
+	if(lkargs_has_meminfo())
+		ret = lkargs_gen_meminfo_fdt(fdt, offset);
+	else
+#endif
 	ret = target_dev_tree_mem(fdt, offset);
 	if(ret)
 	{
@@ -1366,6 +1398,10 @@ int update_device_tree(void *fdt, const char *cmdline,
 			return ret;
 		}
 	}
+
+#ifdef WITH_LIB_ATAGPARSE
+	lkargs_insert_chosen(fdt);
+#endif
 
 	fdt_pack(fdt);
 

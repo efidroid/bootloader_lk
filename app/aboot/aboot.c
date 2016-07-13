@@ -73,6 +73,14 @@
 #include <wdog.h>
 #endif
 
+#ifdef WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
+#endif
+
+#ifdef WITH_LIB_CMDLINE
+#include <lib/cmdline.h>
+#endif
+
 #include "image_verify.h"
 #include "recovery.h"
 #include "bootimg.h"
@@ -87,6 +95,10 @@
 #include "secapp_loader.h"
 #include <menu_keys_detect.h>
 #include <display_menu.h>
+
+#ifdef WITH_FASTBOOT_EXT
+void aboot_fastboot_register_commands_ex(void);
+#endif
 
 extern  bool target_use_signed_kernel(void);
 extern void platform_uninit(void);
@@ -691,6 +703,11 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 
 	ptr = atag_core(ptr);
 	ptr = atag_ramdisk(ptr, ramdisk, ramdisk_size);
+#ifdef WITH_LIB_ATAGPARSE
+	if(lkargs_has_meminfo())
+		ptr = lkargs_gen_meminfo_atags(ptr);
+	else
+#endif
 	ptr = target_atag_mem(ptr);
 
 	/* Skip NAND partition ATAGS for eMMC boot */
@@ -699,6 +716,9 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 	}
 
 	ptr = atag_cmdline(ptr, cmdline);
+#ifdef WITH_LIB_ATAGPARSE
+	ptr = lkargs_atag_insert_unknown(ptr);
+#endif
 	ptr = atag_end(ptr);
 }
 
@@ -718,6 +738,25 @@ void boot_linux(void *kernel, unsigned *tags,
 
 	ramdisk = (void *)PA((addr_t)ramdisk);
 
+#ifdef WITH_LIB_CMDLINE
+	if(lkargs_get_command_line()) {
+		// create cmdline list
+		struct list_node list;
+		cmdline_init(&list);
+		cmdline_addall(&list, cmdline, true);
+		cmdline_addall_list(&list, lkargs_get_command_line_list(), true);
+
+		// generate cmdline
+		size_t cmdline_len = cmdline_length(&list);
+		final_cmdline = malloc(cmdline_len);
+		ASSERT(final_cmdline);
+		cmdline_generate(&list, final_cmdline, cmdline_len);
+
+		// cleanup
+		cmdline_free(&list);
+	}
+	else
+#endif
 	final_cmdline = update_cmdline((const char*)cmdline);
 
 #if DEVICE_TREE
@@ -3773,6 +3812,10 @@ normal_boot:
 
 	/* register aboot specific fastboot commands */
 	aboot_fastboot_register_commands();
+
+#ifdef WITH_FASTBOOT_EXT
+	aboot_fastboot_register_commands_ex();
+#endif
 
 	/* dump partition table for debug info */
 	partition_dump();
