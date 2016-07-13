@@ -451,6 +451,9 @@ void fastboot_send_string_human(const void* _data, size_t size) {
 	size_t pos = 0;
 	const char* data = _data;
 
+	if(size==0)
+		size=strlen(data);
+
 	for(i=0; i<size; i++) {
 		char c = data[i];
 		buf[pos++] = c;
