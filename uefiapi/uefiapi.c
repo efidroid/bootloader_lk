@@ -12,8 +12,8 @@
 #include <platform/timer.h>
 #include <platform/iomap.h>
 #include <platform/interrupts.h>
-#include <atagparse.h>
-#include <cmdline.h>
+#include <lib/atagparse.h>
+#include <lib/cmdline.h>
 #include <mmc.h>
 #include <partition_parser.h>
 #include <arch/defines.h>
