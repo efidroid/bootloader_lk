@@ -70,8 +70,13 @@
 #include <dev_tree.h>
 #endif
 
-#include <atagparse.h>
-#include <cmdline.h>
+#ifdef WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
+#endif
+
+#ifdef WITH_LIB_CMDLINE
+#include <lib/cmdline.h>
+#endif
 
 #include "image_verify.h"
 #include "recovery.h"
@@ -88,12 +93,15 @@
 #include <menu_keys_detect.h>
 #include <display_menu.h>
 
+#ifdef WITH_FASTBOOT_EXT
+void aboot_fastboot_register_commands_ex(void);
+#endif
+
 extern  bool target_use_signed_kernel(void);
 extern void platform_uninit(void);
 extern void target_uninit(void);
 extern int get_target_boot_params(const char *cmdline, const char *part,
 				  char *buf, int buflen);
-void aboot_fastboot_register_commands_ex(void);
 
 void *info_buf;
 void write_device_info_mmc(device_info *dev);
@@ -689,10 +697,12 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 
 	ptr = atag_core(ptr);
 	ptr = atag_ramdisk(ptr, ramdisk, ramdisk_size);
+#ifdef WITH_LIB_ATAGPARSE
 	if(lkargs_has_meminfo())
 		ptr = lkargs_gen_meminfo_atags(ptr);
 	else
-		ptr = target_atag_mem(ptr);
+#endif
+	ptr = target_atag_mem(ptr);
 
 	/* Skip NAND partition ATAGS for eMMC boot */
 	if (!target_is_emmc_boot()){
@@ -700,7 +710,9 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 	}
 
 	ptr = atag_cmdline(ptr, cmdline);
+#ifdef WITH_LIB_ATAGPARSE
 	ptr = lkargs_atag_insert_unknown(ptr);
+#endif
 	ptr = atag_end(ptr);
 }
 
@@ -720,6 +732,7 @@ void boot_linux(void *kernel, unsigned *tags,
 
 	ramdisk = (void *)PA((addr_t)ramdisk);
 
+#ifdef WITH_LIB_CMDLINE
 	if(lkargs_get_command_line()) {
 		// create cmdline list
 		struct list_node list;
@@ -736,9 +749,9 @@ void boot_linux(void *kernel, unsigned *tags,
 		// cleanup
 		cmdline_free(&list);
 	}
-	else {
-		final_cmdline = update_cmdline((const char*)cmdline);
-	}
+	else
+#endif
+	final_cmdline = update_cmdline((const char*)cmdline);
 
 #if DEVICE_TREE
 	dprintf(INFO, "Updating device tree: start\n");
@@ -3541,7 +3554,10 @@ normal_boot:
 
 	/* register aboot specific fastboot commands */
 	aboot_fastboot_register_commands();
+
+#ifdef WITH_FASTBOOT_EXT
 	aboot_fastboot_register_commands_ex();
+#endif
 
 	/* dump partition table for debug info */
 	partition_dump();

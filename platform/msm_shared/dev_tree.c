@@ -39,7 +39,9 @@
 #include <kernel/thread.h>
 #include <target.h>
 #include <partial_goods.h>
-#include <atagparse.h>
+
+#if WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
 
 static uint32_t hook_platform_id(void) {
 	if(lkargs_has_board_info())
@@ -62,6 +64,8 @@ static uint32_t hook_soc_version(void) {
 #define board_platform_id hook_platform_id
 #define board_hardware_id hook_hardware_id
 #define board_soc_version hook_soc_version
+
+#endif
 
 struct dt_entry_v1
 {
@@ -1311,10 +1315,12 @@ int update_device_tree(void *fdt, const char *cmdline,
 
 	offset = ret;
 
+#ifdef WITH_LIB_ATAGPARSE
 	if(lkargs_has_meminfo())
 		ret = lkargs_gen_meminfo_fdt(fdt, offset);
 	else
-		ret = target_dev_tree_mem(fdt, offset);
+#endif
+	ret = target_dev_tree_mem(fdt, offset);
 	if(ret)
 	{
 		dprintf(CRITICAL, "ERROR: Cannot update memory node\n");
@@ -1361,7 +1367,9 @@ int update_device_tree(void *fdt, const char *cmdline,
 		}
 	}
 
+#ifdef WITH_LIB_ATAGPARSE
 	lkargs_insert_chosen(fdt);
+#endif
 
 	fdt_pack(fdt);
 

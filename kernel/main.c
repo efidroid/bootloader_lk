@@ -30,12 +30,18 @@
 #include <platform.h>
 #include <target.h>
 #include <lib/heap.h>
-#include <lib/bio.h>
 #include <kernel/thread.h>
 #include <kernel/timer.h>
 #include <kernel/dpc.h>
 #include <boot_stats.h>
-#include <atagparse.h>
+
+#if WITH_LIB_BIO
+#include <lib/bio.h>
+#endif
+
+#if WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
+#endif
 
 extern void *__ctor_list;
 extern void *__ctor_end;
@@ -78,10 +84,6 @@ void kmain(void)
 
 	// do any super early target initialization
 	target_early_init();
-
-#if WITH_DEBUG_LAST_KMSG
-	lastkmsg_init();
-#endif
 
 	dprintf(INFO, "welcome to lk\n\n");
 	bs_set_timestamp(BS_BL_START);
@@ -129,7 +131,9 @@ static int bootstrap2(void *arg)
 {
 	dprintf(SPEW, "top of bootstrap2()\n");
 
+#if WITH_LIB_ATAGPARSE
 	atag_parse();
+#endif
 
 	arch_init();
 

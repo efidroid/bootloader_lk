@@ -3,8 +3,7 @@ LOCAL_DIR := $(GET_LOCAL_DIR)
 MODULES += \
 	lib/libc \
 	lib/debug \
-	lib/heap \
-	lib/atagparse
+	lib/heap
 
 OBJS += \
 	$(LOCAL_DIR)/debug.o \

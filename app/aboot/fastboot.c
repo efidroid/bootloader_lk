@@ -36,11 +36,14 @@
 #include <kernel/thread.h>
 #include <kernel/event.h>
 #include <dev/udc.h>
-#include <lib/base64.h>
 #include "fastboot.h"
 
 #ifdef USB30_SUPPORT
 #include <usb30_udc.h>
+#endif
+
+#ifdef WITH_LIB_BASE64
+#include <lib/base64.h>
 #endif
 
 typedef struct
@@ -460,6 +463,7 @@ void fastboot_send_string_human(void* _data, size_t size) {
 	}
 }
 
+#ifdef WITH_LIB_BASE64
 void fastboot_send_buf(const void* data, size_t size) {
 	size_t b64_data_size = BASE64_ENCODED_SIZE(size);
 	char* b64_data = malloc(b64_data_size);
@@ -478,6 +482,7 @@ void fastboot_send_buf(const void* data, size_t size) {
 
 	free(b64_data);
 }
+#endif
 
 static void getvar_all(void)
 {
