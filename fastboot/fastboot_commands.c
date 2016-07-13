@@ -10,6 +10,7 @@
 #include <platform/timer.h>
 #include <platform/iomap.h>
 #include <dev/fbcon.h>
+#include <linux/elf.h>
 
 #if WITH_LIB_BIO
 #include <lib/bio.h>
@@ -284,6 +285,8 @@ static void cmd_oem_findbootimages(const char *arg, void *data, unsigned sz)
 	readsize = MAX(readsize, sizeof(qcom_bootimg_t));
 	readsize = MAX(readsize, sizeof(boot_img_hdr));
 	readsize = MAX(readsize, sizeof(qcom_sbl1_header_t));
+	readsize = MAX(readsize, sizeof(Elf32_Ehdr));
+	readsize = MAX(readsize, sizeof(Elf64_Ehdr));
 	readsize = ROUNDUP(readsize, mmc_get_device_blocksize());
 
 	// allocate memory
@@ -294,6 +297,8 @@ static void cmd_oem_findbootimages(const char *arg, void *data, unsigned sz)
 	}
 	struct boot_img_hdr* aimg = (struct boot_img_hdr*)bootimg;
 	qcom_sbl1_header_t* sbl1img = (qcom_sbl1_header_t*)bootimg;
+	Elf32_Ehdr* elf32hdr = (Elf32_Ehdr*)bootimg;
+	Elf64_Ehdr* elf64hdr = (Elf64_Ehdr*)bootimg;
 
 	unsigned i = 0;
 	unsigned count = partition_get_count();
@@ -341,6 +346,22 @@ static void cmd_oem_findbootimages(const char *arg, void *data, unsigned sz)
 			snprintf(buf, sizeof(buf), "\tcode size: %08x", sbl1img->code_size);
 			fastboot_info(buf);
 			snprintf(buf, sizeof(buf), "\tOEM root cert: sel:%08x num:%08x", sbl1img->oem_root_cert_sel, sbl1img->oem_num_root_certs);
+			fastboot_info(buf);
+		}
+
+		// ELF32
+		else if(elf32hdr->e_ident[EI_CLASS] == ELFCLASS32) {
+			snprintf(buf, sizeof(buf), "found ELF32 image on %s", partition_get_name(i));
+			fastboot_info(buf);
+			snprintf(buf, sizeof(buf), "\tEntry: 0x%08x", elf32hdr->e_entry);
+			fastboot_info(buf);
+		}
+
+		// ELF64
+		else if(elf64hdr->e_ident[EI_CLASS] == ELFCLASS64) {
+			snprintf(buf, sizeof(buf), "found ELF64 image on %s", partition_get_name(i));
+			fastboot_info(buf);
+			snprintf(buf, sizeof(buf), "\tEntry: 0x%016llx", elf64hdr->e_entry);
 			fastboot_info(buf);
 		}
 
