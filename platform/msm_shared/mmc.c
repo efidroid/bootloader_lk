@@ -604,9 +604,6 @@ static unsigned int mmc_boot_send_command(struct mmc_host* host, struct mmc_boot
 	/* Wait for the MMC_BOOT_MCI_CMD write to go through. */
 	mmc_internal_mclk_reg_wr_delay(host);
 
-	dprintf(SPEW, "Command sent: CMD%d MCI_CMD_REG:%x MCI_ARG:%x\n",
-		cmd_index, mmc_cmd, cmd->argument);
-
 	/* 3. Wait for interrupt or poll on the following bits of MCI_STATUS
 	   register */
 	do {
@@ -667,8 +664,6 @@ static unsigned int mmc_boot_send_command(struct mmc_host* host, struct mmc_boot
 				mmc_return = MMC_BOOT_E_CMD_INDX_MISMATCH;
 			}
 
-			dprintf(SPEW, "Command response received: %X\n",
-				cmd->resp[0]);
 			break;
 		}
 
