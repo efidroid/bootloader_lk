@@ -24,9 +24,28 @@
 
 #include <uefiapi.h>
 
+static int in_lkapi_call = 0;
+
+uint32_t uefi_entry_check(void) {
+    in_lkapi_call++;
+
+    if(in_lkapi_call==1)
+        critical_section_count = !arch_ints_enabled();
+    return critical_section_count;
+}
+
+void uefi_exit_check(uint32_t prev) {
+    in_lkapi_call--;
+
+    if(in_lkapi_call==0) {
+        ASSERT((int)prev==critical_section_count);
+        //ASSERT(arch_ints_enabled()==!critical_section_count);
+    }
+}
+
 extern void *__ctor_list;
 extern void *__ctor_end;
-void call_constructors(void)
+static void call_constructors(void)
 {
     void **ctor;
 
@@ -45,19 +64,70 @@ void call_constructors(void)
 //                            PLATFORM                                 //
 /////////////////////////////////////////////////////////////////////////
 
-void api_platform_early_init(void);
-void api_platform_init(void);
+#include <qgic.h>
 
-static void api_common_platform_early_init(void)
+__WEAK void uefiapi_platform_init_post(void) {
+
+}
+
+void platform_uninit(void);
+void target_uninit(void);
+
+extern int uefiapi_fn_wrapper_template;
+extern int uefiapi_fn_wrapper_template_end;
+
+void* uefiapi_make_fn_wrapper(void* fn) {
+    void* template = &uefiapi_fn_wrapper_template;
+    void* template_end = &uefiapi_fn_wrapper_template_end;
+    uint32_t template_size = template_end-template;
+
+    // allocate code
+    void* newfn = memalign(CACHE_LINE, template_size);
+    ASSERT(newfn);
+
+    // copy code
+    memcpy(newfn, template, template_size);
+
+    // set original function pointer
+    void** fnptr = newfn+template_size-sizeof(void*)*3;
+    fnptr[0] = uefi_entry_check;
+    fnptr[1] = fn;
+    fnptr[2] = uefi_exit_check;
+
+    return newfn;
+}
+
+static void generate_uefiapi_fn_wrappers(void) {
+    void** table = (void**)&uefiapi;
+    uint32_t size = sizeof(uefiapi)/sizeof(void*);
+
+    // verify size
+    ASSERT(sizeof(uefiapi)%sizeof(void*)==0);
+
+    uint32_t i;
+    for(i=0; i<size; i++) {
+        // set new function pointer
+        table[i] = uefiapi_make_fn_wrapper(table[i]);
+    }
+}
+
+static void api_platform_early_init(void)
 {
+    uint32_t prev = uefi_entry_check();
+
     // disable all known interrupts because UEFI enables interrupts before initializing the GIC
     int i;
     for (i=0; i<NR_IRQS; i++) {
-        mask_interrupt(i);
+        gic_mask_interrupt(i);
     }
 
-    // EARLYINIT
-    api_platform_early_init();
+	// do any super early platform initialization
+	platform_early_init();
+
+	// do any super early target initialization
+	target_early_init();
+
+	dprintf(INFO, "welcome to lk\n\n");
 
     // deal with any static constructors
     dprintf(SPEW, "calling constructors\n");
@@ -67,17 +137,32 @@ static void api_common_platform_early_init(void)
     dprintf(SPEW, "initializing heap\n");
     heap_init();
 
-    // parse atags
-    atag_parse();
+    //__stack_chk_guard_setup();
 
+#if WITH_LIB_ATAGPARSE
+    atag_parse();
+#endif
+
+    generate_uefiapi_fn_wrappers();
+
+    uefi_exit_check(prev);
+}
+
+static void api_platform_init(void) {
 #if WITH_LIB_BIO
     bio_init();
 #endif
 
-    exit_critical_section();
+    // initialize the rest of the platform
+	dprintf(SPEW, "initializing platform\n");
+	platform_init();
 
-    // INIT
-    api_platform_init();
+	// initialize the target
+	dprintf(SPEW, "initializing target\n");
+	target_init();
+
+    // target specific INIT
+    uefiapi_platform_init_post();
 
 #if DEBUG_ENABLE_UEFI_FBCON
     target_display_init("");
@@ -86,6 +171,10 @@ static void api_common_platform_early_init(void)
 
 __WEAK void api_platform_uninit(void)
 {
+    target_uninit();
+
+	/* do any platform specific cleanup before kernel entry */
+	platform_uninit();
 }
 
 __WEAK lkapi_uefi_bootmode api_platform_get_uefi_bootmode(void)
@@ -231,11 +320,6 @@ typedef struct {
     lkapi_biodev_t *list;
 } bio_iter_pdata_t;
 
-__WEAK int api_mmc_init(void)
-{
-    return 0;
-}
-
 static int vnor_init(void)
 {
     status_t rc;
@@ -249,22 +333,6 @@ static int vnor_init(void)
     rc = bio_publish_subdevice(dev->name, "vnor", dev->block_count-num_blocks, num_blocks);
 
     bio_close(dev);
-
-    return rc;
-}
-
-static int api_mmc_init_once(void)
-{
-    static int initialized = 0;
-
-    if (initialized)
-        return 0;
-
-    int rc = api_mmc_init();
-    if (!rc) {
-        initialized = 1;
-        vnor_init();
-    }
 
     return rc;
 }
@@ -359,9 +427,6 @@ static void bio_foreach_cb(void *_pdata, const char *name)
 
 static int api_bio_list(lkapi_biodev_t *list)
 {
-    // initialize MMC now so we can use BIO to retrieve all devices
-    api_mmc_init_once();
-
     bio_iter_pdata_t pdata = {
         .count = 0,
         .list = list,
@@ -444,7 +509,9 @@ static void api_lcd_flush(void)
 
 static void api_lcd_shutdown(void)
 {
-    target_display_shutdown();
+#if DISPLAY_SPLASH_SCREEN
+	target_display_shutdown();
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -627,11 +694,11 @@ static void api_boot_extend_fdt(void *fdt) {
 #endif
 }
 
-unsigned int api_boot_get_pmic_target(unsigned short num_ent) {
+static unsigned int api_boot_get_pmic_target(unsigned short num_ent) {
     return board_pmic_target(num_ent);
 }
 
-unsigned int api_boot_get_platform_id(void) {
+static unsigned int api_boot_get_platform_id(void) {
 #if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_platform_id();
@@ -640,7 +707,7 @@ unsigned int api_boot_get_platform_id(void) {
         return board_platform_id();
 }
 
-unsigned int api_boot_get_hardware_id(void) {
+static unsigned int api_boot_get_hardware_id(void) {
 #if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_variant_id();
@@ -649,11 +716,16 @@ unsigned int api_boot_get_hardware_id(void) {
         return board_hardware_id();
 }
 
-unsigned int api_boot_get_hardware_subtype(void) {
-    return board_hardware_subtype();
+static unsigned int api_boot_get_hardware_subtype(void) {
+#if DEVICE_TREE
+    if(lkargs_has_board_info() && lkargs_board_info_version()>1)
+		return lkargs_get_hw_subtype();
+    else
+#endif
+        return board_hardware_subtype();
 }
 
-unsigned int api_boot_get_soc_version(void) {
+static unsigned int api_boot_get_soc_version(void) {
 #if DEVICE_TREE
     if(lkargs_has_board_info())
         return lkargs_get_soc_rev();
@@ -662,15 +734,15 @@ unsigned int api_boot_get_soc_version(void) {
         return board_soc_version();
 }
 
-unsigned int api_boot_get_target_id(void) {
+static unsigned int api_boot_get_target_id(void) {
     return board_target_id();
 }
 
-unsigned int api_boot_get_foundry_id(void) {
+static unsigned int api_boot_get_foundry_id(void) {
     return board_foundry_id();
 }
 
-unsigned int api_boot_get_hlos_subtype(void) {
+static unsigned int api_boot_get_hlos_subtype(void) {
     return target_get_hlos_subtype();
 }
 
@@ -1137,7 +1209,8 @@ static lkapi_usbgadget_iface_t *api_usbgadget_get_interface(void)
 /////////////////////////////////////////////////////////////////////////
 
 lkapi_t uefiapi = {
-    .platform_early_init = api_common_platform_early_init,
+    .platform_early_init = api_platform_early_init,
+    .platform_init = api_platform_init,
     .platform_uninit = api_platform_uninit,
     .platform_get_uefi_bootmode = api_platform_get_uefi_bootmode,
 
