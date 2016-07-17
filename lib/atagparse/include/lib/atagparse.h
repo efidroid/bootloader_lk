@@ -4,8 +4,8 @@
 #include <platform.h>
 
 typedef enum {
-	LKARGS_UEFI_BM_NORMAL = 0,
-	LKARGS_UEFI_BM_RECOVERY,
+    LKARGS_UEFI_BM_NORMAL = 0,
+    LKARGS_UEFI_BM_RECOVERY,
 } lkargs_uefi_bootmode;
 
 uint32_t lkargs_get_machinetype(void);

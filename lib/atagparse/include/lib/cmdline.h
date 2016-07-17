@@ -22,9 +22,9 @@
 
 #define CMDLINE_ADD(str) ptr+=strlcpy((ptr), (str), cmdline_size)
 #define CMDLINE_BASEBAND(type, str) \
-	case (type): \
-		cmdline_add("androidboot.baseband", (str)); \
-		break;
+    case (type): \
+        cmdline_add("androidboot.baseband", (str)); \
+        break;
 
 bool cmdline_has(struct list_node* list, const char* name);
 const char* cmdline_get(struct list_node* list, const char* name);
