@@ -66,8 +66,8 @@ void platform_fiq(struct arm_iframe *frame)
 status_t mask_interrupt(unsigned int vector)
 {
 #ifdef WITH_KERNEL_UEFIAPI
-	if(uefiapi.int_mask)
-		return uefiapi.int_mask(vector);
+	ASSERT(uefiapi.int_mask);
+	return uefiapi.int_mask(vector);
 #endif
 
 #if TARGET_USES_GIC_VIC
@@ -83,8 +83,8 @@ status_t mask_interrupt(unsigned int vector)
 status_t unmask_interrupt(unsigned int vector)
 {
 #ifdef WITH_KERNEL_UEFIAPI
-	if(uefiapi.int_unmask)
-		return uefiapi.int_unmask(vector);
+	ASSERT(uefiapi.int_unmask);
+	return uefiapi.int_unmask(vector);
 #endif
 
 #if TARGET_USES_GIC_VIC
