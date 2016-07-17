@@ -34,6 +34,7 @@ extern "C" {
 
 void arch_enable_ints(void);
 void arch_disable_ints(void);
+int  arch_ints_enabled(void);
 
 int atomic_swap(volatile int *ptr, int val);
 int atomic_add(volatile int *ptr, int val);
