@@ -20,9 +20,6 @@
 
 #include <uefiapi.h>
 
-#define PMIC_ARB_CHANNEL_NUM    0
-#define PMIC_ARB_OWNER_ID       0
-
 /////////////////////////////////////////////////////////////////////////
 //                                KEYS                                 //
 /////////////////////////////////////////////////////////////////////////
@@ -62,59 +59,14 @@ static key_event_source_t event_source = {
 //                            PLATFORM                                 //
 /////////////////////////////////////////////////////////////////////////
 
-extern struct mmc_device *dev;
-
-static void rpm_smd_init_once(void) {
-	static int initialized = 0;
-	if(!initialized) {
-		rpm_smd_init();
-		initialized = 1;
-	}
-}
-
-void api_platform_early_init(void) {
-	// from platform_early_init, but without GIC
-	board_init();
-	platform_clock_init();
-	qtimer_init();
-
-	// UART
-	target_early_init();
-}
-
-void api_platform_init(void) {
-	// from target_init
-	// Initialize PMIC driver
-	spmi_init(PMIC_ARB_CHANNEL_NUM, PMIC_ARB_OWNER_ID);
-
-	keys_init();
+void uefiapi_platform_init_post(void) {
 	keys_add_source(&event_source);
 	event_source.keymap[0].enable_longpress = true;
-}
-
-void api_platform_uninit(void) {
-	// from target_uninit
-	mmc_put_card_to_sleep(dev);
-
-	// Disable HC mode before jumping to kernel
-	sdhci_mode_disable(&dev->host);
-
-	rpm_smd_uninit();
 }
 
 /////////////////////////////////////////////////////////////////////////
 //                            BlockIO                                  //
 /////////////////////////////////////////////////////////////////////////
-
-void target_sdc_init(void);
-
-int api_mmc_init(void) {
-	// we can't do this in platform_init because this needs interrupts
-	rpm_smd_init_once();
-
-	target_sdc_init();
-	return 0;
-}
 
 void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
