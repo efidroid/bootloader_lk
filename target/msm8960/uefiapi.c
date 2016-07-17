@@ -1,7 +1,11 @@
 #include <err.h>
+#include <board.h>
 #include <stdint.h>
 #include <dev/keys.h>
 #include <dev/pm8921.h>
+#include <platform/iomap.h>
+
+#include <uefiapi.h>
 
 /////////////////////////////////////////////////////////////////////////
 //                                KEYS                                 //
@@ -35,4 +39,11 @@ static key_event_source_t event_source = {
 void uefiapi_platform_init_post(void) {
 	keys_add_source(&event_source);
 	event_source.keymap[0].enable_longpress = true;
+}
+
+void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
+	pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
+	pdata = cb(pdata, MSM_IMEM_BASE, MSM_IMEM_BASE, 1*MB, LKAPI_MEMORY_DEVICE);
+
+	return pdata;
 }
