@@ -16,6 +16,15 @@ typedef struct {
     uint64_t size;
 } meminfo_t;
 
+typedef struct {
+    uint32_t version;
+    uint32_t chipset;
+    uint32_t platform;
+    uint32_t subtype;
+    uint32_t revNum;
+    uint32_t pmic_model[4];
+} efidroid_fdtinfo_t;
+
 // lk boot args
 extern uint32_t lk_boot_args[4];
 
@@ -34,8 +43,10 @@ static size_t meminfo_count = 0;
 #if DEVICE_TREE
 static uint32_t platform_id = 0;
 static uint32_t variant_id = 0;
+static uint32_t hw_subtype = 0;
 static uint32_t soc_rev = 0;
 static bool has_board_info = false;
+static bool board_info_version = 0;
 #endif
 
 uint32_t lkargs_get_machinetype(void) {
@@ -69,6 +80,10 @@ uint32_t lkargs_get_platform_id(void) {
 
 uint32_t lkargs_get_variant_id(void) {
 	return variant_id;
+}
+
+uint32_t lkargs_get_hw_subtype(void) {
+    return hw_subtype;
 }
 
 uint32_t lkargs_get_soc_rev(void) {
@@ -271,282 +286,6 @@ struct dt_entry_v1
 	uint32_t size;
 };
 
-static struct dt_entry* get_dt_entry(void *dtb, uint32_t dtb_size)
-{
-	int root_offset;
-	const void *prop = NULL;
-	const char *plat_prop = NULL;
-	const char *board_prop = NULL;
-	const char *pmic_prop = NULL;
-	char *model = NULL;
-	struct dt_entry *cur_dt_entry = NULL;
-	struct dt_entry *dt_entry_array = NULL;
-	struct board_id *board_data = NULL;
-	struct plat_id *platform_data = NULL;
-	struct pmic_id *pmic_data = NULL;
-	int len;
-	int len_board_id;
-	int len_plat_id;
-	int min_plat_id_len = 0;
-	int len_pmic_id;
-	uint32_t dtb_ver;
-	uint32_t num_entries = 0;
-	uint32_t i, j, k, n;
-	uint32_t msm_data_count;
-	uint32_t board_data_count;
-	uint32_t pmic_data_count;
-
-	root_offset = fdt_path_offset(dtb, "/");
-	if (root_offset < 0)
-		return NULL;
-
-	prop = fdt_getprop(dtb, root_offset, "model", &len);
-	if (prop && len > 0) {
-		model = (char *) malloc(sizeof(char) * len);
-		ASSERT(model);
-		strlcpy(model, prop, len);
-	} else {
-		dprintf(INFO, "model does not exist in device tree\n");
-	}
-	/* Find the pmic-id prop from DTB , if pmic-id is present then
-	* the DTB is version 3, otherwise find the board-id prop from DTB ,
-	* if board-id is present then the DTB is version 2 */
-	pmic_prop = (const char *)fdt_getprop(dtb, root_offset, "qcom,pmic-id", &len_pmic_id);
-	board_prop = (const char *)fdt_getprop(dtb, root_offset, "qcom,board-id", &len_board_id);
-	if (pmic_prop && (len_pmic_id > 0) && board_prop && (len_board_id > 0)) {
-		if ((len_pmic_id % PMIC_ID_SIZE) || (len_board_id % BOARD_ID_SIZE))
-		{
-			dprintf(CRITICAL, "qcom,pmic-id(%d) or qcom,board-id(%d) in device tree is not a multiple of (%d %d)\n",
-				len_pmic_id, len_board_id, PMIC_ID_SIZE, BOARD_ID_SIZE);
-			return NULL;
-		}
-		dtb_ver = DEV_TREE_VERSION_V3;
-		min_plat_id_len = PLAT_ID_SIZE;
-	} else if (board_prop && len_board_id > 0) {
-		if (len_board_id % BOARD_ID_SIZE)
-		{
-			dprintf(CRITICAL, "qcom,board-id in device tree is (%d) not a multiple of (%d)\n",
-				len_board_id, BOARD_ID_SIZE);
-			return NULL;
-		}
-		dtb_ver = DEV_TREE_VERSION_V2;
-		min_plat_id_len = PLAT_ID_SIZE;
-	} else {
-		dtb_ver = DEV_TREE_VERSION_V1;
-		min_plat_id_len = DT_ENTRY_V1_SIZE;
-	}
-
-	/* Get the msm-id prop from DTB */
-	plat_prop = (const char *)fdt_getprop(dtb, root_offset, "qcom,msm-id", &len_plat_id);
-	if (!plat_prop || len_plat_id <= 0) {
-		dprintf(INFO, "qcom,msm-id entry not found\n");
-		return NULL;
-	} else if (len_plat_id % min_plat_id_len) {
-		dprintf(INFO, "qcom,msm-id in device tree is (%d) not a multiple of (%d)\n",
-			len_plat_id, min_plat_id_len);
-		return NULL;
-	}
-
-	/*
-	 * If DTB version is '1' look for <x y z> pair in the DTB
-	 * x: platform_id
-	 * y: variant_id
-	 * z: SOC rev
-	 */
-	if (dtb_ver == DEV_TREE_VERSION_V1) {
-		cur_dt_entry = (struct dt_entry *)
-				malloc(sizeof(struct dt_entry));
-
-		if (!cur_dt_entry) {
-			dprintf(CRITICAL, "Out of memory\n");
-			return NULL;
-		}
-		memset(cur_dt_entry, 0, sizeof(struct dt_entry));
-
-		if(len_plat_id>DT_ENTRY_V1_SIZE) {
-			dprintf(INFO, "Found multiple dtentries!\n");
-		}
-
-		{
-			cur_dt_entry->platform_id = fdt32_to_cpu(((const struct dt_entry_v1 *)plat_prop)->platform_id);
-			cur_dt_entry->variant_id = fdt32_to_cpu(((const struct dt_entry_v1 *)plat_prop)->variant_id);
-			cur_dt_entry->soc_rev = fdt32_to_cpu(((const struct dt_entry_v1 *)plat_prop)->soc_rev);
-			cur_dt_entry->board_hw_subtype =
-				fdt32_to_cpu(((const struct dt_entry_v1 *)plat_prop)->variant_id) >> 0x18;
-			cur_dt_entry->pmic_rev[0] = board_pmic_target(0);
-			cur_dt_entry->pmic_rev[1] = board_pmic_target(1);
-			cur_dt_entry->pmic_rev[2] = board_pmic_target(2);
-			cur_dt_entry->pmic_rev[3] = board_pmic_target(3);
-			cur_dt_entry->offset = (uint32_t)dtb;
-			cur_dt_entry->size = dtb_size;
-
-			dprintf(SPEW, "Found an appended flattened device tree (%s - %u %u 0x%x)\n",
-				*model ? model : "unknown",
-				cur_dt_entry->platform_id, cur_dt_entry->variant_id, cur_dt_entry->soc_rev);
-
-		}
-	}
-	/*
-	 * If DTB Version is '3' then we have split DTB with board & msm data & pmic
-	 * populated saperately in board-id & msm-id & pmic-id prop respectively.
-	 * Extract the data & prepare a look up table
-	 */
-	else if (dtb_ver == DEV_TREE_VERSION_V2 || dtb_ver == DEV_TREE_VERSION_V3) {
-		board_data_count = (len_board_id / BOARD_ID_SIZE);
-		msm_data_count = (len_plat_id / PLAT_ID_SIZE);
-		/* If dtb version is v2.0, the pmic_data_count will be <= 0 */
-		pmic_data_count = (len_pmic_id / PMIC_ID_SIZE);
-
-		/* If we are using dtb v3.0, then we have split board, msm & pmic data in the DTB
-		*  If we are using dtb v2.0, then we have split board & msmdata in the DTB
-		*/
-		board_data = (struct board_id *) malloc(sizeof(struct board_id) * (len_board_id / BOARD_ID_SIZE));
-		ASSERT(board_data);
-		platform_data = (struct plat_id *) malloc(sizeof(struct plat_id) * (len_plat_id / PLAT_ID_SIZE));
-		ASSERT(platform_data);
-		if (dtb_ver == DEV_TREE_VERSION_V3) {
-			pmic_data = (struct pmic_id *) malloc(sizeof(struct pmic_id) * (len_pmic_id / PMIC_ID_SIZE));
-			ASSERT(pmic_data);
-		}
-		i = 0;
-
-		/* Extract board data from DTB */
-		for(i = 0 ; i < board_data_count; i++) {
-			board_data[i].variant_id = fdt32_to_cpu(((struct board_id *)board_prop)->variant_id);
-			board_data[i].platform_subtype = fdt32_to_cpu(((struct board_id *)board_prop)->platform_subtype);
-			/* For V2/V3 version of DTBs we have platform version field as part
-			 * of variant ID, in such case the subtype will be mentioned as 0x0
-			 * As the qcom, board-id = <0xSSPMPmPH, 0x0>
-			 * SS -- Subtype
-			 * PM -- Platform major version
-			 * Pm -- Platform minor version
-			 * PH -- Platform hardware CDP/MTP
-			 * In such case to make it compatible with LK algorithm move the subtype
-			 * from variant_id to subtype field
-			 */
-			if (board_data[i].platform_subtype == 0)
-				board_data[i].platform_subtype =
-					fdt32_to_cpu(((struct board_id *)board_prop)->variant_id) >> 0x18;
-
-			len_board_id -= sizeof(struct board_id);
-			board_prop += sizeof(struct board_id);
-		}
-
-		/* Extract platform data from DTB */
-		for(i = 0 ; i < msm_data_count; i++) {
-			platform_data[i].platform_id = fdt32_to_cpu(((struct plat_id *)plat_prop)->platform_id);
-			platform_data[i].soc_rev = fdt32_to_cpu(((struct plat_id *)plat_prop)->soc_rev);
-			len_plat_id -= sizeof(struct plat_id);
-			plat_prop += sizeof(struct plat_id);
-		}
-
-		if (dtb_ver == DEV_TREE_VERSION_V3 && pmic_prop) {
-			/* Extract pmic data from DTB */
-			for(i = 0 ; i < pmic_data_count; i++) {
-				pmic_data[i].pmic_version[0]= fdt32_to_cpu(((struct pmic_id *)pmic_prop)->pmic_version[0]);
-				pmic_data[i].pmic_version[1]= fdt32_to_cpu(((struct pmic_id *)pmic_prop)->pmic_version[1]);
-				pmic_data[i].pmic_version[2]= fdt32_to_cpu(((struct pmic_id *)pmic_prop)->pmic_version[2]);
-				pmic_data[i].pmic_version[3]= fdt32_to_cpu(((struct pmic_id *)pmic_prop)->pmic_version[3]);
-				len_pmic_id -= sizeof(struct pmic_id);
-				pmic_prop += sizeof(struct pmic_id);
-			}
-
-			/* We need to merge board & platform data into dt entry structure */
-			num_entries = msm_data_count * board_data_count * pmic_data_count;
-		} else {
-			/* We need to merge board & platform data into dt entry structure */
-			num_entries = msm_data_count * board_data_count;
-		}
-
-		if ((((uint64_t)msm_data_count * (uint64_t)board_data_count * (uint64_t)pmic_data_count) !=
-			msm_data_count * board_data_count * pmic_data_count) ||
-			(((uint64_t)msm_data_count * (uint64_t)board_data_count) != msm_data_count * board_data_count)) {
-
-			free(board_data);
-			free(platform_data);
-			if (pmic_data)
-				free(pmic_data);
-			if (model)
-				free(model);
-			return NULL;
-		}
-
-		dt_entry_array = (struct dt_entry*) malloc(sizeof(struct dt_entry) * num_entries);
-		ASSERT(dt_entry_array);
-
-		/* If we have '<X>; <Y>; <Z>' as platform data & '<A>; <B>; <C>' as board data.
-		 * Then dt entry should look like
-		 * <X ,A >;<X, B>;<X, C>;
-		 * <Y ,A >;<Y, B>;<Y, C>;
-		 * <Z ,A >;<Z, B>;<Z, C>;
-		 */
-		i = 0;
-		k = 0;
-		n = 0;
-		for (i = 0; i < msm_data_count; i++) {
-			for (j = 0; j < board_data_count; j++) {
-				if (dtb_ver == DEV_TREE_VERSION_V3 && pmic_prop) {
-					for (n = 0; n < pmic_data_count; n++) {
-						dt_entry_array[k].platform_id = platform_data[i].platform_id;
-						dt_entry_array[k].soc_rev = platform_data[i].soc_rev;
-						dt_entry_array[k].variant_id = board_data[j].variant_id;
-						dt_entry_array[k].board_hw_subtype = board_data[j].platform_subtype;
-						dt_entry_array[k].pmic_rev[0]= pmic_data[n].pmic_version[0];
-						dt_entry_array[k].pmic_rev[1]= pmic_data[n].pmic_version[1];
-						dt_entry_array[k].pmic_rev[2]= pmic_data[n].pmic_version[2];
-						dt_entry_array[k].pmic_rev[3]= pmic_data[n].pmic_version[3];
-						dt_entry_array[k].offset = (uint32_t)dtb;
-						dt_entry_array[k].size = dtb_size;
-						k++;
-					}
-
-				} else {
-					dt_entry_array[k].platform_id = platform_data[i].platform_id;
-					dt_entry_array[k].soc_rev = platform_data[i].soc_rev;
-					dt_entry_array[k].variant_id = board_data[j].variant_id;
-					dt_entry_array[k].board_hw_subtype = board_data[j].platform_subtype;
-					dt_entry_array[k].pmic_rev[0]= board_pmic_target(0);
-					dt_entry_array[k].pmic_rev[1]= board_pmic_target(1);
-					dt_entry_array[k].pmic_rev[2]= board_pmic_target(2);
-					dt_entry_array[k].pmic_rev[3]= board_pmic_target(3);
-					dt_entry_array[k].offset = (uint32_t)dtb;
-					dt_entry_array[k].size = dtb_size;
-					k++;
-				}
-			}
-		}
-
-		if (num_entries>0) {
-			if(num_entries>1) {
-				dprintf(INFO, "Found multiple dtentries!\n");
-			}
-
-			dprintf(SPEW, "Found an appended flattened device tree (%s - %u %u %u 0x%x)\n",
-				*model ? model : "unknown",
-				dt_entry_array[i].platform_id, dt_entry_array[i].variant_id, dt_entry_array[i].board_hw_subtype, dt_entry_array[i].soc_rev);
-
-			// allocate dt entry
-			cur_dt_entry = (struct dt_entry *) malloc(sizeof(struct dt_entry));
-			if (!cur_dt_entry) {
-				dprintf(CRITICAL, "Out of memory\n");
-				return NULL;
-			}
-
-			// copy entry
-			memcpy(cur_dt_entry, &dt_entry_array[0], sizeof(struct dt_entry));
-		}
-
-		free(board_data);
-		free(platform_data);
-		if (pmic_data)
-			free(pmic_data);
-		free(dt_entry_array);
-	}
-	if (model)
-		free(model);
-	return cur_dt_entry;
-}
-
 static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t* out_size_cell_size) {
 	int rc;
 	int len;
@@ -662,18 +401,31 @@ next:
 		}
 	}
 
-	// get dt entry
-	struct dt_entry* dt_entry = get_dt_entry(fdt, fdt_totalsize(fdt));
-	if(!dt_entry) {
-		dprintf(CRITICAL, "Could not find dt entry.\n");
+    // get root node
+	ret = fdt_path_offset(fdt, "/");
+	if (ret < 0)
+	{
+		dprintf(CRITICAL, "Could not find root node.\n");
+	}
+    offset = ret;
+
+    // get socinfo property
+    int len_socinfo;
+    const struct fdt_property* prop_socinfo = fdt_get_property(fdt, offset, "efidroid-soc-info", &len_socinfo);
+    if(!prop_socinfo) {
+		dprintf(CRITICAL, "Could not find efidroid-soc-info.\n");
 	}
 	else {
-		platform_id = dt_entry->platform_id;
-		variant_id = dt_entry->variant_id;
-		soc_rev = dt_entry->soc_rev;
+        const efidroid_fdtinfo_t* socinfo = (const efidroid_fdtinfo_t*)prop_socinfo->data;
+
+		platform_id = fdt32_to_cpu(socinfo->chipset);
+		variant_id = fdt32_to_cpu(socinfo->platform);
+		hw_subtype = fdt32_to_cpu(socinfo->subtype);
+		soc_rev = fdt32_to_cpu(socinfo->revNum);
+        board_info_version = fdt32_to_cpu(socinfo->version);
 		has_board_info = true;
 
-		dprintf(INFO, "platform_id=%d variant_id=%d soc_rev=%X\n", platform_id, variant_id, soc_rev);
+		dprintf(INFO, "platform_id=%u variant_id=%u hw_subtype=%u soc_rev=%X version=%u\n", platform_id, variant_id, hw_subtype, soc_rev, board_info_version);
 	}
 
 	return 0;
@@ -681,6 +433,10 @@ next:
 
 bool lkargs_has_board_info(void) {
 	return has_board_info;
+}
+
+bool lkargs_board_info_version(void) {
+	return board_info_version;
 }
 
 uint32_t lkargs_gen_meminfo_fdt(void *fdt, uint32_t memory_node_offset)
@@ -853,7 +609,7 @@ void atag_parse(void) {
 
 	dprintf(INFO, "cmdline=[%s]\n", command_line);
 #ifndef PLATFORM_MSM7X27A
-	dprintf(INFO, "[orig] platform_id=%d variant_id=%d soc_rev=%X\n", board_platform_id(), board_hardware_id(), board_soc_version());
+	dprintf(INFO, "[orig] platform_id=%u variant_id=%u hw_subtype=%u soc_rev=%X\n", board_platform_id(), board_hardware_id(), board_hardware_subtype(), board_soc_version());
 #endif
 
 	// add to global cmdline lib
