@@ -55,6 +55,12 @@ static uint32_t hook_hardware_id(void) {
 	else	return board_hardware_id();
 }
 
+static uint32_t hook_hardware_subtype(void) {
+	if(lkargs_has_board_info() && lkargs_board_info_version()>1)
+		return lkargs_get_hw_subtype();
+	else	return board_hardware_subtype();
+}
+
 static uint32_t hook_soc_version(void) {
 	if(lkargs_has_board_info())
 		return lkargs_get_soc_rev();
@@ -63,6 +69,7 @@ static uint32_t hook_soc_version(void) {
 
 #define board_platform_id hook_platform_id
 #define board_hardware_id hook_hardware_id
+#define board_hardware_subtype hook_hardware_subtype
 #define board_soc_version hook_soc_version
 
 #endif
@@ -278,6 +285,7 @@ static int dev_tree_compatible(void *dtb, uint32_t dtb_size, struct dt_entry_nod
 					board_platform_id(),
 					board_hardware_id(),
 					board_soc_version());
+
 				plat_prop += DT_ENTRY_V1_SIZE;
 				len_plat_id -= DT_ENTRY_V1_SIZE;
 				continue;
