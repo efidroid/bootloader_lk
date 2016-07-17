@@ -1,20 +1,7 @@
 #include <err.h>
-#include <debug.h>
 #include <stdint.h>
-#include <mmc.h>
-#include <board.h>
-#include <target.h>
 #include <dev/keys.h>
-#include <dev/ssbi.h>
 #include <dev/pm8921.h>
-#include <dev/fbcon.h>
-#include <mipi_dsi.h>
-#include <target/display.h>
-#include <platform/iomap.h>
-#include <platform/timer.h>
-#include <partition_parser.h>
-
-#include <uefiapi.h>
 
 /////////////////////////////////////////////////////////////////////////
 //                                KEYS                                 //
