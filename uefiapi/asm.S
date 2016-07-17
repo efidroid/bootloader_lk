@@ -30,7 +30,7 @@ FUNCTION(uefiapi_fn_wrapper_template)
     push {r0-r3}
 
     // entry check
-	adr r11, fn_entry
+    adr r11, fn_entry
     ldr r11, [r11]
     blx r11
     mov r11, r0
@@ -38,7 +38,7 @@ FUNCTION(uefiapi_fn_wrapper_template)
     push {r11}
 
     // run original function
-	adr r11, fn_hookee
+    adr r11, fn_hookee
     ldr r11, [r11]
     blx r11
     pop {r11}
@@ -46,7 +46,7 @@ FUNCTION(uefiapi_fn_wrapper_template)
 
     // exit check
     mov r0, r11
-	adr r11, fn_exit
+    adr r11, fn_exit
     ldr r11, [r11]
     blx r11
     pop {r0-r3}
