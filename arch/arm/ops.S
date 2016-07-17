@@ -40,6 +40,14 @@ FUNCTION(arch_disable_ints)
 	msr	cpsr_c, r0
 	bx	lr
 
+/* void arch_ints_enabled(void); */
+FUNCTION(arch_ints_enabled)
+	mrs	r0, cpsr
+	and	r0, r0, #(1<<7)
+	eor r0, #(1<<7)
+	lsr r0, r0, #7
+	bx	lr
+
 /* int atomic_swap(int *ptr, int val); */
 FUNCTION(atomic_swap)
 .L_loop_swap:
