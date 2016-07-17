@@ -65,17 +65,21 @@ static enum handler_return vib_timer_func(struct timer *v_timer, time_t t, void 
  */
 void vib_timed_turn_on(const uint32_t vibrate_time)
 {
+#ifndef WITH_KERNEL_UEFIAPI
 	vib_turn_on();
 	vib_timeout=0;
 	timer_initialize(&vib_timer);
 	timer_set_oneshot(&vib_timer, vibrate_time, vib_timer_func, NULL);
+#endif
 }
 
 /* Wait for vibrator timer expired */
 void wait_vib_timeout(void)
 {
+#ifndef WITH_KERNEL_UEFIAPI
 	while (!vib_timeout) {
 		/* every 50ms to check if the vibrator timer is timeout*/
 		thread_sleep(CHECK_VIB_TIMER_FREQUENCY);
 	}
+#endif
 }

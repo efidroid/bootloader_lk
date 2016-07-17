@@ -70,6 +70,10 @@ void qgic_dist_config(uint32_t num_irq)
 /* Initialize QGIC. Called from platform specific init code */
 void qgic_init(void)
 {
+#ifdef WITH_KERNEL_UEFIAPI
+	return;
+#endif
+
 	qgic_dist_init();
 	qgic_cpu_init();
 }
