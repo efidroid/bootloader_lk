@@ -50,10 +50,6 @@ void uefiapi_platform_init_post(void) {
 	event_source.keymap[0].enable_longpress = true;
 }
 
-/////////////////////////////////////////////////////////////////////////
-//                            BlockIO                                  //
-/////////////////////////////////////////////////////////////////////////
-
 void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
 	pdata = cb(pdata, SYSTEM_IMEM_BASE, SYSTEM_IMEM_BASE, 1*1024, LKAPI_MEMORY_DEVICE);
