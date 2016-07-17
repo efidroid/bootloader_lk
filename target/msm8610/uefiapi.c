@@ -1,22 +1,8 @@
 #include <err.h>
-#include <debug.h>
 #include <stdint.h>
-#include <mmc.h>
-#include <spmi.h>
-#include <board.h>
-#include <target.h>
 #include <pm8x41.h>
-#include <qtimer.h>
 #include <dev/keys.h>
-#include <sdhci_msm.h>
-#include <target/display.h>
 #include <platform/iomap.h>
-#include <platform/clock.h>
-#include <platform/timer.h>
-#include <platform/gpio.h>
-#include <partition_parser.h>
-#include <rpm-smd.h>
-#include <regulator.h>
 
 #include <uefiapi.h>
 
