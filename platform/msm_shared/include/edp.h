@@ -274,6 +274,7 @@ void edp_phy_misc_cfg(void);
 void edp_phy_vm_pe_init(void);
 int edp_on(void);
 int edp_off(void);
+void edp_panel_init(struct msm_panel_info *pinfo);
 int edp_config(void *pdata);
 void edp_isr_poll(void);
 void mdss_edp_dpcd_cap_read(void);
