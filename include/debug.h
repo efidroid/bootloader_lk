@@ -71,6 +71,8 @@ void dump_frame(void *frame);
 /* lk_log */
 char* lk_log_getbuf(void);
 unsigned lk_log_getsize(void);
+char* lk_log_getprevbuf(void);
+unsigned lk_log_getprevsize(void);
 #endif
 
 #if WITH_DEBUG_LAST_KMSG

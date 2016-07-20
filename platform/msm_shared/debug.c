@@ -39,6 +39,7 @@
 #include <dev/keys.h>
 #include <platform/timer.h>
 #include <platform.h>
+#include <string.h>
 
 #if PON_VIB_SUPPORT
 #include <vibrator.h>
@@ -68,6 +69,7 @@ static void write_dcc(char c)
 #endif
 
 #define LK_LOG_COOKIE    0x474f4c52 /* "RLOG" in ASCII */
+#define LK_LOG_ADDR 0xc0000000
 
 struct lk_log {
 	struct lk_log_header {
@@ -79,29 +81,41 @@ struct lk_log {
 	char data[LK_LOG_BUF_SIZE];
 };
 
-static struct lk_log log = {
-	.header = {
-		.cookie = LK_LOG_COOKIE,
-		.max_size = sizeof(log.data),
-		.size_written = 0,
-		.idx = 0,
-	},
-	.data = {0}
-};
+static struct lk_log* logp = NULL;
+static struct lk_log* logp_backup = NULL;
 
 static void log_putc(char c)
 {
+    if(!logp) {
+        logp = (void*)LK_LOG_ADDR;
+        logp_backup = (void*)LK_LOG_ADDR + LK_LOG_BUF_SIZE;
+
+        memcpy(logp_backup, logp, LK_LOG_BUF_SIZE);
+
+        logp->header.cookie = LK_LOG_COOKIE;
+        logp->header.max_size = LK_LOG_BUF_SIZE;
+        logp->header.size_written = 0;
+        logp->header.idx = 0;
+    }
+
 	if(!c) return;
-	log.data[log.header.idx++] = c;
-	log.header.size_written++;
-	if (unlikely(log.header.idx >= log.header.max_size))
-		log.header.idx = 0;
+	logp->data[logp->header.idx++] = c;
+	logp->header.size_written++;
+	if (unlikely(logp->header.idx >= logp->header.max_size))
+		logp->header.idx = 0;
 }
 char* lk_log_getbuf(void) {
-    return log.data;
+    return logp->data;
 }
 unsigned lk_log_getsize(void) {
-    return log.header.size_written;
+    return logp->header.size_written;
+}
+
+char* lk_log_getprevbuf(void) {
+    return logp_backup->data;
+}
+unsigned lk_log_getprevsize(void) {
+    return logp_backup->header.size_written;
 }
 #endif /* WITH_DEBUG_LOG_BUF */
 
