@@ -469,8 +469,9 @@ void fastboot_send_string_human(const void* _data, size_t size) {
 #ifdef WITH_LIB_BASE64
 void fastboot_send_buf(const void* data, size_t size) {
 	size_t b64_data_size = BASE64_ENCODED_SIZE(size);
-	char* b64_data = malloc(b64_data_size);
-	if(!b64_data) {
+	char* b64_data = download_base;
+
+	if(b64_data_size>download_max) {
 		fastboot_fail("out of memory");
 		return;
 	}
@@ -482,8 +483,6 @@ void fastboot_send_buf(const void* data, size_t size) {
 	}
 
 	fastboot_send_string(b64_data, ret);
-
-	free(b64_data);
 }
 #endif
 
