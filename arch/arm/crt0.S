@@ -146,6 +146,9 @@ lk_boot_args:
 #ifdef WITH_KERNEL_UEFIAPI
 lk_phys_offset:
 	.word 0
+.global edk2_base
+edk2_base:
+	.word 0
 #endif
 
 .Lstack_setup:
@@ -191,11 +194,16 @@ lk_phys_offset:
 	ldr     r0, =__data_end
 	add     r0, r0, r3
 
-	// r3 = EDK2_SIZE, r0 += 4
+	// r1 = EDK2_FD_BASE, r0 += 4
+	ldr     r1, [r0], #4
+	// store base at 'edk2_base'
+	ldr     r3, =edk2_base
+	str     r1, [r3]
+
+	// r3 = EDK2_FD_SIZE, r0 += 4
 	ldr     r3, [r0], #4
 
 	// check if we need to relocate EDK2
-	ldr     r1, =EDK2_BASE
 	cmp     r0, r1
 	beq     .Ledk2_relocate_done
 
