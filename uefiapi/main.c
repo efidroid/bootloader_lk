@@ -27,6 +27,8 @@
 #include <uefiapi.h>
 #include <platform/timer.h>
 
+extern void* edk2_base;
+
 /* the global critical section count */
 int critical_section_count = 1;
 
@@ -34,7 +36,7 @@ int critical_section_count = 1;
 void kmain(void) __NO_RETURN __EXTERNALLY_VISIBLE;
 void kmain(void)
 {
-    void (*entry)(void *) __NO_RETURN = (void *)(EDK2_BASE);
+    void (*entry)(void *) __NO_RETURN = edk2_base;
 
     // BOOT :D
     entry(&uefiapi);

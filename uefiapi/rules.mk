@@ -9,9 +9,6 @@ INCLUDES += \
 	-I$(LOCAL_DIR)/include \
 	-I$(LK_TOP_DIR)/app/aboot
 
-DEFINES += EDK2_BASE=$(EDK2_BASE)
-DEFINES += EDK2_SIZE=$(EDK2_SIZE)
-
 OBJS += \
 	$(LOCAL_DIR)/asm.o \
 	$(LOCAL_DIR)/uefiapi.o \
