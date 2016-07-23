@@ -2,14 +2,14 @@
 #include <string.h>
 #include <malloc.h>
 #include <board.h>
+#include <stdlib.h>
+#include <boot_device.h>
 #include <lib/atagparse.h>
 #include <lib/cmdline.h>
 #include "atags.h"
 
-#if DEVICE_TREE
 #include <libfdt.h>
 #include <dev_tree.h>
-#endif
 
 typedef struct {
     uint64_t start;
@@ -25,6 +25,43 @@ typedef struct {
     uint32_t pmic_model[4];
 } efidroid_fdtinfo_t;
 
+typedef struct {
+    struct list_node node;
+
+    const char* name;
+    uint32_t value;
+} qcid_item_t;
+
+typedef struct {
+    uint32_t pmic_model;
+    uint32_t pmic_minor;
+    uint32_t pmic_major;
+} qcpmicinfo_t;
+
+typedef struct {
+    // platform_id (x)
+    uint32_t msm_id;
+    uint32_t foundry_id;
+
+    // variant_id (y)
+    uint32_t platform_hw;
+    uint32_t platform_major;
+    uint32_t platform_minor;
+    //uint32_t platform_subtype;
+
+    // soc_rev (z)
+    uint32_t soc_rev;
+
+    // platform_subtype (y')
+    uint32_t subtype;
+    uint32_t ddr;
+    uint32_t panel;
+    uint32_t bootdev;
+
+    // pmic_rev
+    qcpmicinfo_t pmic_rev[4];
+} qchwinfo_t;
+
 // lk boot args
 extern uint32_t lk_boot_args[4];
 
@@ -33,26 +70,46 @@ static void*  tags_copy = NULL;
 static size_t tags_size = 0;
 
 // parsed data: common
-static uint32_t machinetype = 0;
+static qchwinfo_t* hwinfo_tags = NULL;
+static qchwinfo_t* hwinfo_lk = NULL;
 static char* command_line = NULL;
 static struct list_node cmdline_list;
 static lkargs_uefi_bootmode uefi_bootmode = LKARGS_UEFI_BM_NORMAL;
 static meminfo_t* meminfo = NULL;
 static size_t meminfo_count = 0;
-// parsed data: fdt
-#if DEVICE_TREE
-static uint32_t platform_id = 0;
-static uint32_t variant_id = 0;
-static uint32_t hw_subtype = 0;
-static uint32_t soc_rev = 0;
-static bool has_board_info = false;
-static bool board_info_version = 0;
-#endif
+static struct list_node qciditem_list;
 
-uint32_t lkargs_get_machinetype(void)
+static void qciditem_add(const char* name, uint32_t value)
 {
-    return machinetype;
+    qcid_item_t* item = malloc(sizeof(qcid_item_t));
+    ASSERT(item);
+
+    item->name = strdup(name);
+    item->value = value;
+
+    list_add_tail(&qciditem_list, &item->node);
 }
+
+int qciditem_get(const char* name, uint32_t* datap)
+{
+    qcid_item_t *entry;
+    list_for_every_entry(&qciditem_list, entry, qcid_item_t, node) {
+        if (!strcmp(entry->name, name)) {
+            *datap = entry->value;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+uint32_t qciditem_get_zero(const char* name)
+{
+    uint32_t data = 0;
+    qciditem_get(name, &data);
+    return data;
+}
+
 
 const char* lkargs_get_command_line(void)
 {
@@ -76,28 +133,6 @@ const char* lkargs_get_panel_name(const char* key)
 
     return name;
 }
-
-#if DEVICE_TREE
-uint32_t lkargs_get_platform_id(void)
-{
-    return platform_id;
-}
-
-uint32_t lkargs_get_variant_id(void)
-{
-    return variant_id;
-}
-
-uint32_t lkargs_get_hw_subtype(void)
-{
-    return hw_subtype;
-}
-
-uint32_t lkargs_get_soc_rev(void)
-{
-    return soc_rev;
-}
-#endif
 
 lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void)
 {
@@ -137,7 +172,6 @@ int atags_check_header(void* tags)
     return atags->hdr.tag!=ATAG_CORE;
 }
 
-#if DEVICE_TREE
 static int save_fdt(void* fdt)
 {
     tags_size = fdt_totalsize(fdt);
@@ -150,7 +184,6 @@ static int save_fdt(void* fdt)
     memcpy(tags_copy, fdt, tags_size);
     return 0;
 }
-#endif
 
 // parse ATAGS
 static int parse_atag_core(const struct tag *tag)
@@ -291,15 +324,6 @@ bool lkargs_has_meminfo(void)
 }
 
 // parse FDT
-#if DEVICE_TREE
-struct dt_entry_v1 {
-    uint32_t platform_id;
-    uint32_t variant_id;
-    uint32_t soc_rev;
-    uint32_t offset;
-    uint32_t size;
-};
-
 static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t* out_size_cell_size)
 {
     int rc;
@@ -340,11 +364,27 @@ static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t*
     return 0;
 }
 
+static void print_qchwinfo(const char* prefix, qchwinfo_t* hwinfo)
+{
+    dprintf(INFO, "%splat=%u/%u variant=%u/%u/%u socrev=%x subtype=%u/%u/%u/%u pmic_rev=<%u/%u/%u> <%u/%u/%u> <%u/%u/%u> <%u/%u/%u>\n",
+            prefix?:"",
+            hwinfo->msm_id, hwinfo->foundry_id,
+            hwinfo->platform_hw, hwinfo->platform_major, hwinfo->platform_minor,
+            hwinfo->soc_rev,
+            hwinfo->subtype, hwinfo->ddr, hwinfo->panel, hwinfo->bootdev,
+            hwinfo->pmic_rev[0].pmic_model, hwinfo->pmic_rev[0].pmic_minor, hwinfo->pmic_rev[0].pmic_major,
+            hwinfo->pmic_rev[1].pmic_model, hwinfo->pmic_rev[1].pmic_minor, hwinfo->pmic_rev[1].pmic_major,
+            hwinfo->pmic_rev[2].pmic_model, hwinfo->pmic_rev[2].pmic_minor, hwinfo->pmic_rev[2].pmic_major,
+            hwinfo->pmic_rev[3].pmic_model, hwinfo->pmic_rev[3].pmic_minor, hwinfo->pmic_rev[3].pmic_major
+           );
+}
+
 static int parse_fdt(void* fdt)
 {
     int ret = 0;
     uint32_t offset;
     int len;
+    uint32_t i;
 
     // get memory node
     ret = fdt_path_offset(fdt, "/memory");
@@ -420,29 +460,47 @@ next:
     if (!prop_socinfo) {
         dprintf(CRITICAL, "Could not find efidroid-soc-info.\n");
     } else {
+        // read info from fdt
         const efidroid_fdtinfo_t* socinfo = (const efidroid_fdtinfo_t*)prop_socinfo->data;
+        uint32_t platform_id = fdt32_to_cpu(socinfo->chipset);
+        uint32_t variant_id = fdt32_to_cpu(socinfo->platform);
+        uint32_t hw_subtype = fdt32_to_cpu(socinfo->subtype);
+        uint32_t soc_rev = fdt32_to_cpu(socinfo->revNum);
+        uint32_t pmic_model[4] = {
+            fdt32_to_cpu(socinfo->pmic_model[0]),
+            fdt32_to_cpu(socinfo->pmic_model[1]),
+            fdt32_to_cpu(socinfo->pmic_model[2]),
+            fdt32_to_cpu(socinfo->pmic_model[3]),
+        };
 
-        platform_id = fdt32_to_cpu(socinfo->chipset);
-        variant_id = fdt32_to_cpu(socinfo->platform);
-        hw_subtype = fdt32_to_cpu(socinfo->subtype);
-        soc_rev = fdt32_to_cpu(socinfo->revNum);
-        board_info_version = fdt32_to_cpu(socinfo->version);
-        has_board_info = true;
+        // if subtype is 0, we have to use the subtype id from the variant_id
+        if (hw_subtype==0) {
+            hw_subtype = (variant_id&0xff000000)>>24;
+        }
 
-        dprintf(INFO, "platform_id=%u variant_id=%u hw_subtype=%u soc_rev=%X version=%u\n", platform_id, variant_id, hw_subtype, soc_rev, board_info_version);
+        // build hwinfo_tags
+        hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
+        ASSERT(hwinfo_tags);
+        hwinfo_tags->msm_id = platform_id&0x0000ffff;
+        hwinfo_tags->foundry_id = (platform_id&0x00ff0000)>>16;
+        hwinfo_tags->platform_hw = variant_id&0x000000ff;
+        hwinfo_tags->platform_minor = (variant_id&0x0000ff00)>>8;
+        hwinfo_tags->platform_major = (variant_id&0x00ff0000)>>16;
+        hwinfo_tags->platform_minor = (soc_rev&0xff);
+        hwinfo_tags->platform_major = (soc_rev>>16)&0xff;
+        hwinfo_tags->soc_rev = soc_rev;
+        hwinfo_tags->subtype = hw_subtype&0x000000ff;
+        hwinfo_tags->ddr = (hw_subtype&0x700)>>8;
+        hwinfo_tags->panel = (hw_subtype&0x1800)>>11;
+        hwinfo_tags->bootdev = (hw_subtype&0xf0000)>>16;
+        for (i=0; i<4; i++) {
+            hwinfo_tags->pmic_rev[i].pmic_model = (pmic_model[i]&0x000000ff);
+            hwinfo_tags->pmic_rev[i].pmic_minor = (pmic_model[i]&0x0000ff00)>>8;
+            hwinfo_tags->pmic_rev[i].pmic_major = (pmic_model[i]&0x00ff0000)>>16;
+        }
     }
 
     return 0;
-}
-
-bool lkargs_has_board_info(void)
-{
-    return has_board_info;
-}
-
-bool lkargs_board_info_version(void)
-{
-    return board_info_version;
 }
 
 uint32_t lkargs_gen_meminfo_fdt(void *fdt, uint32_t memory_node_offset)
@@ -465,9 +523,7 @@ uint32_t lkargs_gen_meminfo_fdt(void *fdt, uint32_t memory_node_offset)
 out:
     return ret;
 }
-#endif
 
-#if DEVICE_TREE
 static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void* fdtsrc, int offsetsrc)
 {
     int len;
@@ -571,10 +627,11 @@ int lkargs_insert_chosen(void* fdt)
     // insert all nodes
     return lkargs_fdt_insert_nodes(fdt, target_offset_chosen);
 }
-#endif
 
 void atag_parse(void)
 {
+    uint32_t i;
+
     dprintf(INFO, "bootargs: 0x%x 0x%x 0x%x 0x%x\n",
             lk_boot_args[0],
             lk_boot_args[1],
@@ -582,41 +639,37 @@ void atag_parse(void)
             lk_boot_args[3]
            );
 
-    // init cmdline lib
+    // init
     cmdline_init(&cmdline_list);
-
-    // machine type
-    machinetype = lk_boot_args[1];
-    dprintf(INFO, "machinetype: %u\n", machinetype);
+    list_initialize(&qciditem_list);
 
     void* tags = (void*)lk_boot_args[2];
 
-#if DEVICE_TREE
     // fdt
     if (!fdt_check_header(tags)) {
         save_fdt(tags);
         parse_fdt(tags);
-    } else
-#endif
+    }
 
-        // atags
-        if (!atags_check_header(tags)) {
-            save_atags(tags);
-            parse_atags(tags);
-        }
+    // atags
+    else if (!atags_check_header(tags)) {
+        // machine type
+        uint32_t machinetype = lk_boot_args[1];
+        dprintf(INFO, "machinetype: %u\n", machinetype);
+
+        qciditem_add("machtype", machinetype);
+        save_atags(tags);
+        parse_atags(tags);
+    }
 
     // unknown
-        else {
-            dprintf(CRITICAL, "Invalid atags!\n");
-            return;
-        }
+    else {
+        dprintf(CRITICAL, "Invalid atags!\n");
+        return;
+    }
 
+    // parse cmdline
     dprintf(INFO, "cmdline=[%s]\n", command_line);
-#ifndef PLATFORM_MSM7X27A
-    dprintf(INFO, "[orig] platform_id=%u variant_id=%u hw_subtype=%u soc_rev=%X\n", board_platform_id(), board_hardware_id(), board_hardware_subtype(), board_soc_version());
-#endif
-
-    // add to global cmdline lib
     cmdline_addall(&cmdline_list, command_line, true);
 
     // get bootmode
@@ -629,4 +682,95 @@ void atag_parse(void)
 
         cmdline_remove(&cmdline_list, "uefi.bootmode");
     }
+
+    // build and print hwinfo_lk
+#ifndef PLATFORM_MSM7X27A
+    {
+        uint32_t platform_id = board_platform_id();
+        uint32_t foundry_id = (platform_id&0x00ff0000)>>16;
+        foundry_id = MAX(foundry_id, board_foundry_id());
+        uint32_t soc_rev = board_soc_version();
+
+        // allocate
+        hwinfo_lk = calloc(1, sizeof(qchwinfo_t));
+        ASSERT(hwinfo_lk);
+
+        hwinfo_lk->msm_id = platform_id&0x0000ffff;
+        hwinfo_lk->foundry_id = foundry_id;
+        hwinfo_lk->platform_hw = board_hardware_id();
+        hwinfo_lk->platform_minor = (soc_rev&0xff);
+        hwinfo_lk->platform_major = (soc_rev>>16)&0xff;
+        hwinfo_lk->soc_rev = soc_rev;
+        hwinfo_lk->subtype = board_hardware_subtype();
+        hwinfo_lk->ddr = board_get_ddr_subtype();
+        hwinfo_lk->panel = platform_detect_panel();
+        hwinfo_lk->bootdev = platform_get_boot_dev();
+        for (i=0; i<4; i++) {
+            uint32_t pmic_model = board_pmic_target(i);
+            hwinfo_lk->pmic_rev[i].pmic_model = (pmic_model&0x000000ff);
+            hwinfo_lk->pmic_rev[i].pmic_minor = (pmic_model&0x0000ff00)>>8;
+            hwinfo_lk->pmic_rev[i].pmic_major = (pmic_model&0x00ff0000)>>16;
+        }
+
+        print_qchwinfo("[LK]   ", hwinfo_lk);
+    }
+
+    // build info based on hwinfo_lk
+    uint32_t platform_id = hwinfo_lk->msm_id | (hwinfo_lk->foundry_id<<16); // EQ
+    uint32_t platform_hw = hwinfo_lk->platform_hw; // EQ
+    uint32_t subtype = hwinfo_lk->subtype; // EQ
+    uint32_t platform_subtype = (hwinfo_lk->subtype) | (hwinfo_lk->ddr << 8) | (hwinfo_lk->panel << 11) | (hwinfo_lk->bootdev << 16); // EQ
+    uint32_t soc_rev = hwinfo_lk->soc_rev; // LE
+    uint32_t variant_id_platform_hw = hwinfo_lk->platform_hw; // LE
+    uint32_t variant_id_platform_minor = hwinfo_lk->platform_minor; // LE
+    uint32_t variant_id_platform_major = hwinfo_lk->platform_major; // LE
+    uint32_t variant_id_subtype = hwinfo_lk->subtype; // LE
+    uint32_t pmicrev1 = (hwinfo_lk->pmic_rev[0].pmic_model) | (hwinfo_lk->pmic_rev[0].pmic_minor << 8) | (hwinfo_lk->pmic_rev[0].pmic_major << 16); // LE
+    uint32_t pmicrev2 = (hwinfo_lk->pmic_rev[1].pmic_model) | (hwinfo_lk->pmic_rev[1].pmic_minor << 8) | (hwinfo_lk->pmic_rev[1].pmic_major << 16); // LE
+    uint32_t pmicrev3 = (hwinfo_lk->pmic_rev[2].pmic_model) | (hwinfo_lk->pmic_rev[2].pmic_minor << 8) | (hwinfo_lk->pmic_rev[2].pmic_major << 16); // LE
+    uint32_t pmicrev4 = (hwinfo_lk->pmic_rev[3].pmic_model) | (hwinfo_lk->pmic_rev[3].pmic_minor << 8) | (hwinfo_lk->pmic_rev[3].pmic_major << 16); // LE
+    uint32_t foundry_id = hwinfo_lk->foundry_id; // EQ
+
+    // improve info using hwinfo_tags
+    if (hwinfo_tags) {
+        // print hwinfo
+        print_qchwinfo("[TAGS] ", hwinfo_tags);
+
+        // use exact-match values from tags
+        platform_id = hwinfo_tags->msm_id | (hwinfo_tags->foundry_id<<16);
+        platform_hw = hwinfo_tags->platform_hw;
+        subtype = hwinfo_tags->subtype;
+        platform_subtype = (hwinfo_tags->subtype) | (hwinfo_tags->ddr << 8) | (hwinfo_tags->panel << 11) | (hwinfo_tags->bootdev << 16);
+        foundry_id = hwinfo_tags->foundry_id;
+
+        // use LE values from tags if they are bigger
+        if (hwinfo_tags->soc_rev > hwinfo_lk->soc_rev)
+            soc_rev = hwinfo_tags->soc_rev;
+        // variant_id
+        if (hwinfo_tags->platform_hw > variant_id_platform_hw)
+            variant_id_platform_hw = hwinfo_tags->platform_hw;
+        if (hwinfo_tags->platform_minor > variant_id_platform_minor)
+            variant_id_platform_minor = hwinfo_tags->platform_minor;
+        if (hwinfo_tags->platform_major > variant_id_platform_major)
+            variant_id_platform_major = hwinfo_tags->platform_major;
+        if (hwinfo_tags->subtype > variant_id_subtype)
+            variant_id_subtype = hwinfo_tags->subtype;
+
+        // always use pmicrev from LK until we tested this
+    }
+
+    uint32_t variant_id = (variant_id_platform_hw) | (variant_id_platform_minor << 8) | (variant_id_platform_major << 16) | (variant_id_subtype << 24);
+
+    qciditem_add("qcom,platform_id", platform_id); // libboot_qcdt_platform_id
+    qciditem_add("qcom,platform_hw", platform_hw); // libboot_qcdt_hardware_id
+    qciditem_add("qcom,subtype", subtype); // libboot_qcdt_hardware_subtype
+    qciditem_add("qcom,platform_subtype", platform_subtype); // libboot_qcdt_get_hlos_subtype
+    qciditem_add("qcom,soc_rev", soc_rev); // libboot_qcdt_soc_version
+    qciditem_add("qcom,variant_id", variant_id); // libboot_qcdt_target_id
+    qciditem_add("qcom,pmic_rev1", pmicrev1); // libboot_qcdt_pmic_target
+    qciditem_add("qcom,pmic_rev2", pmicrev2); // libboot_qcdt_pmic_target
+    qciditem_add("qcom,pmic_rev3", pmicrev3); // libboot_qcdt_pmic_target
+    qciditem_add("qcom,pmic_rev4", pmicrev4); // libboot_qcdt_pmic_target
+    qciditem_add("qcom,foundry_id", foundry_id); // libboot_qcdt_foundry_id
+#endif
 }
