@@ -183,7 +183,7 @@ __WEAK void api_platform_uninit(void)
     platform_uninit();
 }
 
-__WEAK lkapi_uefi_bootmode api_platform_get_uefi_bootmode(void)
+__WEAK unsigned int api_platform_get_uefi_bootmode(void)
 {
     switch (lkargs_get_uefi_bootmode()) {
         case LKARGS_UEFI_BM_RECOVERY:
@@ -488,7 +488,7 @@ static unsigned int api_lcd_get_bpp(void)
     return fbcon->bpp;
 }
 
-static lkapi_lcd_pixelformat_t api_lcd_get_pixelformat(void)
+static int api_lcd_get_pixelformat(void)
 {
     struct fbcon_config *fbcon = fbcon_display();
 
@@ -683,11 +683,6 @@ static void api_boot_exec(void *kernel, unsigned int zero, unsigned int arch, un
         entry(zero, arch, (unsigned *)tags);
 }
 
-static unsigned int api_boot_get_machine_type(void)
-{
-    return board_target_id();
-}
-
 static const char* api_boot_get_cmdline_extension(void)
 {
     return lkargs_get_command_line();
@@ -705,64 +700,8 @@ static void api_boot_extend_fdt(void *fdt)
 #endif
 }
 
-static unsigned int api_boot_get_pmic_target(unsigned short num_ent)
-{
-    return board_pmic_target(num_ent);
-}
-
-static unsigned int api_boot_get_platform_id(void)
-{
-#if DEVICE_TREE
-    if (lkargs_has_board_info())
-        return lkargs_get_platform_id();
-    else
-#endif
-        return board_platform_id();
-}
-
-static unsigned int api_boot_get_hardware_id(void)
-{
-#if DEVICE_TREE
-    if (lkargs_has_board_info())
-        return lkargs_get_variant_id();
-    else
-#endif
-        return board_hardware_id();
-}
-
-static unsigned int api_boot_get_hardware_subtype(void)
-{
-#if DEVICE_TREE
-    if (lkargs_has_board_info() && lkargs_board_info_version()>1)
-        return lkargs_get_hw_subtype();
-    else
-#endif
-        return board_hardware_subtype();
-}
-
-static unsigned int api_boot_get_soc_version(void)
-{
-#if DEVICE_TREE
-    if (lkargs_has_board_info())
-        return lkargs_get_soc_rev();
-    else
-#endif
-        return board_soc_version();
-}
-
-static unsigned int api_boot_get_target_id(void)
-{
-    return board_target_id();
-}
-
-static unsigned int api_boot_get_foundry_id(void)
-{
-    return board_foundry_id();
-}
-
-static unsigned int api_boot_get_hlos_subtype(void)
-{
-    return target_get_hlos_subtype();
+static int api_boot_get_hwid(const char* id, unsigned int* datap) {
+    return qciditem_get(id, datap);
 }
 
 
@@ -1282,19 +1221,10 @@ lkapi_t uefiapi = {
     .boot_update_addrs = api_boot_update_addrs,
     .boot_exec = api_boot_exec,
 
-    .boot_get_machine_type = api_boot_get_machine_type,
+    .boot_get_hwid = api_boot_get_hwid,
     .boot_get_cmdline_extension = api_boot_get_cmdline_extension,
     .boot_extend_atags = api_boot_extend_atags,
     .boot_extend_fdt = api_boot_extend_fdt,
-
-    .boot_get_pmic_target = api_boot_get_pmic_target,
-    .boot_get_platform_id = api_boot_get_platform_id,
-    .boot_get_hardware_id = api_boot_get_hardware_id,
-    .boot_get_hardware_subtype = api_boot_get_hardware_subtype,
-    .boot_get_soc_version = api_boot_get_soc_version,
-    .boot_get_target_id = api_boot_get_target_id,
-    .boot_get_foundry_id = api_boot_get_foundry_id,
-    .boot_get_hlos_subtype = api_boot_get_hlos_subtype,
 
     .event_init = NULL,
     .event_destroy = NULL,
