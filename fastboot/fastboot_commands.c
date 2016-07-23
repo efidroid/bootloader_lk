@@ -553,6 +553,20 @@ static void cmd_oem_dumpatags(const char *arg, void *data, unsigned sz)
 }
 #endif
 
+#if defined(WITH_LIB_BASE64)
+static void cmd_oem_dumpmem(const char *arg, void *data, unsigned sz)
+{
+    uint32_t addr = hex2unsigned(arg);
+    arg += 9;
+    uint32_t size = hex2unsigned(arg);
+
+    if (addr && size)
+        fastboot_send_buf((void*)addr, size);
+
+    fastboot_okay("");
+}
+#endif
+
 void aboot_fastboot_register_commands_ex(void)
 {
     int i;
@@ -579,6 +593,9 @@ void aboot_fastboot_register_commands_ex(void)
         {"oem memfill", cmd_oem_memfill},
 #if defined(WITH_LIB_ATAGPARSE) && defined(WITH_LIB_BASE64)
         {"oem dump-atags", cmd_oem_dumpatags},
+#endif
+#if defined(WITH_LIB_BASE64)
+        {"oem dump-mem", cmd_oem_dumpmem},
 #endif
 #endif
     };
