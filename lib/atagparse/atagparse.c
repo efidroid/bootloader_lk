@@ -657,7 +657,7 @@ void atag_parse(void)
         uint32_t machinetype = lk_boot_args[1];
         dprintf(INFO, "machinetype: %u\n", machinetype);
 
-        qciditem_add("machtype", machinetype);
+        qciditem_add("qcom,machtype", machinetype);
         save_atags(tags);
         parse_atags(tags);
     }
