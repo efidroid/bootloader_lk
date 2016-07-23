@@ -44,33 +44,48 @@
 #include <lib/atagparse.h>
 
 static uint32_t hook_platform_id(void) {
-	if(lkargs_has_board_info())
-		return lkargs_get_platform_id();
-	else	return board_platform_id();
+    return qciditem_get_zero("qcom,platform_id");
 }
-
 static uint32_t hook_hardware_id(void) {
-	if(lkargs_has_board_info())
-		return lkargs_get_variant_id();
-	else	return board_hardware_id();
+    return qciditem_get_zero("qcom,platform_hw");
 }
-
 static uint32_t hook_hardware_subtype(void) {
-	if(lkargs_has_board_info() && lkargs_board_info_version()>1)
-		return lkargs_get_hw_subtype();
-	else	return board_hardware_subtype();
+    return qciditem_get_zero("qcom,subtype");
+}
+static uint32_t hook_get_hlos_subtype(void) {
+    return qciditem_get_zero("qcom,platform_subtype");
+}
+static uint32_t hook_soc_version(void) {
+    return qciditem_get_zero("qcom,soc_rev");
 }
 
-static uint32_t hook_soc_version(void) {
-	if(lkargs_has_board_info())
-		return lkargs_get_soc_rev();
-	else	return board_soc_version();
+static uint32_t hook_target_id(void) {
+    return qciditem_get_zero("qcom,variant_id");
+}
+static uint32_t hook_pmic_target(uint8_t num_ent) {
+    if(num_ent==0)
+        return qciditem_get_zero("qcom,pmic_rev1");
+    if(num_ent==1)
+        return qciditem_get_zero("qcom,pmic_rev2");
+    if(num_ent==2)
+        return qciditem_get_zero("qcom,pmic_rev3");
+    if(num_ent==3)
+        return qciditem_get_zero("qcom,pmic_rev4");
+
+    return 0;
+}
+static uint32_t hook_foundry_id(void) {
+    return qciditem_get_zero("qcom,foundry_id");
 }
 
 #define board_platform_id hook_platform_id
 #define board_hardware_id hook_hardware_id
 #define board_hardware_subtype hook_hardware_subtype
+#define target_get_hlos_subtype hook_get_hlos_subtype
 #define board_soc_version hook_soc_version
+#define board_target_id hook_target_id
+#define board_pmic_target hook_pmic_target
+#define board_foundry_id hook_foundry_id
 
 #endif
 
