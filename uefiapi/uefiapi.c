@@ -24,6 +24,8 @@
 
 #include <uefiapi.h>
 
+static int vnor_init(void);
+
 static int in_lkapi_call = 0;
 
 uint32_t uefi_entry_check(void)
@@ -169,6 +171,9 @@ static void api_platform_init(void)
 
     // target specific INIT
     uefiapi_platform_init_post();
+
+    // init VBOR
+    vnor_init();
 
 #if DEBUG_ENABLE_UEFI_FBCON
     target_display_init("");
