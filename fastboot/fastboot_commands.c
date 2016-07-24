@@ -639,6 +639,18 @@ static void update_ker_tags_rdisk_addr(bootimg_context_t *context, bool is_arm64
 #endif
 }
 
+static void *libboot_add_custom_atags(void *tags)
+{
+    return lkargs_atag_insert_unknown(tags);
+}
+
+static void libboot_patch_fdt(void *fdt)
+{
+#if DEVICE_TREE
+    lkargs_insert_chosen(fdt);
+#endif
+}
+
 static void cmd_boot(const char *arg, void *data, unsigned sz)
 {
     // init
@@ -648,6 +660,8 @@ static void cmd_boot(const char *arg, void *data, unsigned sz)
     // setup context
     bootimg_context_t context;
     libboot_init_context(&context);
+    context.add_custom_atags = libboot_add_custom_atags;
+    context.patch_fdt = libboot_patch_fdt;
 
     // identify type
     int rc = libboot_identify_memory(data, sz, &context);
