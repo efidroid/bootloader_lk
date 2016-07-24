@@ -11,6 +11,8 @@
 #include <platform/iomap.h>
 #include <dev/fbcon.h>
 #include <linux/elf.h>
+#include <kernel/thread.h>
+#include <boot_stats.h>
 
 #if WITH_LIB_BIO
 #include <lib/bio.h>
@@ -18,6 +20,10 @@
 
 #ifdef WITH_LIB_ATAGPARSE
 #include <lib/atagparse.h>
+#endif
+
+#ifdef WITH_LIB_BOOT
+#include <lib/boot.h>
 #endif
 
 #include "fastboot.h"
@@ -567,6 +573,116 @@ static void cmd_oem_dumpmem(const char *arg, void *data, unsigned sz)
 }
 #endif
 
+#ifdef WITH_LIB_BOOT
+#define IS_ARM64(ptr) (((struct kernel64_hdr *)(ptr))->magic_64 == KERNEL64_HDR_MAGIC) ? true : false
+
+typedef void libboot_entry_func_ptr(unsigned, unsigned, unsigned);
+void libboot_platform_heap_init(void* base, size_t len);
+void target_uninit(void);
+void platform_uninit(void);
+
+static void boot_jump(bootimg_context_t* context) {
+    void (*entry)(unsigned, unsigned, unsigned) = (libboot_entry_func_ptr*)(PA((addr_t)context->kernel_addr));
+
+    /* Perform target specific cleanup */
+    target_uninit();
+
+    /* Turn off splash screen if enabled */
+#if DISPLAY_SPLASH_SCREEN
+    target_display_shutdown();
+#endif
+
+    dprintf(INFO, "booting linux @ %p, ramdisk @ %p (%lu), tags/device tree @ %p\n",
+    entry, (void*)context->ramdisk_addr, context->ramdisk_size, (void *)context->tags_addr);
+
+    enter_critical_section();
+
+    /* do any platform specific cleanup before kernel entry */
+    platform_uninit();
+
+    arch_disable_cache(UCACHE);
+
+#if ARM_WITH_MMU
+    arch_disable_mmu();
+#endif
+    bs_set_timestamp(BS_KERNEL_ENTRY);
+
+    if (IS_ARM64(context->kernel_addr))
+        // Jump to a 64bit kernel
+        scm_elexec_call((paddr_t)context->kernel_addr, context->kernel_arguments[2]);
+    else
+        // Jump to a 32bit kernel
+        entry(context->kernel_arguments[0], context->kernel_arguments[1], context->kernel_arguments[2]);
+}
+
+static void print_error_stack(void) {
+    // print errors
+    uint32_t i;
+    char** error_stack = libboot_error_stack_get();
+    for(i=0; i<libboot_error_stack_count(); i++)
+        printf("[%d] %s\n", i, error_stack[i]);
+    libboot_error_stack_reset();
+}
+
+static void update_ker_tags_rdisk_addr(bootimg_context_t* context, bool is_arm64) {
+	/* overwrite the destination of specified for the project */
+#ifdef ABOOT_IGNORE_BOOT_HEADER_ADDRS
+    if (is_arm64)
+        context->kernel_addr = ABOOT_FORCE_KERNEL64_ADDR;
+    else
+        context->kernel_addr = ABOOT_FORCE_KERNEL_ADDR;
+    context->ramdisk_addr = ABOOT_FORCE_RAMDISK_ADDR;
+    context->tags_addr = ABOOT_FORCE_TAGS_ADDR;
+#endif
+}
+
+static void cmd_boot(const char *arg, void *data, unsigned sz) {
+    // init
+    libboot_platform_heap_init(data + sz, target_get_max_flash_size() - sz);
+    libboot_init();
+
+    // setup context
+    bootimg_context_t context;
+    libboot_init_context(&context);
+
+    // identify type
+    int rc = libboot_identify_memory(data, sz, &context);
+    if(!rc) {
+        // load image
+        rc = libboot_load(&context);
+        if(!rc) {
+
+            // update loading addresses
+            update_ker_tags_rdisk_addr(&context, IS_ARM64(context.kernel_data));
+
+            // prepare for boot
+            rc = libboot_prepare(&context);
+            if(!rc) {
+                // just in case one got ignored
+                print_error_stack();
+
+                // disable fastboot
+	            fastboot_okay("");
+	            fastboot_stop();
+
+                // BOOT :)
+                boot_jump(&context);
+                dprintf(CRITICAL, "BOOT RETURNED\n");
+            }
+        }
+    }
+
+    // print errors
+    print_error_stack();
+
+    // cleanup
+    libboot_free_context(&context);
+    libboot_uninit();
+
+    fastboot_fail("can't boot");
+}
+#endif
+
 void aboot_fastboot_register_commands_ex(void)
 {
     int i;
@@ -596,6 +712,11 @@ void aboot_fastboot_register_commands_ex(void)
 #endif
 #if defined(WITH_LIB_BASE64)
         {"oem dump-mem", cmd_oem_dumpmem},
+#endif
+
+        // these work because fastboot checks the last commands first
+#ifdef WITH_LIB_BOOT
+        {"boot", cmd_boot},
 #endif
 #endif
     };
