@@ -197,12 +197,8 @@ int mdss_dsi_cmds_tx(struct mipi_panel_info *mipi,
 		sctl_base = mipi->sctl_base;
 	}
 
-	/* Align pload at 8 byte boundary */
-	off = (uint32_t) pload;
-	off &= 0x07;
-	if (off)
-		off = 8 - off;
-	off += (uint32_t) pload;
+	/* Align pload at cache line size */
+	off = ROUNDUP((uint32_t)pload, CACHE_LINE);
 
 	cm = cmds;
 	for (i = 0; i < count; i++) {
@@ -211,19 +207,16 @@ int mdss_dsi_cmds_tx(struct mipi_panel_info *mipi,
 		if (ret)
 			goto wait4video_error;
 
-		/* The payload size has to be a multiple of 4 */
-		size = cm->size;
-		size &= 0x03;
-		if (size)
-			size = 4 - size;
-		size += cm->size;
-		memcpy((uint8_t *)off, (cm->payload), size);
+		/* Align size at cache line size */
+		size = ROUNDUP((uint32_t)cm->size, CACHE_LINE);
+
+		memcpy((uint8_t *)off, (cm->payload), cm->size);
 		arch_clean_invalidate_cache_range((addr_t)(off), size);
 		writel(off, ctl_base + DMA_CMD_OFFSET);
-		writel(size, ctl_base + DMA_CMD_LENGTH);
+		writel(cm->size, ctl_base + DMA_CMD_LENGTH);
 		if (dual_dsi) {
 			writel(off, sctl_base + DMA_CMD_OFFSET);
-			writel(size, sctl_base + DMA_CMD_LENGTH);
+			writel(cm->size, sctl_base + DMA_CMD_LENGTH);
 		}
 		dsb();
 		ret += mdss_dsi_cmd_dma_trigger_for_panel(dual_dsi, ctl_base,
