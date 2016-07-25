@@ -43,6 +43,7 @@
 #include <pm_pwm.h>
 #include <target/display.h>
 #include <gcdb_display.h>
+#include <mdp3.h>
 
 #include "include/panel.h"
 #include "include/display_resource.h"
