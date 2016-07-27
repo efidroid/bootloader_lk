@@ -43,9 +43,9 @@ FUNCTION(arch_disable_ints)
 /* void arch_ints_enabled(void); */
 FUNCTION(arch_ints_enabled)
 	mrs	r0, cpsr
-	and	r0, r0, #(1<<7)
-	eor r0, #(1<<7)
-	lsr r0, r0, #7
+	tst	r0, #0x80
+	moveq	r0, #1
+	movne	r0, #0
 	bx	lr
 
 /* int atomic_swap(int *ptr, int val); */
