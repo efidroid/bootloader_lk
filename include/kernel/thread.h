@@ -126,6 +126,9 @@ extern thread_t *idle_thread;
 /* critical sections */
 extern int critical_section_count;
 
+#ifdef WITH_KERNEL_UEFIAPI
+#include <uefiapi.h>
+#else
 static inline __ALWAYS_INLINE void enter_critical_section(void)
 {
 	critical_section_count++;
@@ -139,6 +142,7 @@ static inline __ALWAYS_INLINE void exit_critical_section(void)
 	if (critical_section_count == 0)
 		arch_enable_ints();
 }
+#endif
 
 static inline __ALWAYS_INLINE bool in_critical_section(void)
 {
