@@ -31,6 +31,7 @@ extern void* edk2_base;
 
 /* the global critical section count */
 int critical_section_count = 1;
+int critical_enter_status = 1;
 
 /* called from crt0.S */
 void kmain(void) __NO_RETURN __EXTERNALLY_VISIBLE;

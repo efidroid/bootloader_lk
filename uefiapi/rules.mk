@@ -10,7 +10,6 @@ INCLUDES += \
 	-I$(LK_TOP_DIR)/app/aboot
 
 OBJS += \
-	$(LOCAL_DIR)/asm.o \
 	$(LOCAL_DIR)/uefiapi.o \
 	$(LOCAL_DIR)/main.o \
 	$(LOCAL_DIR)/event.o \

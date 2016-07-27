@@ -26,27 +26,6 @@
 
 static int vnor_init(void);
 
-static int in_lkapi_call = 0;
-
-uint32_t uefi_entry_check(void)
-{
-    in_lkapi_call++;
-
-    if (in_lkapi_call==1)
-        critical_section_count = !arch_ints_enabled();
-    return critical_section_count;
-}
-
-void uefi_exit_check(uint32_t prev)
-{
-    in_lkapi_call--;
-
-    if (in_lkapi_call==0) {
-        ASSERT((int)prev==critical_section_count);
-        //ASSERT(arch_ints_enabled()==!critical_section_count);
-    }
-}
-
 extern void *__ctor_list;
 extern void *__ctor_end;
 static void call_constructors(void)
@@ -78,50 +57,8 @@ __WEAK void uefiapi_platform_init_post(void)
 void platform_uninit(void);
 void target_uninit(void);
 
-extern int uefiapi_fn_wrapper_template;
-extern int uefiapi_fn_wrapper_template_end;
-
-void* uefiapi_make_fn_wrapper(void* fn)
-{
-    void* template = &uefiapi_fn_wrapper_template;
-    void* template_end = &uefiapi_fn_wrapper_template_end;
-    uint32_t template_size = template_end-template;
-
-    // allocate code
-    void* newfn = memalign(CACHE_LINE, template_size);
-    ASSERT(newfn);
-
-    // copy code
-    memcpy(newfn, template, template_size);
-
-    // set original function pointer
-    void** fnptr = newfn+template_size-sizeof(void*)*3;
-    fnptr[0] = uefi_entry_check;
-    fnptr[1] = fn;
-    fnptr[2] = uefi_exit_check;
-
-    return newfn;
-}
-
-static void generate_uefiapi_fn_wrappers(void)
-{
-    void** table = (void**)&uefiapi;
-    uint32_t size = sizeof(uefiapi)/sizeof(void*);
-
-    // verify size
-    ASSERT(sizeof(uefiapi)%sizeof(void*)==0);
-
-    uint32_t i;
-    for (i=0; i<size; i++) {
-        // set new function pointer
-        table[i] = uefiapi_make_fn_wrapper(table[i]);
-    }
-}
-
 static void api_platform_early_init(void)
 {
-    uint32_t prev = uefi_entry_check();
-
     // disable all known interrupts because UEFI enables interrupts before initializing the GIC
     int i;
     for (i=0; i<NR_IRQS; i++) {
@@ -149,10 +86,6 @@ static void api_platform_early_init(void)
 #if WITH_LIB_ATAGPARSE
     atag_parse();
 #endif
-
-    generate_uefiapi_fn_wrappers();
-
-    uefi_exit_check(prev);
 }
 
 static void api_platform_init(void)
