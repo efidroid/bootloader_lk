@@ -85,11 +85,15 @@ void *libboot_platform_memset(void *s, int c, boot_uintn_t n) {
     return memset(s, c, n);
 }
 
-void libboot_platform_format_string(char* buf, boot_uintn_t sz, const char* fmt, ...) {
+int libboot_platform_format_string(char* buf, boot_uintn_t sz, const char* fmt, ...) {
+    int rc;
+
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buf, sz, fmt, args);
+    rc = vsnprintf(buf, sz, fmt, args);
     va_end (args);
+
+    return rc;
 }
 
 char* libboot_platform_strdup(const char *s) {
