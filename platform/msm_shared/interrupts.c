@@ -101,7 +101,7 @@ void register_int_handler(unsigned int vector, int_handler func, void *arg)
 {
 #ifdef WITH_KERNEL_UEFIAPI
 	ASSERT(uefiapi.int_register_handler);
-	uefiapi.int_register_handler(vector, (lkapi_int_handler)uefiapi_make_fn_wrapper(func), arg);
+	uefiapi.int_register_handler(vector, (lkapi_int_handler)func, arg);
 	return;
 #endif
 
