@@ -81,6 +81,8 @@
 #include <lib/cmdline.h>
 #endif
 
+#include <reboot.h>
+
 #include "image_verify.h"
 #include "recovery.h"
 #include "bootimg.h"
@@ -138,13 +140,6 @@ struct fastboot_cmd_desc {
 #define RECOVERY_HARD_RESET_MODE   0x01
 #define FASTBOOT_HARD_RESET_MODE   0x02
 #define RTC_HARD_RESET_MODE        0x03
-
-#define RECOVERY_MODE        0x77665502
-#define FASTBOOT_MODE        0x77665500
-#define ALARM_BOOT           0x77665503
-#define DM_VERITY_LOGGING    0x77665508
-#define DM_VERITY_ENFORCING  0x77665509
-#define DM_VERITY_KEYSCLEAR  0x7766550A
 
 /* make 4096 as default size to ensure EFS,EXT4's erasing */
 #define DEFAULT_ERASE_SIZE  4096
@@ -3745,7 +3740,11 @@ void aboot_init(const struct app_descriptor *app)
 	boot_into_fastboot = true;
 	#endif
 
+#if USE_PON_REBOOT_REG
+	reboot_mode = check_hard_reboot_mode();
+#else
 	reboot_mode = check_reboot_mode();
+#endif
 	hard_reboot_mode = check_hard_reboot_mode();
 	if (reboot_mode == RECOVERY_MODE ||
 		hard_reboot_mode == RECOVERY_HARD_RESET_MODE) {
