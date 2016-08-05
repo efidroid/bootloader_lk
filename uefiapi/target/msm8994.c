@@ -55,13 +55,17 @@ void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
 	pdata = cb(pdata, SYSTEM_IMEM_BASE, SYSTEM_IMEM_BASE, 1*MB, LKAPI_MEMORY_DEVICE);
 	pdata = cb(pdata, MSM_SHARED_BASE, MSM_SHARED_BASE, 2*MB, LKAPI_MEMORY_DEVICE);
+#ifdef RPMB_SND_RCV_BUF
 	pdata = cb(pdata, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ*MB, LKAPI_MEMORY_DEVICE);
+#endif
 
 	return pdata;
 }
 
 void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb) {
 	pdata = cb(pdata, MSM_SHARED_BASE, 2*MB);
+#ifdef RPMB_SND_RCV_BUF
     pdata = cb(pdata, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ*MB);
+#endif
     return pdata;
 }
