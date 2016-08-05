@@ -46,6 +46,8 @@
 #include <lib/base64.h>
 #endif
 
+#define USB_DEBUG 0
+
 typedef struct
 {
 	int (*udc_init)(struct udc_device *devinfo);
@@ -202,7 +204,9 @@ static int usb30_usb_read(void *_buf, unsigned len)
 	if (fastboot_state == STATE_ERROR)
 		goto oops;
 
+#if USB_DEBUG
 	dprintf(SPEW, "usb_read(): len = %d\n", len);
+#endif
 
 	while (len > 0)
 	{
@@ -234,7 +238,9 @@ static int usb30_usb_read(void *_buf, unsigned len)
 		/* note: req.length is update by callback to reflect the amount of data
 		 * actually read.
 		 */
+#if USB_DEBUG
 		dprintf(SPEW, "usb_read(): DONE. req.length = %d\n\n", req.length);
+#endif
 
 		/* For USB3.0 if the data transfer is less than MaxpacketSize, its
 		 * short packet and DWC layer generates transfer complete. App layer
@@ -269,7 +275,9 @@ static int usb30_usb_write(void *buf, unsigned len)
 	if (fastboot_state == STATE_ERROR)
 		goto oops;
 
+#if USB_DEBUG
 	dprintf(SPEW, "usb_write(): len = %d str = %s\n", len, (char *) buf);
+#endif
 
 	/* flush buffer to main memory before giving to udc */
 	arch_clean_invalidate_cache_range((addr_t) buf, len);
@@ -285,8 +293,10 @@ static int usb30_usb_write(void *buf, unsigned len)
 	}
 	event_wait(&txn_done);
 
+#if USB_DEBUG
 	dprintf(SPEW, "usb_write(): DONE: len = %d req->length = %d str = %s\n",
 			len, req.length, (char *) buf);
+#endif
 
 	if (txn_status < 0) {
 		dprintf(CRITICAL, "usb_write() transaction failed. txn_status = %d\n",
