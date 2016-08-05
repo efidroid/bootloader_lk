@@ -524,14 +524,9 @@ static int api_rtc_settime(unsigned int time)
 
 #include <platform.h>
 
-__WEAK void *platform_get_mmap(void *pdata, platform_mmap_cb_t cb)
-{
-    return lkargs_get_mmap_callback(pdata, (platform_mmap_cb_t)cb);
-}
-
 static void *api_mmap_get_dram(void *pdata, lkapi_mmap_cb_t cb)
 {
-    return platform_get_mmap(pdata, (platform_mmap_cb_t)cb);
+    return lkargs_get_mmap_callback(pdata, (lkargs_mmap_cb_t)cb);
 }
 
 typedef struct {

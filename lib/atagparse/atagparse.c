@@ -305,7 +305,7 @@ unsigned *lkargs_gen_meminfo_atags(unsigned *ptr)
     return ptr;
 }
 
-void* lkargs_get_mmap_callback(void* pdata, platform_mmap_cb_t cb)
+void* lkargs_get_mmap_callback(void* pdata, lkargs_mmap_cb_t cb)
 {
     uint32_t i;
 
