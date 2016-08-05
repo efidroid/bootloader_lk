@@ -39,6 +39,10 @@
 #include <lib/bio.h>
 #endif
 
+#if WITH_LIB_ATAGPARSE
+#include <lib/atagparse.h>
+#endif
+
 extern void *__ctor_list;
 extern void *__ctor_end;
 extern int __bss_start;
@@ -126,6 +130,10 @@ int main(void);
 static int bootstrap2(void *arg)
 {
 	dprintf(SPEW, "top of bootstrap2()\n");
+
+#if WITH_LIB_ATAGPARSE
+	atag_parse();
+#endif
 
 	arch_init();
 
