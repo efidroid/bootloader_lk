@@ -67,9 +67,7 @@ endif
 
 # setup toolchain prefix
 TOOLCHAIN_PREFIX ?= arm-eabi-
-ifndef WITH_KERNEL_UEFIAPI
 CFLAGS += -fstack-protector-all
-endif
 CFLAGS += -fno-strict-overflow
 CPPFLAGS := -fno-exceptions -fno-rtti -fno-threadsafe-statics
 #CPPFLAGS += -Weffc++
@@ -139,6 +137,10 @@ include target/rules.mk
 include kernel/rules.mk
 include dev/rules.mk
 include app/rules.mk
+
+ifneq ($(LK_EXTERNAL_MAKEFILE_POSTRULES),)
+include $(LK_EXTERNAL_MAKEFILE_POSTRULES)
+endif
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
 # modules in the ALLMODULES list

@@ -93,14 +93,10 @@ OBJS += \
 	$(LOCAL_DIR)/cache-ops.o \
 	$(LOCAL_DIR)/ops.o \
 	$(LOCAL_DIR)/faults.o \
-	$(LOCAL_DIR)/dcc.o
-
-ifndef WITH_KERNEL_UEFIAPI
-OBJS += \
+	$(LOCAL_DIR)/dcc.o \
 	$(LOCAL_DIR)/exceptions.o \
 	$(LOCAL_DIR)/mmu.o \
 	$(LOCAL_DIR)/thread.o
-endif
 
 # set the default toolchain to arm eabi and set a #define
 TOOLCHAIN_PREFIX ?= arm-eabi-
