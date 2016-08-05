@@ -73,12 +73,6 @@ char* lk_log_getbuf(void);
 unsigned lk_log_getsize(void);
 #endif
 
-#if WITH_DEBUG_LAST_KMSG
-uint32_t lastkmsg_get_addr(void);
-uint32_t lastkmsg_get_size(void);
-void lastkmsg_init(void);
-#endif
-
 void _panic(void *caller, const char *fmt, ...) __PRINTFLIKE(2, 3) __NO_RETURN;
 #define panic(x...) _panic(__GET_CALLER(), x)
 
