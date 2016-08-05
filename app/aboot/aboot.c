@@ -85,6 +85,10 @@
 #include <menu_keys_detect.h>
 #include <display_menu.h>
 
+#ifdef WITH_FASTBOOT_EXT
+void aboot_fastboot_register_commands_ex(void);
+#endif
+
 extern  bool target_use_signed_kernel(void);
 extern void platform_uninit(void);
 extern void target_uninit(void);
@@ -3523,6 +3527,10 @@ normal_boot:
 
 	/* register aboot specific fastboot commands */
 	aboot_fastboot_register_commands();
+
+#ifdef WITH_FASTBOOT_EXT
+	aboot_fastboot_register_commands_ex();
+#endif
 
 	/* dump partition table for debug info */
 	partition_dump();
