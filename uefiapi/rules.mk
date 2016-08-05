@@ -13,4 +13,8 @@ OBJS += \
 	$(LOCAL_DIR)/uefiapi.o \
 	$(LOCAL_DIR)/main.o \
 	$(LOCAL_DIR)/event.o \
-	$(LOCAL_DIR)/mutex.o
+	$(LOCAL_DIR)/mutex.o \
+	$(LOCAL_DIR)/target/$(TARGET).o
+
+SHIMOBJS += \
+	$(LOCAL_DIR)/shim.o
