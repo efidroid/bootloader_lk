@@ -54,6 +54,13 @@ void uefiapi_platform_init_post(void) {
 void* api_mmap_get_platform_mappings(void* pdata, lkapi_mmap_mappings_cb_t cb) {
 	pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
 	pdata = cb(pdata, SYSTEM_IMEM_BASE, SYSTEM_IMEM_BASE, 1*MB, LKAPI_MEMORY_DEVICE);
+	pdata = cb(pdata, MSM_SHARED_BASE, MSM_SHARED_BASE, 2*MB, LKAPI_MEMORY_WRITE_THROUGH);
+
+	return pdata;
+}
+
+void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb) {
+	pdata = cb(pdata, MSM_SHARED_BASE, 2*MB);
 
 	return pdata;
 }
