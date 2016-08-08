@@ -75,6 +75,7 @@ static qchwinfo_t* hwinfo_lk = NULL;
 static char* command_line = NULL;
 static struct list_node cmdline_list;
 static lkargs_uefi_bootmode uefi_bootmode = LKARGS_UEFI_BM_NORMAL;
+static char* uefi_bootpart = NULL;
 static meminfo_t* meminfo = NULL;
 static size_t meminfo_count = 0;
 static struct list_node qciditem_list;
@@ -137,6 +138,13 @@ const char* lkargs_get_panel_name(const char* key)
 lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void)
 {
     return uefi_bootmode;
+}
+
+const char* lkargs_get_uefi_bootpart(void)
+{
+    if(uefi_bootpart)
+        return uefi_bootpart;
+    return "";
 }
 
 void* lkargs_get_tags_backup(void)
@@ -673,14 +681,15 @@ void atag_parse(void)
     cmdline_addall(&cmdline_list, command_line, true);
 
     // get bootmode
-    const char* bootmode = cmdline_get(&cmdline_list, "uefi.bootmode");
-    if (bootmode) {
-        dprintf(INFO, "uefi.bootmode = [%s]\n", bootmode);
+    const char* bootpart = cmdline_get(&cmdline_list, "uefi.bootpart");
+    if (bootpart) {
+        dprintf(INFO, "uefi.bootpart = [%s]\n", bootpart);
 
-        if (!strcmp(bootmode, "recovery"))
-            uefi_bootmode = LKARGS_UEFI_BM_RECOVERY;
+        // copy value
+        uefi_bootpart = strdup(bootpart);
 
-        cmdline_remove(&cmdline_list, "uefi.bootmode");
+        // remove from list so it doesn't end up in the kernel cmdline
+        cmdline_remove(&cmdline_list, "uefi.bootpart");
     }
 
     // build and print hwinfo_lk

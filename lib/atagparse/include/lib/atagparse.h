@@ -7,13 +7,13 @@ typedef void* (*lkargs_mmap_cb_t)(void* pdata, uint64_t addr, uint64_t size, boo
 
 typedef enum {
     LKARGS_UEFI_BM_NORMAL = 0,
-    LKARGS_UEFI_BM_RECOVERY,
 } lkargs_uefi_bootmode;
 
 const char* lkargs_get_command_line(void);
 struct list_node* lkargs_get_command_line_list(void);
 const char* lkargs_get_panel_name(const char* key);
 lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void);
+const char* lkargs_get_uefi_bootpart(void);
 void* lkargs_get_tags_backup(void);
 size_t lkargs_get_tags_backup_size(void);
 void atag_parse(void);

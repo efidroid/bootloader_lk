@@ -124,14 +124,15 @@ __WEAK void api_platform_uninit(void)
 __WEAK unsigned int api_platform_get_uefi_bootmode(void)
 {
     switch (lkargs_get_uefi_bootmode()) {
-        case LKARGS_UEFI_BM_RECOVERY:
-            return LKAPI_UEFI_BM_RECOVERY;
-
         default:
             return LKAPI_UEFI_BM_NORMAL;
     }
 }
 
+__WEAK const char* api_platform_get_uefi_bootpart(void)
+{
+    return lkargs_get_uefi_bootpart();
+}
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -1104,6 +1105,7 @@ lkapi_t uefiapi = {
     .platform_init = api_platform_init,
     .platform_uninit = api_platform_uninit,
     .platform_get_uefi_bootmode = api_platform_get_uefi_bootmode,
+    .platform_get_uefi_bootpart = api_platform_get_uefi_bootpart,
 
     .serial_poll_char = api_serial_poll_char,
     .serial_write_char = api_serial_write_char,
