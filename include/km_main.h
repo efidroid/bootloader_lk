@@ -31,6 +31,7 @@
 #define KM_MAIN_H
 
 #include <sys/types.h>
+#include <boot_verifier.h>
 /**
  * Commands supported
  */
@@ -62,7 +63,8 @@ typedef enum {
     KEYMASTER_UPDATE						= (KEYMASTER_CMD_ID + 17UL),
     KEYMASTER_FINISH						= (KEYMASTER_CMD_ID + 18UL),
     KEYMASTER_ABORT							= (KEYMASTER_CMD_ID + 19UL),
-
+    KEYMASTER_SET_BOOT_STATE                = (KEYMASTER_UTILS_CMD_ID + 8UL),
+    KEYMASTER_GET_VERSION                   = (KEYMASTER_UTILS_CMD_ID + 0UL),
     KEYMASTER_SET_ROT						= (KEYMASTER_UTILS_CMD_ID + 1UL),
     KEYMASTER_READ_LK_DEVICE_STATE			= (KEYMASTER_UTILS_CMD_ID + 2UL),
     KEYMASTER_WRITE_LK_DEVICE_STATE			= (KEYMASTER_UTILS_CMD_ID + 3UL),
@@ -162,5 +164,61 @@ typedef struct _key_op_delete_all_req_t {
 typedef struct _key_op_delete_all_rsp_t {
 	int status;
 }__attribute__ ((packed)) key_op_delete_all_rsp_t;
+
+/**
+ * Structures for get_version
+ **/
+typedef struct _km_get_version_req_t
+{
+       uint32_t cmd_id;
+}__attribute__((packed)) km_get_version_req_t;
+
+typedef struct _km_get_version_rsp_t
+{
+       int status;
+       uint32_t major_version;
+       uint32_t minor_version;
+       uint32_t ta_major_version;
+       uint32_t ta_minor_version;
+}__attribute__((packed)) km_get_version_rsp_t;
+
+typedef struct _km_boot_state_t
+{
+       bool                   is_unlocked;
+       uint8_t                public_key[32];
+       uint32_t               color;
+       uint32_t               system_version;
+       uint32_t               system_security_level;
+}__attribute__((packed))  km_boot_state_t;
+
+/**
+ *  @brief
+ *  Data structure
+ *  @param[in]   cmd_id             Requested command
+ *  @param[in]   boot_state_ofset   Offset from the top of the struct.
+ *  @param[in]   boot_state_size    Size of the Boot state
+ *
+ *  The offset contains the following
+ *  km_boot_state_t
+ **/
+typedef struct _km_set_boot_state_req_t
+{
+       uint32_t        cmd_id;
+       uint32_t        version;
+       uint32_t        boot_state_offset;
+       uint32_t        boot_state_size;
+}__attribute__((packed)) km_set_boot_state_req_t;
+
+/**
+ *  @brief
+ *  Data structure
+ *
+ *  @param[out]   status      Status of the request
+ **/
+typedef struct _km_set_boot_state_rsp_t
+{
+       int status;
+}__attribute__((packed)) km_set_boot_state_rsp_t;
+
 
 #endif /* KM_MAIN_H */
