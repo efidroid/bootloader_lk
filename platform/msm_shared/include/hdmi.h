@@ -48,25 +48,29 @@
 #define DMA_DSTC2R_8BITS (BIT(5)|BIT(4))
 #define BM(m, l) (((((uint32_t)-1) << (31-m)) >> (31-m+l)) << l)
 #define BVAL(m, l, val)     (((val) << l) & BM(m, l))
-#define CC(m, n) (BVAL((m+1), m, 0x2) * !!(n))
 #define NS_MM(n_msb, n_lsb, n, m, d_msb, d_lsb, d, s_msb, s_lsb, s) \
              (BVAL(n_msb, n_lsb, ~(n-m)) | BVAL(d_msb, d_lsb, (d-1)) \
              | BVAL(s_msb, s_lsb, s))
 
-extern int pm8901_mpp_enable();
-extern int pm8901_vs_enable();
-extern int pm8058_ldo_set_voltage();
-extern int pm8058_vreg_enable();
+extern int pm8901_mpp_enable(void);
+extern int pm8901_vs_enable(void);
+extern int pm8058_ldo_set_voltage(void);
+extern int pm8058_vreg_enable(void);
+extern void apq8064_ext_3p3V_enable(void);
 void gpio_tlmm_config(uint32_t gpio, uint8_t func,
 		      uint8_t dir, uint8_t pull,
 		      uint8_t drvstr, uint32_t enable);
 
 int  hdmi_dtv_on(void);
+int  hdmi_dtv_init(void);
+int  hdmi_msm_turn_on(void);
 void hdmi_msm_set_mode(int on);
 void hdmi_msm_init_phy(void);
 void hdmi_display_shutdown(void);
 void hdmi_msm_reset_core(void);
 void hdmi_set_fb_addr(void *addr);
+void hdmi_app_clk_init(int);
+void hdmi_msm_panel_init(struct msm_panel_info *pinfo);
 
 struct hdmi_disp_mode_timing_type {
 	uint32_t height;

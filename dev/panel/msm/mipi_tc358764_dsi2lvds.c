@@ -83,8 +83,6 @@
 #include <platform/timer.h>
 #include <target/display.h>
 #include <dev/gpio.h>
-#include <dev/pm8921.h>
-#include <dev/pm8921_pwm.h>
 
 #ifndef u32
 	#define u32 uint32_t

@@ -619,7 +619,7 @@ err:
 	return ret;
 }
 
-static int qseecom_load_commonlib_image(char * app_name)
+static int qseecom_load_commonlib_image(const char * app_name)
 {
 	int index = INVALID_PTN;
 	unsigned long long ptn = 0;
@@ -703,7 +703,7 @@ static int qseecom_unload_commonlib_image(void)
  * data mutex acquired.
  */
 static struct qseecom_registered_app_list *
-	__qseecom_add_app_entry(char *app_name, uint32_t app_id)
+	__qseecom_add_app_entry(const char *app_name, uint32_t app_id)
 {
 	struct qseecom_registered_app_list *entry = NULL;
 	int32_t ret = GENERIC_ERROR;
@@ -814,7 +814,7 @@ static struct qseecom_registered_app_list
 
 
 static struct qseecom_registered_app_list *
-	__qseecom_check_app_exists(char *app_name)
+	__qseecom_check_app_exists(const char *app_name)
 {
 	struct qseecom_registered_app_list *entry = NULL;
 
@@ -915,7 +915,7 @@ static int __qseecom_send_cmd(uint32_t app_id, struct qseecom_send_cmd_req *req)
 *   			Secure app. Always greater than zero.
 *   Failure:	Error code (negative only).
 */
-int qseecom_start_app(char *app_name)
+int qseecom_start_app(const char *app_name)
 {
 	int32_t ret = GENERIC_ERROR;
 	int handle = 0;

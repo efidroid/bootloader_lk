@@ -161,7 +161,7 @@ struct clk *clk_get (const char * cid)
 	return NULL;
 }
 
-int clk_get_set_enable(char *id, unsigned long rate, bool enable)
+int clk_get_set_enable(const char *id, unsigned long rate, bool enable)
 {
 	int ret = NO_ERROR;
 	struct clk *cp;

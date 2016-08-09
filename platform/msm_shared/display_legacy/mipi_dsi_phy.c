@@ -29,7 +29,9 @@
 #include <debug.h>
 #include <reg.h>
 #include <mipi_dsi.h>
+#include <mdp5.h>
 #include <platform/iomap.h>
+#include <platform/timer.h>
 
 static void mipi_dsi_calibration(void)
 {

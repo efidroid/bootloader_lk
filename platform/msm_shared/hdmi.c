@@ -91,7 +91,7 @@ void hdmi_msm_set_mode(int on)
 	}
 }
 
-struct hdmi_disp_mode_timing_type *hdmi_common_init_panel_info()
+struct hdmi_disp_mode_timing_type *hdmi_common_init_panel_info(void)
 {
 	return &hdmi_timing_default;
 }
@@ -119,7 +119,7 @@ void hdmi_msm_panel_init(struct msm_panel_info *pinfo)
 	pinfo->hdmi.v_pulse_width = hdmi_timing_default.vsync_width;
 }
 
-void hdmi_frame_ctrl_reg()
+void hdmi_frame_ctrl_reg(void)
 {
 	uint32_t hdmi_frame_ctrl;
 
@@ -129,7 +129,7 @@ void hdmi_frame_ctrl_reg()
 	writel(hdmi_frame_ctrl, HDMI_FRAME_CTRL);
 }
 
-void hdmi_video_setup()
+void hdmi_video_setup(void)
 {
 	uint32_t hsync_total = 0;
 	uint32_t vsync_total = 0;
@@ -317,7 +317,7 @@ int hdmi_msm_turn_on(void)
 	return 0;
 }
 
-int hdmi_dtv_init()
+int hdmi_dtv_init(void)
 {
 	uint32_t hsync_period;
 	uint32_t hsync_ctrl;
@@ -357,13 +357,13 @@ int hdmi_dtv_init()
 	writel(0xff0000, MDP_BASE + 0xb0078);
 
 	// overlay rgb setup RGB2
-	rgb_base = MDP_BASE + MDP4_RGB_BASE;
+	rgb_base = (void*)(MDP_BASE + MDP4_RGB_BASE);
 	rgb_base += (MDP4_RGB_OFF * 1);
 	writel(((timing->height << 16) | timing->width), rgb_base + 0x0000);
 	writel(0x0, rgb_base + 0x0004);
 	writel(((timing->height << 16) | timing->width), rgb_base + 0x0008);
 	writel(0x0, rgb_base + 0x000c);
-	writel(timing->base, rgb_base + 0x0010);	//FB address
+	writel((uint32_t)timing->base, rgb_base + 0x0010);	//FB address
 	writel((timing->width * timing->bpp / 8), rgb_base + 0x0040);
 	writel(0x2443F, rgb_base + 0x0050);	//format
 	writel(0x20001, rgb_base + 0x0054);	//pattern
@@ -384,13 +384,13 @@ int hdmi_dtv_init()
 	data = readl(MDP_BASE + 0x10100);
 
 	// Overlay cfg
-	overlay_base = MDP_BASE + MDP4_OVERLAYPROC1_BASE;
+	overlay_base = (void*)(MDP_BASE + MDP4_OVERLAYPROC1_BASE);
 
 	writel(0x0, MDP_BASE + 0x0038);	//EXternal interface select
 
 	data = ((timing->height << 16) | timing->width);
 	writel(data, overlay_base + 0x0008);
-	writel(timing->base, overlay_base + 0x000c);
+	writel((uint32_t)timing->base, overlay_base + 0x000c);
 	writel((timing->width * timing->bpp / 8), overlay_base + 0x0010);
 	writel(0x10, overlay_base + 0x104);
 	writel(0x10, overlay_base + 0x124);
@@ -446,7 +446,7 @@ int hdmi_dtv_init()
 	return 0;
 }
 
-void hdmi_display_shutdown()
+void hdmi_display_shutdown(void)
 {
 	writel(0x0, MDP_BASE + DTV_BASE);
 	writel(0x8, MDP_BASE + 0x0038);

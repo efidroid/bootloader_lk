@@ -71,7 +71,7 @@
 /*GPIO pin structure to define reset pin, enable pin, te pin, etc. */
 struct gpio_pin{
 
-	char    *pin_source;
+	const char    *pin_source;
 	uint32_t pin_id;
 	uint32_t pin_strength;
 	uint32_t pin_direction;
@@ -81,7 +81,7 @@ struct gpio_pin{
 
 /*LDO entry structure for different LDO entries. */
 struct ldo_entry{
-	char    *ldo_name;
+	const char    *ldo_name;
 	uint32_t ldo_id;
 	uint32_t ldo_type;
 	uint32_t ldo_voltage;

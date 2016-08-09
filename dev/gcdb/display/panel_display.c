@@ -32,6 +32,7 @@
 /*---------------------------------------------------------------------------*/
 #include <stdint.h>
 #include <msm_panel.h>
+#include <target.h>
 #include <mipi_dsi.h>
 #include <mdp5.h>
 #include <sys/types.h>
@@ -58,7 +59,7 @@ static int dsi_platform_base_offset_adjust(uint32_t base)
 }
 
 static int dsi_panel_ctl_base_setup(struct msm_panel_info *pinfo,
-	char *panel_destination)
+	const char *panel_destination)
 {
 	int base_offset = 0, base1_offset = 0;
 
@@ -268,17 +269,17 @@ int dsi_panel_init(struct msm_panel_info *pinfo,
 /* Panel Callbacks                                                           */
 /*---------------------------------------------------------------------------*/
 
-int dsi_panel_pre_on()
+int dsi_panel_pre_on(void)
 {
 	return target_display_pre_on();
 }
 
-int dsi_panel_pre_off()
+int dsi_panel_pre_off(void)
 {
 	return target_display_pre_off();
 }
 
-int dsi_panel_post_on()
+int dsi_panel_post_on(void)
 {
 	int ret = NO_ERROR;
 
@@ -289,7 +290,7 @@ int dsi_panel_post_on()
 	return oem_panel_on();
 }
 
-int dsi_panel_post_off()
+int dsi_panel_post_off(void)
 {
 	int ret = NO_ERROR;
 
@@ -300,7 +301,7 @@ int dsi_panel_post_off()
 	return oem_panel_off();
 }
 
-int dsi_panel_rotation()
+int dsi_panel_rotation(void)
 {
 	return oem_panel_rotation();
 }

@@ -32,6 +32,18 @@
 #ifndef _PLATFORM_MSM8610_IOMAP_H_
 #define _PLATFORM_MSM8610_IOMAP_H_
 
+#ifdef RDBK_DATA0
+#undef RDBK_DATA0
+#endif
+
+#ifdef MDP_DISP_INTF_SEL
+#undef MDP_DISP_INTF_SEL
+#endif
+
+#ifdef MDP_INTR_CLEAR
+#undef MDP_INTR_CLEAR
+#endif
+
 #define MSM_IOMAP_BASE              0xF9000000
 #define MSM_IOMAP_END               0xFEFFFFFF
 

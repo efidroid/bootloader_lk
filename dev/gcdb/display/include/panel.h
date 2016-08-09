@@ -55,12 +55,12 @@ enum {
 /*Panel Configuration */
 struct panel_config{
 
-	char  *panel_node_id;
-	char  *panel_controller;
-	char  *panel_compatible;
+	const char  *panel_node_id;
+	const char  *panel_controller;
+	const char  *panel_compatible;
 	uint16_t panel_interface;
 	uint16_t panel_type;
-	char   *panel_destination;
+	const char   *panel_destination;
 	uint32_t panel_orientation;
 	/* panel_clockrate is deprecated in favor of panel_bitclock_freq */
 	uint32_t panel_clockrate;
@@ -76,7 +76,7 @@ struct panel_config{
 	uint32_t panel_operating_mode;
 	uint32_t panel_with_enable_gpio;
 	uint8_t  mode_gpio_state;
-	char  *slave_panel_node_id;
+	const char  *slave_panel_node_id;
 };
 
 struct panel_resolution{
@@ -177,7 +177,7 @@ struct backlight {
 	uint16_t bl_max_level;
 	uint16_t bl_step;
 	uint16_t bl_pmic_controltype;
-	char     *bl_pmic_model;
+	const char     *bl_pmic_model;
 };
 
 struct fb_compression {

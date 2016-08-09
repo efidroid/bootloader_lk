@@ -77,13 +77,13 @@ int mipi_toshiba_video_wsvga_config(void *pdata)
 	return ret;
 }
 
-int mipi_toshiba_video_wsvga_on()
+int mipi_toshiba_video_wsvga_on(void)
 {
 	int ret = NO_ERROR;
 	return ret;
 }
 
-int mipi_toshiba_video_wsvga_off()
+int mipi_toshiba_video_wsvga_off(void)
 {
 	int ret = NO_ERROR;
 	return ret;

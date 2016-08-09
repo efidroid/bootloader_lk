@@ -53,9 +53,9 @@
 
 static struct mmc_device *dev;
 
-extern void dmb(void);
 extern void msm8960_keypad_init(void);
 extern void msm8930_keypad_init(void);
+extern void apq8064_keypad_init(void);
 extern void panel_backlight_on(void);
 
 static unsigned mmc_sdc_base[] =
@@ -502,7 +502,7 @@ int target_cont_splash_screen()
 	}
 }
 
-void apq8064_ext_3p3V_enable()
+void apq8064_ext_3p3V_enable(void)
 {
 	/* Configure GPIO for output */
 	gpio_tlmm_config(77, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);

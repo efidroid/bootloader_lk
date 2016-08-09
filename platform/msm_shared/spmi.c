@@ -47,7 +47,7 @@ static uint32_t pmic_arb_ver;
 static uint8_t *chnl_tbl;
 static uint32_t max_peripherals;
 
-static void spmi_lookup_chnl_number()
+static void spmi_lookup_chnl_number(void)
 {
 	uint32_t i;
 	uint8_t slave_id = 0;
@@ -360,7 +360,7 @@ int spmi_acc_irq(uint32_t periph_acc_irq, uint32_t status)
 		return 0;
 }
 
-void spmi_irq()
+void spmi_irq(void)
 {
 	int i;
 	uint32_t status;
@@ -389,7 +389,7 @@ void spmi_enable_periph_interrupts(uint8_t periph_id)
 
 }
 
-void spmi_uninit()
+void spmi_uninit(void)
 {
 	mask_interrupt(EE0_KRAIT_HLOS_SPMI_PERIPH_IRQ);
 }

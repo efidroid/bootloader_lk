@@ -319,7 +319,7 @@ int X509_VERIFY_PARAM_get_depth(const X509_VERIFY_PARAM *param)
 
 static const X509_VERIFY_PARAM default_table[] = {
 	{
-	"default",	/* X509 default parameters */
+	(char*)"default",	/* X509 default parameters */
 	0,		/* Check time */
 	0,		/* internal flags */
 	0,		/* flags */
@@ -329,7 +329,7 @@ static const X509_VERIFY_PARAM default_table[] = {
 	NULL		/* policies */
 	},
 	{
-	"pkcs7",			/* S/MIME sign parameters */
+	(char*)"pkcs7",			/* S/MIME sign parameters */
 	0,				/* Check time */
 	0,				/* internal flags */
 	0,				/* flags */
@@ -339,7 +339,7 @@ static const X509_VERIFY_PARAM default_table[] = {
 	NULL				/* policies */
 	},
 	{
-	"smime_sign",			/* S/MIME sign parameters */
+	(char*)"smime_sign",			/* S/MIME sign parameters */
 	0,				/* Check time */
 	0,				/* internal flags */
 	0,				/* flags */
@@ -349,7 +349,7 @@ static const X509_VERIFY_PARAM default_table[] = {
 	NULL				/* policies */
 	},
 	{
-	"ssl_client",			/* SSL/TLS client parameters */
+	(char*)"ssl_client",			/* SSL/TLS client parameters */
 	0,				/* Check time */
 	0,				/* internal flags */
 	0,				/* flags */
@@ -359,7 +359,7 @@ static const X509_VERIFY_PARAM default_table[] = {
 	NULL				/* policies */
 	},
 	{
-	"ssl_server",			/* SSL/TLS server parameters */
+	(char*)"ssl_server",			/* SSL/TLS server parameters */
 	0,				/* Check time */
 	0,				/* internal flags */
 	0,				/* flags */

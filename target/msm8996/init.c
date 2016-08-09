@@ -56,6 +56,7 @@
 #include <sdhci_msm.h>
 #include <qusb2_phy.h>
 #include <rpmb.h>
+#include <secapp_loader.h>
 
 #define CE_INSTANCE             1
 #define CE_EE                   1
@@ -90,7 +91,7 @@ void target_early_init(void)
 }
 
 /* Return 1 if vol_up pressed */
-int target_volume_up()
+int target_volume_up(void)
 {
 	static uint8_t first_time = 0;
 	uint8_t status = 0;
@@ -118,12 +119,12 @@ int target_volume_up()
 }
 
 /* Return 1 if vol_down pressed */
-uint32_t target_volume_down()
+uint32_t target_volume_down(void)
 {
 	return pm8x41_resin_status();
 }
 
-static void target_keystatus()
+static void target_keystatus(void)
 {
 	keys_init();
 
@@ -160,7 +161,7 @@ void target_uninit(void)
 
 }
 
-static void set_sdc_power_ctrl()
+static void set_sdc_power_ctrl(void)
 {
 	/* Drive strength configs for sdc pins */
 	struct tlmm_cfgs sdc1_hdrv_cfg[] =
@@ -189,7 +190,7 @@ static void set_sdc_power_ctrl()
 	tlmm_set_pull_ctrl(sdc1_rclk_cfg, ARRAY_SIZE(sdc1_rclk_cfg));
 }
 
-void target_sdc_init()
+void target_sdc_init(void)
 {
 	struct mmc_config_data config = {0};
 
@@ -223,7 +224,7 @@ void target_sdc_init()
 	}
 }
 
-void *target_mmc_device()
+void *target_mmc_device(void)
 {
 	if (platform_boot_dev_isemmc())
 		return (void *) dev;
@@ -298,7 +299,7 @@ void target_baseband_detect(struct board_data *board)
 		ASSERT(0);
 	};
 }
-unsigned target_baseband()
+unsigned target_baseband(void)
 {
 	return board_baseband();
 }
@@ -353,13 +354,13 @@ int emmc_recovery_init(void)
 	return _emmc_recovery_init();
 }
 
-void target_usb_phy_reset()
+void target_usb_phy_reset(void)
 {
 	usb30_qmp_phy_reset();
 	qusb2_phy_reset();
 }
 
-target_usb_iface_t* target_usb30_init()
+target_usb_iface_t* target_usb30_init(void)
 {
 	target_usb_iface_t *t_usb_iface;
 
@@ -375,12 +376,12 @@ target_usb_iface_t* target_usb30_init()
 }
 
 /* identify the usb controller to be used for the target */
-const char * target_usb_controller()
+const char * target_usb_controller(void)
 {
 	return "dwc";
 }
 
-uint32_t target_override_pll()
+uint32_t target_override_pll(void)
 {
 	return 1;
 }
@@ -391,7 +392,7 @@ crypto_engine_type board_ce_type(void)
 }
 
 /* Set up params for h/w CE. */
-void target_crypto_init_params()
+void target_crypto_init_params(void)
 {
 	struct crypto_init_params ce_params;
 

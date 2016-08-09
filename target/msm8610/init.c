@@ -51,6 +51,7 @@
 #include <platform/clock.h>
 #include <platform/timer.h>
 #include <crypto5_wrapper.h>
+#include <sdhci_msm.h>
 #include <rpm-smd.h>
 
 #if LONG_PRESS_POWER_ON
@@ -98,7 +99,7 @@ static uint32_t  mmc_sdc_pwrctl_irq[] =
 
 struct mmc_device *dev;
 
-void target_crypto_init_params();
+void target_crypto_init_params(void);
 
 void target_early_init(void)
 {
@@ -108,7 +109,7 @@ void target_early_init(void)
 }
 
 /* Return 1 if vol_up pressed */
-int target_volume_up()
+int target_volume_up(void)
 {
 	uint8_t status = 0;
 
@@ -124,13 +125,13 @@ int target_volume_up()
 }
 
 /* Return 1 if vol_down pressed */
-uint32_t target_volume_down()
+uint32_t target_volume_down(void)
 {
 	/* Volume down button tied in with PMIC RESIN. */
 	return pm8x41_resin_status();
 }
 
-static void target_keystatus()
+static void target_keystatus(void)
 {
 	keys_init();
 
@@ -145,7 +146,7 @@ __WEAK int target_sdc_pre_init_actions(void) {
 	return 0;
 }
 
-void target_sdc_init()
+void target_sdc_init(void)
 {
 	struct mmc_config_data config;
 	struct mmc_device *tmpdev;
@@ -354,7 +355,7 @@ void target_baseband_detect(struct board_data *board)
 	};
 }
 
-unsigned target_baseband()
+unsigned target_baseband(void)
 {
 	return board_baseband();
 }
@@ -406,7 +407,7 @@ void reboot_device(unsigned reboot_reason)
 }
 
 /* Returns 1 if autopanel detection is enabled for the target. */
-uint8_t target_panel_auto_detect_enabled()
+uint8_t target_panel_auto_detect_enabled(void)
 {
 	int ret = 0;
 
@@ -425,7 +426,7 @@ uint8_t target_panel_auto_detect_enabled()
 static uint8_t splash_override;
 
 /* Returns 1 if target supports continuous splash screen. */
-int target_cont_splash_screen()
+int target_cont_splash_screen(void)
 {
 	uint8_t splash_screen = 0;
 	if(!splash_override) {
@@ -529,13 +530,13 @@ static void set_sdc_power_ctrl(uint8_t slot)
 	tlmm_set_pull_ctrl(sdc1_pull_cfg, ARRAY_SIZE(sdc1_pull_cfg));
 }
 
-void *target_mmc_device()
+void *target_mmc_device(void)
 {
 	return (void *) dev;
 }
 
 /* Set up params for h/w CRYPTO_ENGINE. */
-void target_crypto_init_params()
+void target_crypto_init_params(void)
 {
 	struct crypto_init_params ce_params;
 
@@ -572,7 +573,7 @@ int set_download_mode(enum dload_mode mode)
 }
 
 /* Configure PMIC and Drop PS_HOLD for shutdown */
-void shutdown_device()
+void shutdown_device(void)
 {
 	dprintf(CRITICAL, "Going down for shutdown.\n");
 

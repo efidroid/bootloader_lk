@@ -60,7 +60,7 @@ static struct mdss_dsi_phy_ctrl dsi_video_mode_phy_db;
 /* Extern                                                                    */
 /*---------------------------------------------------------------------------*/
 extern int msm_display_init(struct msm_fb_panel_data *pdata);
-extern int msm_display_off();
+extern int msm_display_off(void);
 
 static uint32_t panel_backlight_ctrl(uint8_t enable)
 {
@@ -327,7 +327,7 @@ static int mdss_dsi_bl_enable(uint8_t enable)
 	return ret;
 }
 
-static void init_platform_data()
+static void init_platform_data(void)
 {
 	memcpy(dsi_video_mode_phy_db.regulator, panel_regulator_settings,
 							REGULATOR_SIZE);

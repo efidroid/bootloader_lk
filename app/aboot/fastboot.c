@@ -496,7 +496,7 @@ void fastboot_send_buf(const void* data, size_t size) {
 }
 #endif
 
-static void getvar_all()
+static void getvar_all(void)
 {
 	struct fastboot_var *var;
 	char getvar_all[64];

@@ -43,14 +43,14 @@
 #include <board.h>
 #include <qmp_phy.h>
 
-extern char* ss_link_state_lookup[20];
-extern char* hs_link_state_lookup[20];
-extern char* event_lookup_device[20];
-extern char* event_lookup_ep[20];
-extern char* dev_ctrl_state_lookup[20];
-extern char* ep_state_lookup[20];
-extern char* dev_state_lookup[20];
-extern char* speed_lookup[20];
+extern const char* ss_link_state_lookup[20];
+extern const char* hs_link_state_lookup[20];
+extern const char* event_lookup_device[20];
+extern const char* event_lookup_ep[20];
+extern const char* dev_ctrl_state_lookup[20];
+extern const char* ep_state_lookup[20];
+extern const char* dev_state_lookup[20];
+extern const char* speed_lookup[20];
 
 //#define DEBUG_USB
 
@@ -62,7 +62,7 @@ extern char* speed_lookup[20];
 
 #define ERR(...) dprintf(ALWAYS, __VA_ARGS__)
 
-__WEAK int platform_is_8974()
+__WEAK int platform_is_8974(void)
 {
 	return 0;
 }

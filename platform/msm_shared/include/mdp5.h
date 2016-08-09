@@ -187,7 +187,7 @@
 #define MDSS_MDP_REG_PP_FBC_LOSSY_MODE          0x03C
 
 void mdp_set_revision(int rev);
-int mdp_get_revision();
+int mdp_get_revision(void);
 int mdp_dsi_video_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 int mdp_dsi_cmd_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 int mipi_dsi_cmd_config(struct fbcon_config mipi_fb_cfg,
@@ -199,8 +199,8 @@ int mdp_edp_on(struct msm_panel_info *pinfo);
 int mdp_edp_off(void);
 void mdp_disable(void);
 void mdp_gdsc_ctrl(uint8_t enable);
-int mdp_get_revision();
-uint8_t target_is_edp();
+int mdp_get_revision(void);
+uint8_t target_is_edp(void);
 void target_edp_panel_init(struct msm_panel_info *pinfo);
 int target_edp_panel_clock(uint8_t enable, struct msm_panel_info *pinfo);
 int target_edp_panel_enable(void);
@@ -210,6 +210,6 @@ int mdss_hdmi_init(void);
 int mdss_hdmi_on(struct msm_panel_info *pinfo);
 int mdss_hdmi_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 void mdss_hdmi_get_vic(char *buf);
-int msm_display_off();
+int msm_display_off(void);
 void display_shutdown(void);
 #endif

@@ -41,6 +41,8 @@
 #define BITS_IN_ELEMENT(x) (sizeof(x) * 8)
 #define KEYMAP_INDEX(row, col) (row)* BITS_IN_ELEMENT(unsigned int) + (col)
 
+uint8_t platform_pmic_type(uint32_t pmic_type);
+
 unsigned int msm8960_qwerty_keymap[] = {
 	[KEYMAP_INDEX(0, 0)] = KEY_VOLUMEUP,	/* Volume key on the device/CDP */
 	[KEYMAP_INDEX(0, 1)] = KEY_VOLUMEDOWN,	/* Volume key on the device/CDP */
@@ -167,6 +169,8 @@ int led_kp_set( int current,
 	{
 		dprintf(CRITICAL, "FAIL pm8921_config_drv_keypad(): rc=%d.\n", rc);
 	}
+
+	return 0;
 }
 
 /* Configure gpio 26 through lpg2 */

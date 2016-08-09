@@ -34,6 +34,7 @@
 #include <partition_parser.h>
 #include <platform/iomap.h>
 #include <platform/timer.h>
+#include <platform/clock.h>
 #include <bits.h>
 #include <assert.h>
 #include <err.h>
@@ -63,6 +64,8 @@
 
 #define MMC_BOOT_DATA_READ     0
 #define MMC_BOOT_DATA_WRITE    1
+
+void target_mmc_caps(struct mmc_host *host);
 
 static unsigned int mmc_boot_data_transfer(struct mmc_host *host, unsigned int *data_ptr,
 						unsigned int data_len,

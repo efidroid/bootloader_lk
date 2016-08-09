@@ -36,12 +36,12 @@ int lvds_chimei_wxga_config(void *pdata)
 	return NO_ERROR;
 }
 
-int lvds_chimei_wxga_on()
+int lvds_chimei_wxga_on(void)
 {
 	return NO_ERROR;
 }
 
-int lvds_chimei_wxga_off()
+int lvds_chimei_wxga_off(void)
 {
 	return NO_ERROR;
 }

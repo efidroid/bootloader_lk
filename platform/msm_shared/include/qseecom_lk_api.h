@@ -40,7 +40,7 @@
 *   Success:	Init succeeded.
 *   Failure:	Error code (negative only).
 */
-int qseecom_init();
+int qseecom_init(void);
 
 /**
 * Qseecom Tz Init
@@ -50,7 +50,7 @@ int qseecom_init();
 *   Success:	Tz init succeeded.
 *   Failure:	Error code (negative only).
 */
-int qseecom_tz_init();
+int qseecom_tz_init(void);
 
 /**
 * Qseecom Exit
@@ -62,7 +62,7 @@ int qseecom_tz_init();
 *   Success:	Exit succeeded.
 *   Failure:	Error code (negative only).
 */
-int qseecom_exit();
+int qseecom_exit(void);
 
 /**
 * Start a Secure App
@@ -79,7 +79,7 @@ int qseecom_exit();
 *   			Secure app. Always greater than zero.
 *   Failure:	Error code (negative only).
 */
-int qseecom_start_app(char *app_name);
+int qseecom_start_app(const char *app_name);
 
 /**
 * Shutdown a Secure App
@@ -144,7 +144,7 @@ typedef int (*ListenerCallback)(void*, uint32_t);
  *        Failure:	Error code (negative only).
  */
 struct qseecom_listener_services {
-	char *service_name;
+	const char *service_name;
 	uint32_t  id;
 	uint32_t sb_size;
 	ListenerCallback service_cmd_handler;

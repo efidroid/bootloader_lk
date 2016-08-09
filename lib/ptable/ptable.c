@@ -40,8 +40,8 @@ void ptable_init(struct ptable *ptable)
 	memset(ptable, 0, sizeof(struct ptable));
 }
 
-char* ptype[] = {"Apps", "Modem"};
-char* pperm[] = {"No", "Yes"};
+const char* ptype[] = {"Apps", "Modem"};
+const char* pperm[] = {"No", "Yes"};
 
 void ptable_add(struct ptable *ptable, char *name, unsigned start,
 		unsigned length, unsigned flags, char type, char perm)

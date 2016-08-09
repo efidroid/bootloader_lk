@@ -34,6 +34,7 @@
 #include <arch/defines.h>
 #include <platform/iomap.h>
 #include <platform/clock.h>
+#include <platform/timer.h>
 #include <dev/fbcon.h>
 #include <dev/lcdc.h>
 
@@ -42,7 +43,7 @@
 
 void lvds_init(struct msm_panel_info *pinfo)
 {
-	unsigned int lvds_intf, lvds_phy_cfg0;
+	unsigned int lvds_intf = 0, lvds_phy_cfg0 = 0;
 	MDP_OUTP(MDP_BASE + 0xc2034, 0x33);
 	udelay(1000);
 

@@ -304,7 +304,7 @@ int mdp_dsi_video_config(struct msm_panel_info *pinfo,
 	writel(0x0000000b, MDP_OVERLAYPROC0_CFG);
 
 	/* write fb addr in MDP_DMA_P_BUF_ADDR */
-	writel(fb->base, MDP_DMA_P_BUF_ADDR);
+	writel((uint32_t)fb->base, MDP_DMA_P_BUF_ADDR);
 
 	/* write active region size*/
 	mdp_rgb_size = (fb->height << 16) + fb->width;
@@ -349,8 +349,8 @@ int mdp_dsi_video_config(struct msm_panel_info *pinfo,
 	if (lcdc->xres_pad) {
 		writel((1 << 31) |
 			(lcdc->h_back_porch + lcdc->h_pulse_width +
-			 fb->width - 1) << 16 | lcdc->h_pulse_width +
-			lcdc->h_back_porch, MDP_DSI_VIDEO_ACTIVE_HCTL);
+			 fb->width - 1) << 16 | (lcdc->h_pulse_width +
+			lcdc->h_back_porch), MDP_DSI_VIDEO_ACTIVE_HCTL);
 	}
 
 	if (pinfo->mipi.force_clk_lane_hs) {
@@ -373,7 +373,7 @@ int mdp_dsi_video_on(struct msm_panel_info *pinfo)
 	return ret;
 }
 
-int mdp_dsi_video_off()
+int mdp_dsi_video_off(struct msm_panel_info *pinfo)
 {
 	if(!target_cont_splash_screen())
 	{
@@ -386,7 +386,7 @@ int mdp_dsi_video_off()
 	return NO_ERROR;
 }
 
-int mdp_dsi_cmd_off()
+int mdp_dsi_cmd_off(void)
 {
 	mdp_dma_off();
 	/*
@@ -404,7 +404,7 @@ void mdp_set_revision(int rev)
 	mdp_rev = rev;
 }
 
-int mdp_get_revision()
+int mdp_get_revision(void)
 {
 	return mdp_rev;
 }

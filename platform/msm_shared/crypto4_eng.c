@@ -38,7 +38,7 @@
 #include <scm.h>
 #include <smem.h>
 
-extern void ce_async_reset();
+extern void ce_async_reset(void);
 
 void wr_ce(uint32_t val,uint32_t reg)
 {
@@ -218,7 +218,7 @@ crypto_send_data(void *ctx_ptr, unsigned char *data_ptr,
 		       buff_ptr,
 		       (((buff_size + sha1_ctx->saved_buff_indx) <=
 			 CRYPTO_SHA_BLOCK_SIZE)
-			? buff_size : (CRYPTO_SHA_BLOCK_SIZE -
+			? buff_size : (unsigned int)(CRYPTO_SHA_BLOCK_SIZE -
 				       sha1_ctx->saved_buff_indx)));
 
 		if (bytes_to_write >= CRYPTO_SHA_BLOCK_SIZE) {
@@ -392,7 +392,7 @@ void crypto_get_ctx(void *ctx_ptr)
 }
 
 /* Returns the max authentication block size */
-uint32_t crypto_get_max_auth_blk_size()
+uint32_t crypto_get_max_auth_blk_size(void)
 {
 	return 0xFA00;
 }

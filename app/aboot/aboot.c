@@ -104,7 +104,7 @@ static int aboot_save_boot_hash_mmc(uint32_t image_addr, uint32_t image_size);
 typedef void (*fastboot_cmd_fn) (const char *, void *, unsigned);
 
 struct fastboot_cmd_desc {
-	char * name;
+	const char * name;
 	fastboot_cmd_fn cb;
 };
 
@@ -300,11 +300,11 @@ static void ptentry_to_tag(unsigned **ptr, struct ptentry *ptn)
 	*ptr += sizeof(struct atag_ptbl_entry) / sizeof(unsigned);
 }
 
-unsigned char *update_cmdline(const char * cmdline)
+char *update_cmdline(const char * cmdline)
 {
 	int cmdline_len = 0;
 	int have_cmdline = 0;
-	unsigned char *cmdline_final = NULL;
+	char *cmdline_final = NULL;
 	int pause_at_bootup = 0;
 	bool warm_boot = false;
 	bool gpt_exists = partition_gpt_exists();
@@ -436,9 +436,9 @@ unsigned char *update_cmdline(const char * cmdline)
 
 	if (cmdline_len > 0) {
 		const char *src;
-		unsigned char *dst;
+		char *dst;
 
-		cmdline_final = (unsigned char*) malloc((cmdline_len + 4) & (~3));
+		cmdline_final = (char*) malloc((cmdline_len + 4) & (~3));
 		ASSERT(cmdline_final != NULL);
 		memset((void *)cmdline_final, 0, sizeof(*cmdline_final));
 		dst = cmdline_final;
@@ -705,7 +705,7 @@ void boot_linux(void *kernel, unsigned *tags,
 		const char *cmdline, unsigned machtype,
 		void *ramdisk, unsigned ramdisk_size)
 {
-	unsigned char *final_cmdline;
+	char *final_cmdline;
 #if DEVICE_TREE
 	int ret = 0;
 #endif
@@ -722,7 +722,7 @@ void boot_linux(void *kernel, unsigned *tags,
 	dprintf(INFO, "Updating device tree: start\n");
 
 	/* Update the Device Tree */
-	ret = update_device_tree((void *)tags,(const char *)final_cmdline, ramdisk, ramdisk_size);
+	ret = update_device_tree((void *)tags, final_cmdline, ramdisk, ramdisk_size);
 	if(ret)
 	{
 		dprintf(CRITICAL, "ERROR: Updating Device Tree Failed \n");
@@ -911,7 +911,7 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 #endif
 }
 
-static bool check_format_bit()
+static bool check_format_bit(void)
 {
 	bool ret = false;
 	int index;
@@ -954,7 +954,7 @@ static bool check_format_bit()
 	return ret;
 }
 
-void boot_verifier_init()
+void boot_verifier_init(void)
 {
 
 	uint32_t boot_state;
@@ -1774,7 +1774,7 @@ static int write_allow_oem_unlock(bool allow_unlock)
 
 	/*is_allow_unlock is a bool value stored at the LSB of last byte*/
 	buf[blocksize-1] = allow_unlock;
-	if (mmc_write(ptn + offset, blocksize, buf))
+	if (mmc_write(ptn + offset, blocksize, (void*)buf))
 	{
 		dprintf(CRITICAL, "Writing MMC failed\n");
 		return -1;
@@ -1906,14 +1906,14 @@ void read_device_info(device_info *dev)
 	}
 }
 
-void reset_device_info()
+void reset_device_info(void)
 {
 	dprintf(ALWAYS, "reset_device_info called.");
 	device.is_tampered = 0;
 	write_device_info(&device);
 }
 
-void set_device_root()
+void set_device_root(void)
 {
 	dprintf(ALWAYS, "set_device_root called.");
 	device.is_tampered = 1;
@@ -3066,7 +3066,7 @@ void cmd_preflash(const char *arg, void *data, unsigned sz)
 	fastboot_okay("");
 }
 
-struct fbimage* splash_screen_flash();
+struct fbimage* splash_screen_flash(void);
 
 int splash_screen_check_header(struct fbimage *logo)
 {
@@ -3077,7 +3077,7 @@ int splash_screen_check_header(struct fbimage *logo)
 	return 0;
 }
 
-struct fbimage* splash_screen_flash()
+struct fbimage* splash_screen_flash(void)
 {
 	struct ptentry *ptn;
 	struct ptable *ptable;
@@ -3133,7 +3133,7 @@ err:
 	return NULL;
 }
 
-struct fbimage* splash_screen_mmc()
+struct fbimage* splash_screen_mmc(void)
 {
 	int index = INVALID_PTN;
 	unsigned long long ptn = 0;
@@ -3205,7 +3205,7 @@ err:
 }
 
 
-struct fbimage* fetch_image_from_partition()
+struct fbimage* fetch_image_from_partition(void)
 {
 	if (target_is_emmc_boot()) {
 		return splash_screen_mmc();
@@ -3291,7 +3291,7 @@ void get_baseband_version(unsigned char *buf)
 	return;
 }
 
-bool is_device_locked()
+bool is_device_locked(void)
 {
 	return device.is_unlocked ? false:true;
 }
@@ -3542,7 +3542,7 @@ normal_boot:
 #endif
 }
 
-uint32_t get_page_size()
+uint32_t get_page_size(void)
 {
 	return page_size;
 }

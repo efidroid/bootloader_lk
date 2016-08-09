@@ -7,3 +7,5 @@ OBJS += \
 	$(LOCAL_DIR)/inflate.o \
 	$(LOCAL_DIR)/inffast.o \
 	$(LOCAL_DIR)/decompress.o
+
+DEFINES += ZLIB_CONST=1

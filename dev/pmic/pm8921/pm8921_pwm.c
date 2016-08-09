@@ -32,7 +32,7 @@
 #include <dev/pm8921_pwm.h>
 
 
-static char *clks[NUM_CLOCKS] = {
+static const char *clks[NUM_CLOCKS] = {
 	"1K", "32768", "19.2M"
 };
 
@@ -80,8 +80,8 @@ static void pm8921_pwm_calc_period(uint32_t period_us,
 {
 	int n, m, clk, div;
 	int best_m, best_div, best_clk;
-	int last_err, cur_err, better_err, better_m;
-	uint32_t tmp_p, last_p, min_err, period_n;
+	int last_err, cur_err, better_err, better_m, min_err;
+	uint32_t tmp_p, last_p, period_n;
 
 	/* PWM Period / N : handle underflow or overflow */
 	if (period_us < (PM_PWM_PERIOD_MAX / NSEC_PER_USEC))
@@ -252,7 +252,7 @@ int pm8921_pwm_config(uint8_t pwm_id,
 	pm8921_pwm_calc_period(period_us, &pwm_conf);
 
 	/* Figure out pwm_value with overflow handling */
-	if (period_us > (1 << pwm_conf.pwm_size))
+	if (period_us > (1u << pwm_conf.pwm_size))
 	{
 		tmp = period_us;
 		tmp >>= pwm_conf.pwm_size;

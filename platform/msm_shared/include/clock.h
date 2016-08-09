@@ -163,7 +163,7 @@ struct clk *clk_get_parent(struct clk *clk);
  *
  * Returns success (0) or negative errno.
  */
-int clk_get_set_enable(char *id, unsigned long rate, bool enable);
+int clk_get_set_enable(const char *id, unsigned long rate, bool enable);
 
 struct clk_lookup {
 	const char		*con_id;
@@ -194,5 +194,5 @@ void clk_init(struct clk_lookup *clist, unsigned num);
  */
 int clk_reset(struct clk *clk, enum clk_reset_action);
 
-void clock_bumpup_pipe3_clk();
+void clock_bumpup_pipe3_clk(void);
 #endif

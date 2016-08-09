@@ -674,7 +674,7 @@ int X509V3_EXT_print(BIO *out, X509_EXTENSION *ext, unsigned long flag, int inde
 #ifndef OPENSSL_NO_FP_API
 int X509V3_EXT_print_fp(FILE *out, X509_EXTENSION *ext, int flag, int indent);
 #endif
-int X509V3_extensions_print(BIO *out, char *title, STACK_OF(X509_EXTENSION) *exts, unsigned long flag, int indent);
+int X509V3_extensions_print(BIO *out, const char *title, STACK_OF(X509_EXTENSION) *exts, unsigned long flag, int indent);
 
 int X509_check_ca(X509 *x);
 int X509_check_purpose(X509 *x, int id, int ca);

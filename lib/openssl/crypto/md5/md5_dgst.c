@@ -56,6 +56,8 @@
  * [including the GNU Public Licence.]
  */
 
+#pragma GCC diagnostic ignored "-Wunused-value"
+
 #include <stdio.h>
 #include "md5_locl.h"
 #include <openssl/opensslv.h>

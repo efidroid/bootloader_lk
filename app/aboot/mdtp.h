@@ -116,7 +116,7 @@ typedef enum {
  *
  * @return - None.
  */
-void mdtp_fwlock_verify_lock();
+void mdtp_fwlock_verify_lock(void);
 
 /**
  * mdtp_fuse_get_enabled
@@ -152,7 +152,7 @@ void get_pin_from_user(char *entered_pin, uint32_t pin_length);
  *
  * @return - None.
  */
-void display_invalid_pin_msg();
+void display_invalid_pin_msg(void);
 
 /**
  * display_error_msg
@@ -161,7 +161,7 @@ void display_invalid_pin_msg();
  *
  * @return - None.
  */
-void display_error_msg();
+void display_error_msg(void);
 
 /**
  * mdtp_activated

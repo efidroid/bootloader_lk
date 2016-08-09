@@ -182,6 +182,7 @@ int pm8921_config_drv_keypad(unsigned int drv_flash_sel,
 int pm8921_low_voltage_switch_enable(uint8_t lvs_id);
 int pm8921_mpp_set_digital_output(uint8_t mpp_id);
 int pm8921_rtc_alarm_disable(void);
+int pm8921_HDMI_Switch(void);
 int pm89xx_bat_alarm_set(bat_vol_t, bat_vol_t);
 int pm89xx_bat_alarm_status(uint8_t *, uint8_t *);
 int pm89xx_vbus_status(void);

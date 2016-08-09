@@ -592,7 +592,7 @@ struct mmc_device {
     ({                                                             \
      unsigned int indx = (start) / (size_of);                  \
      unsigned int offset = (start) % (size_of);                \
-     unsigned int mask = (((len)<(size_of))? 1<<(len):0) - 1; \
+     unsigned int mask = (((len)<(size_of))? 1llu<<(len):0) - 1; \
      unsigned int unpck = array[indx] >> offset;               \
      unsigned int indx2 = ((start) + (len) - 1) / (size_of);       \
      if(indx2 > indx)                                          \
@@ -608,8 +608,6 @@ struct mmc_device {
 #define MMC_BOOT_MCI_FIFO_DEPTH       16
 #define MMC_BOOT_MCI_HFIFO_COUNT      ( MMC_BOOT_MCI_FIFO_DEPTH / 2 )
 #define MMC_BOOT_MCI_FIFO_SIZE        ( MMC_BOOT_MCI_FIFO_DEPTH * 4 )
-
-#define MAX_PARTITIONS 64
 
 #define MMC_BOOT_CHECK_PATTERN        0xAA	/* 10101010b */
 
@@ -644,10 +642,13 @@ unsigned mmc_get_psn(void);
 unsigned int mmc_erase_card(unsigned long long data_addr,
 			    unsigned long long data_len);
 
-void mmc_mclk_reg_wr_delay();
-void mmc_boot_mci_clk_enable();
-void mmc_boot_mci_clk_disable();
-uint64_t mmc_get_device_capacity();
+void mmc_mclk_reg_wr_delay(void);
+void mmc_boot_mci_clk_enable(void);
+void mmc_boot_mci_clk_disable(void);
+uint64_t mmc_get_device_capacity(void);
+uint32_t mmc_get_device_blocksize(void);
 void mmc_put_card_to_sleep(struct mmc_device *dev);
+void mmc_set_lun(uint8_t lun);
+uint32_t mmc_page_size(void);
 #endif
 #endif

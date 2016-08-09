@@ -56,6 +56,8 @@
  * [including the GNU Public Licence.]
  */
 
+#pragma GCC diagnostic ignored "-Wunused-value"
+
 #include <openssl/opensslconf.h>
 #if !defined(OPENSSL_NO_SHA1) && !defined(OPENSSL_NO_SHA)
 

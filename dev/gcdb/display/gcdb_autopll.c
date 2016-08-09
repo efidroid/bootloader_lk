@@ -75,7 +75,7 @@ static void calculate_bitclock(struct msm_panel_info *pinfo)
 	pll_data.halfbit_clock = pll_data.bit_clock >> 1;
 }
 
-static uint32_t calculate_div1()
+static uint32_t calculate_div1(void)
 {
 	uint32_t ret = NO_ERROR;
 
@@ -144,7 +144,7 @@ static uint32_t calculate_div3(uint8_t bpp, uint8_t num_of_lanes)
 	return NO_ERROR;
 }
 
-static uint32_t calculate_dec_frac_start()
+static uint32_t calculate_dec_frac_start(void)
 {
 	uint32_t refclk = 19200000;
 	uint32_t vco_rate = pll_data.vco_clock;

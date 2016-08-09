@@ -682,7 +682,7 @@ int scm_protect_keystore(uint32_t * img_ptr, uint32_t  img_len)
 	return ret;
 }
 
-void set_tamper_fuse_cmd()
+void set_tamper_fuse_cmd(void)
 {
 	uint32_t svc_id;
 	uint32_t cmd_id;
@@ -720,7 +720,7 @@ void set_tamper_fuse_cmd()
 
 }
 
-uint8_t get_tamper_fuse_cmd()
+uint8_t get_tamper_fuse_cmd(void)
 {
 	uint32_t svc_id;
 	uint32_t cmd_id;
@@ -963,7 +963,7 @@ uint8_t switch_ce_chn_cmd(enum ap_ce_channel_type channel)
 	return resp_buf;
 }
 
-int scm_halt_pmic_arbiter()
+int scm_halt_pmic_arbiter(void)
 {
 	int ret = 0;
 	scmcall_arg scm_arg = {0};
@@ -1083,7 +1083,7 @@ int scm_random(uint32_t * rbuf, uint32_t  r_len)
 	return ret;
 }
 
-void * get_canary()
+void * get_canary(void)
 {
 	void * canary;
 	if(scm_random((uint32_t *)&canary, sizeof(canary))) {
@@ -1097,7 +1097,7 @@ void * get_canary()
 	return canary;
 }
 
-int scm_xpu_err_fatal_init()
+int scm_xpu_err_fatal_init(void)
 {
 	uint32_t ret = 0;
 	uint32_t response = 0;
@@ -1207,7 +1207,7 @@ uint32_t scm_call2(scmcall_arg *arg, scmcall_ret *ret)
 static bool secure_boot_enabled = true;
 static bool wdog_debug_fuse_disabled = true;
 
-void scm_check_boot_fuses()
+void scm_check_boot_fuses(void)
 {
 	uint32_t ret = 0;
 	uint32_t resp;
@@ -1234,7 +1234,7 @@ void scm_check_boot_fuses()
 		dprintf(CRITICAL, "scm call to check secure boot fuses failed\n");
 }
 
-bool is_secure_boot_enable()
+bool is_secure_boot_enable(void)
 {
 	scm_check_boot_fuses();
 	return secure_boot_enabled;

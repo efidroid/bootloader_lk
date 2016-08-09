@@ -41,8 +41,8 @@ struct oem_panel_data oem_data = {{'\0'}, false, false, SIM_NONE};
 
 void panel_name_to_dt_string(struct panel_lookup_list supp_panels[],
 			  uint32_t supp_panels_size,
-			  const char *panel_name, char **panel_node,
-			  char **slave_panel_node, int *panel_mode)
+			  const char *panel_name, const char **panel_node,
+			  const char **slave_panel_node, int *panel_mode)
 {
 	uint32_t i;
 
@@ -73,7 +73,7 @@ void panel_name_to_dt_string(struct panel_lookup_list supp_panels[],
 
 void sim_override_to_cmdline(struct sim_lookup_list sim[],
 			  uint32_t sim_size, uint32_t sim_mode,
-			  char **sim_string)
+			  const char **sim_string)
 {
 	uint32_t i;
 
@@ -142,8 +142,8 @@ void set_panel_cmd_string(const char *panel_name)
 
 }
 
-static bool mdss_dsi_set_panel_node(char *panel_name, char **dsi_id,
-		char **panel_node, char **slave_panel_node, int *panel_mode)
+static bool mdss_dsi_set_panel_node(const char *panel_name, const char **dsi_id,
+		const char **panel_node, const char **slave_panel_node, int *panel_mode)
 {
 	if (!strcmp(panel_name, SIM_VIDEO_PANEL)) {
 		*dsi_id = SIM_DSI_ID;
@@ -177,19 +177,19 @@ static bool mdss_dsi_set_panel_node(char *panel_name, char **dsi_id,
 
 bool gcdb_display_cmdline_arg(char *pbuf, uint16_t buf_size)
 {
-	char *dsi_id = NULL;
-	char *panel_node = NULL;
-	char *slave_panel_node = NULL;
-	char *sim_mode_string = NULL;
+	const char *dsi_id = NULL;
+	const char *panel_node = NULL;
+	const char *slave_panel_node = NULL;
+	const char *sim_mode_string = NULL;
 	uint16_t dsi_id_len = 0, panel_node_len = 0, slave_panel_node_len = 0;
 	uint32_t arg_size = 0;
 	bool ret = true;
 	bool rc;
-	char *default_str;
+	const char *default_str;
 	struct panel_struct panelstruct;
 	int panel_mode = SPLIT_DISPLAY_FLAG | DUAL_PIPE_FLAG | DST_SPLIT_FLAG;
 	int prefix_string_len = strlen(DISPLAY_CMDLINE_PREFIX);
-	char *sctl_string;
+	const char *sctl_string;
 
 	panelstruct = mdss_dsi_get_panel_data();
 

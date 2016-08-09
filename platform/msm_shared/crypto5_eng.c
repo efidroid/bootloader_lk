@@ -157,9 +157,10 @@ static uint32_t crypto_write_reg(struct bam_instance *bam_core,
 	}
 
 	crypto_wait_for_cmd_exec(bam_core, 1, CRYPTO_WRITE_PIPE_INDEX);
-#endif
 
 crypto_read_reg_err:
+#endif
+
 	return ret;
 }
 

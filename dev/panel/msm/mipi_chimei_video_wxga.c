@@ -52,6 +52,8 @@ int mipi_chimei_video_wxga_early_config(void *pdata)
 	writel_relaxed(tmp, reg);
 
 	mipi_d2l_dsi_init_sequence(pinfo);
+
+	return NO_ERROR;
 }
 
 int mipi_chimei_video_wxga_config(void *pdata)

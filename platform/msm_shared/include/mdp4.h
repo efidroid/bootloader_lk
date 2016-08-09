@@ -103,17 +103,17 @@ int mipi_dsi_cmd_config(struct fbcon_config mipi_fb_cfg,
 void mdp_shutdown(void);
 void mdp_disable(void);
 void mdp_start_dma(void);
-int mdp_dsi_video_off();
+int mdp_dsi_video_off(struct msm_panel_info *pinfo);
 int mdp_dsi_cmd_off(void);
 int mdp_dsi_video_on(struct msm_panel_info *pinfo);
 int mdp_dma_on(struct msm_panel_info *pinfo);
 int mdp_dsi_video_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 int mdp_dsi_cmd_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
 int mdp_lcdc_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);
-int mdp_lcdc_on();
-int mdp_lcdc_off();
+int mdp_lcdc_on(struct msm_fb_panel_data *panel);
+int mdp_lcdc_off(void);
 void mdp_set_revision(int rev);
-int mdp_get_revision();
+int mdp_get_revision(void);
 
 /* defining no-op functions that are implemented only for mdp5 */
 int mdp_edp_config(struct msm_panel_info *pinfo, struct fbcon_config *fb);

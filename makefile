@@ -51,8 +51,10 @@ endif
 
 INCLUDES := -I$(BUILDDIR) -Iinclude
 CFLAGS := -O2 -g -fno-builtin -finline -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused-function -include $(CONFIGHEADER)
-CFLAGS += -Wno-error=unused-const-variable -Wno-error=unused-variable
-#CFLAGS += -Werror
+CFLAGS += -Wno-error=unused-const-variable -Wno-error=unused-variable -Wno-error=unused-but-set-variable
+CFLAGS += -Wno-error=strict-aliasing
+CFLAGS += -Wstrict-prototypes -Wwrite-strings
+CFLAGS += -Werror
 ifeq ($(EMMC_BOOT),1)
   CFLAGS += -D_EMMC_BOOT=1
 endif

@@ -102,9 +102,14 @@
 
 void platform_clock_init(void);
 
+void mmss_clock_auto_pll_init(uint32_t dsi_pixel0_cfg_rcgr, uint32_t dual_dsi,
+			uint8_t pclk0_m, uint8_t pclk0_n, uint8_t pclk0_d);
+void mmss_clock_disable(uint32_t dual_dsi);
+
 void clock_init_mmc(uint32_t interface);
 void clock_config_mmc(uint32_t interface, uint32_t freq);
 void clock_config_uart_dm(uint8_t id);
+void clock_config_blsp_i2c(uint8_t blsp_id, uint8_t qup_id);
 void hsusb_clock_init(void);
 void clock_config_ce(uint8_t instance);
 void mdp_clock_init(void);
@@ -112,6 +117,7 @@ void mdp_clock_enable(void);
 void mdp_clock_disable(uint32_t dual_dsi);
 void mdp_gdsc_ctrl(uint8_t enable);
 void edp_clk_enable(void);
+void edp_clk_disable(void);
 void clock_ce_enable(uint8_t instance);
 void clock_ce_disable(uint8_t instance);
 void clock_usb30_init(void);

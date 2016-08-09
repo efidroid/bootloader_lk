@@ -353,7 +353,7 @@ start:
 
 	rlen = edp_aux_read_buf(ep, 0x50, 128, 1);
 
-	dprintf(SPEW, "%s: rlen=%d\n", rlen, __func__);
+	dprintf(SPEW, "%s: rlen=%d\n", __func__, rlen);
 
 	if (rlen < 0)
 		goto start;
@@ -417,7 +417,7 @@ void edp_cap2pinfo(struct msm_panel_info *pinfo)
 	pinfo->edp.max_lane_count = cap->max_lane_count;
 	pinfo->edp.max_link_clk = cap->max_link_rate;
 
-	dprintf(SPEW, "%s: clk=%d lane=%d\n", __func__,
+	dprintf(SPEW, "%s: clk=%d lane=%lu\n", __func__,
 	pinfo->edp.max_lane_count, pinfo->edp.max_link_clk);
 }
 

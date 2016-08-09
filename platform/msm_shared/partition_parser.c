@@ -74,9 +74,9 @@ static uint32_t partition_parse_gpt_header(uint8_t *buffer,
 static uint32_t write_mbr(uint32_t, uint8_t *mbrImage, uint32_t block_size);
 static uint32_t write_gpt(uint32_t size, uint8_t *gptImage, uint32_t block_size);
 
-char *ext3_partitions[] =
+const char *ext3_partitions[] =
     { "system", "userdata", "persist", "cache", "tombstones" };
-char *vfat_partitions[] = { "modem", "mdm", "NONE" };
+const char *vfat_partitions[] = { "modem", "mdm", "NONE" };
 
 unsigned int ext3_count = 0;
 unsigned int vfat_count = 0;
@@ -85,7 +85,7 @@ struct partition_entry *partition_entries;
 static unsigned gpt_partitions_exist = 0;
 static unsigned partition_count;
 
-unsigned int partition_read_table()
+unsigned int partition_read_table(void)
 {
 	unsigned int ret;
 	uint32_t block_size;
@@ -807,10 +807,10 @@ mbr_fill_name(struct partition_entry *partition_ent, unsigned int type)
 	case MBR_MODEM_TYPE:
 	case MBR_MODEM_TYPE2:
 		/* if already assigned last name available then return */
-		if (!strcmp((const char *)vfat_partitions[vfat_count], "NONE"))
+		if (!strcmp(vfat_partitions[vfat_count], "NONE"))
 			return;
 		strlcpy((char *)partition_ent->name,
-			(const char *)vfat_partitions[vfat_count],
+			vfat_partitions[vfat_count],
 			sizeof(partition_ent->name));
 		vfat_count++;
 		break;
@@ -852,7 +852,7 @@ mbr_fill_name(struct partition_entry *partition_ent, unsigned int type)
 		if (ext3_count == sizeof(ext3_partitions) / sizeof(char *))
 			return;
 		strlcpy((char *)partition_ent->name,
-			(const char *)ext3_partitions[ext3_count],
+			ext3_partitions[ext3_count],
 			sizeof(partition_ent->name));
 		ext3_count++;
 		break;
@@ -950,7 +950,7 @@ uint8_t partition_get_lun(int index)
 }
 
 /* Debug: Print all parsed partitions */
-void partition_dump()
+void partition_dump(void)
 {
 	unsigned i = 0;
 	for (i = 0; i < partition_count; i++) {
@@ -1169,7 +1169,7 @@ fail:
 	return ret;
 }
 
-bool partition_gpt_exists()
+bool partition_gpt_exists(void)
 {
 	return (gpt_partitions_exist != 0);
 }
