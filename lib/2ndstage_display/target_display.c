@@ -20,7 +20,25 @@
 #include <platform/iomap.h>
 #include <dev/lcdc.h>
 
-int check_aboot_addr_range_overlap(uint32_t start, uint32_t size);
+/* Function to check if the memory address range falls within the aboot
+ * boundaries.
+ * start: Start of the memory region
+ * size: Size of the memory region
+ */
+static int check_aboot_addr_range_overlap(uint32_t start, uint32_t size)
+{
+	/* Check for boundary conditions. */
+	if ((UINT_MAX - start) < size)
+		return -1;
+
+	/* Check for memory overlap. */
+	if ((start < MEMBASE) && ((start + size) <= MEMBASE))
+		return 0;
+	else if (start >= (MEMBASE + MEMSIZE))
+		return 0;
+	else
+		return -1;
+}
 
 #if defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP3)
 static int mdp_dump_config(struct fbcon_config *fb)
