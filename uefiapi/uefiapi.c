@@ -401,7 +401,9 @@ static int api_lcd_init(void)
 #if !DEBUG_ENABLE_UEFI_FBCON
     target_display_init("");
 #endif
-    return 0;
+
+    struct fbcon_config *fbcon = fbcon_display();
+    return fbcon==NULL;
 }
 
 static unsigned int api_lcd_get_width(void)
