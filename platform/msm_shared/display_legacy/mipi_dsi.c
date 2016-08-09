@@ -41,6 +41,7 @@
 #include <err.h>
 #include <msm_panel.h>
 #include <arch/ops.h>
+#include <mdp5.h>
 
 extern void mdp_disable(void);
 extern int mipi_dsi_cmd_config(struct fbcon_config mipi_fb_cfg,
@@ -848,4 +849,12 @@ int mipi_cmd_trigger()
 	writel(0x1, DSI_CMD_MODE_MDP_SW_TRIGGER);
 
 	return NO_ERROR;
+}
+
+void mipi_update_sw_trigger(void) {
+	mdp_start_dma();
+	dsb();
+	mdelay(10);
+	dsb();
+	writel(0x1, DSI_CMD_MODE_MDP_SW_TRIGGER);
 }
