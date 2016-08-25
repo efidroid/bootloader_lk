@@ -44,9 +44,16 @@ static uint32_t *tt = (void *)MMU_TRANSLATION_TABLE_ADDR;
 static uint32_t tt[4096] __ALIGNED(16384);
 #endif
 
+int check_aboot_addr_range_overlap(uint32_t start, uint32_t size);
+
 void arm_mmu_map_section(addr_t paddr, addr_t vaddr, uint flags)
 {
 	int index;
+
+	if(flags&MMU_MEMORY_XN && check_aboot_addr_range_overlap(paddr, MB)) {
+		dprintf(CRITICAL, "tried to map 0x%08lx-0x%08lx as XN - ignore\n", paddr, paddr+MB);
+		return;
+	}
 
 	/* Get the index into the translation table */
 	index = vaddr / MB;
