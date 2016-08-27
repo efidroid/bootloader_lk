@@ -110,7 +110,6 @@ static int cmdstate2int(const char* s) {
 
 static int process_fdt_paneldata(void* fdt, int offset_panel, struct panel_config* paneldata) {
     int rc;
-    char* compatible = NULL;
     char* destination = NULL;
     char* paneltype = NULL;
 
@@ -119,14 +118,7 @@ static int process_fdt_paneldata(void* fdt, int offset_panel, struct panel_confi
     if(!paneldata->panel_controller) { rc = -1; goto done;}
     
     // compatible
-    compatible = fdt_getprop_str(fdt, offset_panel, "compatible");
-    dprintf(CRITICAL, "%s\n", compatible);
-    if(!compatible || strcmp(compatible, "qcom,mdss-dsi-panel")) {
-        dprintf(CRITICAL, "panel is not compatible\n");
-        rc = -1;
-        goto done;
-    }
-    paneldata->panel_compatible = strdup(compatible);
+    paneldata->panel_compatible = strdup("qcom,mdss-dsi-panel");
     if(!paneldata->panel_compatible) { rc = -1; goto done;}
 
     // panel_type
@@ -175,7 +167,6 @@ static int process_fdt_paneldata(void* fdt, int offset_panel, struct panel_confi
     rc = 0;
 
 done:
-    free(compatible);
     free(destination);
     free(paneltype);
 
