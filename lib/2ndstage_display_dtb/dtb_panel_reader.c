@@ -282,6 +282,35 @@ done:
     return rc;
 }
 
+static int process_fdt_commandpanel(void* fdt, int offset_panel, struct commandpanel_info* commandpanel) {
+
+    // techeck_enable
+    commandpanel->techeck_enable = fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-te-check-enable");
+    // tepin_select
+    commandpanel->tepin_select = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-pin-select");
+    // teusing_tepin
+    commandpanel->teusing_tepin = fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-te-using-te-pin");
+
+    // TODO: autorefresh_enable
+    // TODO: autorefresh_framenumdiv
+
+    // tevsync_rdptr_irqline
+    commandpanel->tevsync_rdptr_irqline = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-v-sync-rd-ptr-irq-line");
+    // tevsync_continue_lines
+    commandpanel->tevsync_continue_lines = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-v-sync-continues-lines");
+    // tevsync_startline_divisor
+    commandpanel->tevsync_startline_divisor = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-v-sync-start-line-divisor");
+    // tepercent_variance
+    commandpanel->tepercent_variance = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-percent-variance");
+    // tedcs_command
+    commandpanel->tedcs_command = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-te-dcs-command");
+
+    // TODO: disable_eotafter_hsxfer
+    // TODO: cmdmode_idletime
+
+    return 0;
+}
+
 static int process_fdt_state(void* fdt, int offset_panel, struct command_state* state) {
     int rc;
     char* state_on = NULL;
@@ -651,7 +680,9 @@ static int process_fdt(void* fdt, const char* name, dtb_panel_config_t* config) 
     rc = process_fdt_videopanel(fdt, offset_panel, config->videopanel);
     if(rc) goto done;
 
-    // TODO: commandpanel
+    // commandpanel
+    rc = process_fdt_commandpanel(fdt, offset_panel, config->commandpanel);
+    if(rc) goto done;
 
     // state
     rc = process_fdt_state(fdt, offset_panel, config->state);
