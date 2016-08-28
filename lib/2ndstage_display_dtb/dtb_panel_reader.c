@@ -342,51 +342,52 @@ static int process_fdt_laneconfig(void* fdt, int offset_panel, struct lane_confi
 
     // dsi_lanemap
     lane_map = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-lane-map");
-    if(!lane_map) { rc = -1; goto done;}
-    int lane_map_int;
-    if(!strcmp(lane_map, "lane_map_0123"))
-        lane_map_int = 0;
-    else if(!strcmp(lane_map, "lane_map_3012"))
-        lane_map_int = 1;
-    else if(!strcmp(lane_map, "lane_map_2301"))
-        lane_map_int = 2;
-    else if(!strcmp(lane_map, "lane_map_1230"))
-        lane_map_int = 3;
-    else if(!strcmp(lane_map, "lane_map_0321"))
-        lane_map_int = 4;
-    else if(!strcmp(lane_map, "lane_map_1032"))
-        lane_map_int = 5;
-    else if(!strcmp(lane_map, "lane_map_2103"))
-        lane_map_int = 6;
-    else if(!strcmp(lane_map, "lane_map_3210"))
-        lane_map_int = 7;
-    else {
-        dprintf(CRITICAL, "invalid lane map: %s\n", lane_map);
-        rc = -1;
-        goto done;
+    if(lane_map) {
+        int lane_map_int;
+        if(!strcmp(lane_map, "lane_map_0123"))
+            lane_map_int = 0;
+        else if(!strcmp(lane_map, "lane_map_3012"))
+            lane_map_int = 1;
+        else if(!strcmp(lane_map, "lane_map_2301"))
+            lane_map_int = 2;
+        else if(!strcmp(lane_map, "lane_map_1230"))
+            lane_map_int = 3;
+        else if(!strcmp(lane_map, "lane_map_0321"))
+            lane_map_int = 4;
+        else if(!strcmp(lane_map, "lane_map_1032"))
+            lane_map_int = 5;
+        else if(!strcmp(lane_map, "lane_map_2103"))
+            lane_map_int = 6;
+        else if(!strcmp(lane_map, "lane_map_3210"))
+            lane_map_int = 7;
+        else {
+            dprintf(CRITICAL, "invalid lane map: %s\n", lane_map);
+            rc = -1;
+            goto done;
+        }
+        laneconfig->dsi_lanemap = lane_map_int;
     }
-    laneconfig->dsi_lanemap = lane_map_int;
     
     // lane0_state
     uint32_t dsi_lanes = 0;
     if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-0-state")) {
         dsi_lanes++;
-        laneconfig->lane0_state = lane_map_int;
+        laneconfig->lane0_state = 1;
     }
     // lane1_state
     if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-1-state")) {
         dsi_lanes++;
-        laneconfig->lane1_state = lane_map_int;
+        laneconfig->lane1_state = 1;
     }
     // lane2_state
     if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-2-state")) {
         dsi_lanes++;
-        laneconfig->lane2_state = lane_map_int;
+        laneconfig->lane2_state = 1;
     }
     // lane3_state
     if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-3-state")) {
         dsi_lanes++;
-        laneconfig->lane3_state = lane_map_int;
+        laneconfig->lane3_state = 1;
     }
 
     // dsi_lanes
