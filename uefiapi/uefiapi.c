@@ -631,9 +631,7 @@ static void* api_boot_extend_atags(void *atags)
 
 static void api_boot_extend_fdt(void *fdt)
 {
-#if DEVICE_TREE
     lkargs_insert_chosen(fdt);
-#endif
 }
 
 static int api_boot_get_hwid(const char* id, unsigned int* datap) {
