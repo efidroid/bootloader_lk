@@ -588,7 +588,7 @@ int lkargs_insert_chosen(void* fdt)
     return lkargs_fdt_insert_nodes(fdt, target_offset_chosen);
 }
 
-static int parse_smem(void) {
+__WEAK void* lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb) {
     unsigned int i;
     ram_partition ptn_entry;
 
@@ -601,9 +601,26 @@ static int parse_smem(void) {
     for (i = 0; i<smem_get_ram_ptable_len(); i++) {
         smem_get_ram_ptable_entry(&ptn_entry, i);
         if(ptn_entry.category==SDRAM && ptn_entry.type==SYS_MEMORY) {
-            add_meminfo(ptn_entry.start, ptn_entry.size);
+            cb(pdata, ptn_entry.start, ptn_entry.size, 0);
         }
     }
+
+    return pdata;
+}
+
+static void* add_meminfo_cb(void* pdata, uint64_t addr, uint64_t size, bool reserved) {
+    add_meminfo(addr, size);
+    return pdata;
+}
+
+static int parse_smem(void) {
+    // Make sure RAM partition table is initialized
+    if (!smem_ram_ptable_init_v1()) {
+        ASSERT(0);
+    }
+
+    // add meminfo
+    lkargs_platform_get_mmap(NULL, add_meminfo_cb);
 
     // add empty cmdline
     command_line = strdup("");
