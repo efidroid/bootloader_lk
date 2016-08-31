@@ -672,9 +672,7 @@ static void *libboot_add_custom_atags(void *tags)
 
 static void libboot_patch_fdt(void *fdt)
 {
-#if DEVICE_TREE
     lkargs_insert_chosen(fdt);
-#endif
 }
 
 static void cmd_boot(const char *arg, void *data, unsigned sz)
