@@ -142,11 +142,12 @@ static int str2nameval(const char* str, char** name, char** value)
 void cmdline_addall(struct list_node* list, const char* _cmdline, bool overwrite)
 {
     const char* sep = " ";
+    char *saveptr = NULL;
 
     char* cmdline = strdup(_cmdline);
     if (!cmdline) return;
 
-    char *pch = strtok(cmdline, sep);
+    char *pch = strtok_r(cmdline, sep, &saveptr);
     while (pch != NULL) {
         // parse
         char* name = NULL;
@@ -161,7 +162,7 @@ void cmdline_addall(struct list_node* list, const char* _cmdline, bool overwrite
         free(value);
 
         // next
-        pch = strtok(NULL, sep);
+        pch = strtok_r(NULL, sep, &saveptr);
     }
 
     free(cmdline);
