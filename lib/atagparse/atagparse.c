@@ -12,6 +12,8 @@
 #include <dev_tree.h>
 
 typedef struct {
+    struct list_node node;
+
     uint64_t start;
     uint64_t size;
 } meminfo_t;
@@ -69,15 +71,13 @@ extern uint32_t lk_boot_args[4];
 static void*  tags_copy = NULL;
 static size_t tags_size = 0;
 
-// parsed data: common
-static qchwinfo_t* hwinfo_tags = NULL;
-static qchwinfo_t* hwinfo_lk = NULL;
+// parsed data: internal
 static char* command_line = NULL;
+static struct list_node meminfo;
+
+// parsed data: accessible via public functions
 static struct list_node cmdline_list;
-static lkargs_uefi_bootmode uefi_bootmode = LKARGS_UEFI_BM_NORMAL;
 static char* uefi_bootpart = NULL;
-static meminfo_t* meminfo = NULL;
-static size_t meminfo_count = 0;
 static struct list_node qciditem_list;
 
 static void qciditem_add(const char* name, uint32_t value)
@@ -114,7 +114,19 @@ uint32_t qciditem_get_zero(const char* name)
 
 const char* lkargs_get_command_line(void)
 {
-    return command_line;
+    static char* cache = NULL;
+    if(!cache) {
+        // cmdline
+        size_t cmdline_len = cmdline_length(&cmdline_list);
+        if (cmdline_len) {
+            cache = malloc(cmdline_len);
+            if(cache) {
+                cache[0] = 0;
+                cmdline_generate(&cmdline_list, cache, cmdline_len);
+            }
+        }
+    }
+    return cache;
 }
 
 struct list_node* lkargs_get_command_line_list(void)
@@ -133,11 +145,6 @@ const char* lkargs_get_panel_name(const char* key)
     else name = pch+1;
 
     return name;
-}
-
-lkargs_uefi_bootmode lkargs_get_uefi_bootmode(void)
-{
-    return uefi_bootmode;
 }
 
 const char* lkargs_get_uefi_bootpart(void)
@@ -174,7 +181,7 @@ static int save_atags(const struct tag *tags)
     return 0;
 }
 
-int atags_check_header(void* tags)
+static int atags_check_header(void* tags)
 {
     struct tag *atags = (struct tag *)tags;
     return atags->hdr.tag!=ATAG_CORE;
@@ -201,19 +208,20 @@ static int parse_atag_core(const struct tag *tag)
 
 static void add_meminfo(uint64_t start, uint64_t size)
 {
-    meminfo = realloc(meminfo, (++meminfo_count)*sizeof(*meminfo));
-    ASSERT(meminfo);
+    dprintf(INFO, "0x%016llx-0x%016llx\n", start, start+size-1);
 
-    meminfo[meminfo_count-1].start = start;
-    meminfo[meminfo_count-1].size = size;
+    meminfo_t* item = malloc(sizeof(meminfo_t));
+    ASSERT(item);
+
+    item->start = start;
+    item->size = size;
+
+    list_add_tail(&meminfo, &item->node);
 }
 
 static int parse_atag_mem32(const struct tag *tag)
 {
-    dprintf(INFO, "0x%08x-0x%08x\n", tag->u.mem.start, tag->u.mem.start+tag->u.mem.size);
-
     add_meminfo((uint64_t)tag->u.mem.start, (uint64_t)tag->u.mem.size);
-
     return 0;
 }
 
@@ -290,45 +298,14 @@ void* lkargs_atag_insert_unknown(void* tags)
     return tag;
 }
 
-static unsigned *target_mem_atag_create(unsigned *ptr, uint32_t size, uint32_t addr)
-{
-    *ptr++ = 4;
-    *ptr++ = ATAG_MEM;
-    *ptr++ = size;
-    *ptr++ = addr;
-
-    return ptr;
-}
-
-unsigned *lkargs_gen_meminfo_atags(unsigned *ptr)
-{
-    uint8_t i = 0;
-
-    for (i = 0; i < meminfo_count; i++) {
-        ptr = target_mem_atag_create(ptr,
-                                     (uint32_t)meminfo[i].size,
-                                     (uint32_t)meminfo[i].start);
-    }
-
-    return ptr;
-}
-
 void* lkargs_get_mmap_callback(void* pdata, lkargs_mmap_cb_t cb)
 {
-    uint32_t i;
-
-    ASSERT(meminfo);
-
-    for (i=0; i<meminfo_count; i++) {
-        pdata = cb(pdata, meminfo[i].start, meminfo[i].size, false);
+    meminfo_t *entry;
+    list_for_every_entry(&meminfo, entry, meminfo_t, node) {
+        pdata = cb(pdata, entry->start, entry->size, false);
     }
 
     return pdata;
-}
-
-bool lkargs_has_meminfo(void)
-{
-    return !!meminfo;
 }
 
 // parse FDT
@@ -387,7 +364,7 @@ static void print_qchwinfo(const char* prefix, qchwinfo_t* hwinfo)
            );
 }
 
-static int parse_fdt(void* fdt)
+static int parse_fdt(void* fdt, qchwinfo_t** hwinfo)
 {
     int ret = 0;
     uint32_t offset;
@@ -428,12 +405,7 @@ static int parse_fdt(void* fdt)
                     size = fdt32_to_cpu(reg[regpos++]);
                 }
 
-                dprintf(INFO, "0x%016llx-0x%016llx\n", base, base+size);
-                if (base>0xffffffff || size>0xffffffff) {
-                    dprintf(CRITICAL, "address range exceeds 32bit address space\n");
-                } else {
-                    add_meminfo(base, size);
-                }
+                add_meminfo(base, size);
             }
         }
     }
@@ -487,7 +459,7 @@ next:
         }
 
         // build hwinfo_tags
-        hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
+        qchwinfo_t* hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
         ASSERT(hwinfo_tags);
         hwinfo_tags->msm_id = platform_id&0x0000ffff;
         hwinfo_tags->foundry_id = (platform_id&0x00ff0000)>>16;
@@ -506,30 +478,10 @@ next:
             hwinfo_tags->pmic_rev[i].pmic_minor = (pmic_model[i]&0x0000ff00)>>8;
             hwinfo_tags->pmic_rev[i].pmic_major = (pmic_model[i]&0x00ff0000)>>16;
         }
+        *hwinfo = hwinfo_tags;
     }
 
     return 0;
-}
-
-uint32_t lkargs_gen_meminfo_fdt(void *fdt, uint32_t memory_node_offset)
-{
-    unsigned int i;
-    int ret = 0;
-
-    for (i = 0 ; i < meminfo_count; i++) {
-        ret = dev_tree_add_mem_info(fdt,
-                                    memory_node_offset,
-                                    meminfo[i].start,
-                                    meminfo[i].size);
-
-        if (ret) {
-            dprintf(CRITICAL, "Failed to add memory info\n");
-            goto out;
-        }
-    }
-
-out:
-    return ret;
 }
 
 static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void* fdtsrc, int offsetsrc)
@@ -636,9 +588,35 @@ int lkargs_insert_chosen(void* fdt)
     return lkargs_fdt_insert_nodes(fdt, target_offset_chosen);
 }
 
+static int parse_smem(void) {
+    unsigned int i;
+    ram_partition ptn_entry;
+
+    // Make sure RAM partition table is initialized
+    if (!smem_ram_ptable_init_v1()) {
+        ASSERT(0);
+    }
+
+    // add meminfo
+    for (i = 0; i<smem_get_ram_ptable_len(); i++) {
+        smem_get_ram_ptable_entry(&ptn_entry, i);
+        if(ptn_entry.category==SDRAM && ptn_entry.type==SYS_MEMORY) {
+            add_meminfo(ptn_entry.start, ptn_entry.size);
+        }
+    }
+
+    // add empty cmdline
+    command_line = strdup("");
+
+    return 0;
+}
+
 void atag_parse(void)
 {
     uint32_t i;
+    qchwinfo_t* hwinfo_tags = NULL;
+    qchwinfo_t* hwinfo_lk = NULL;
+    uint32_t machinetype;
 
     dprintf(INFO, "bootargs: 0x%x 0x%x 0x%x 0x%x\n",
             lk_boot_args[0],
@@ -650,31 +628,36 @@ void atag_parse(void)
     // init
     cmdline_init(&cmdline_list);
     list_initialize(&qciditem_list);
+    list_initialize(&meminfo);
 
-    void* tags = (void*)lk_boot_args[2];
+    machinetype = board_machtype();
+    if(machinetype==LINUX_MACHTYPE_UNKNOWN) {
+        // this board probably doesn't have official atags support
+        machinetype = board_target_id();
+    }
 
     // fdt
+    void* tags = (void*)lk_boot_args[2];
     if (!fdt_check_header(tags)) {
         save_fdt(tags);
-        parse_fdt(tags);
+        parse_fdt(tags, &hwinfo_tags);
     }
 
     // atags
     else if (!atags_check_header(tags)) {
-        // machine type
-        uint32_t machinetype = lk_boot_args[1];
-        dprintf(INFO, "machinetype: %u\n", machinetype);
+        // use provided machine type
+        machinetype = lk_boot_args[1];
 
-        qciditem_add("qcom,machtype", machinetype);
         save_atags(tags);
         parse_atags(tags);
     }
 
     // unknown
     else {
-        dprintf(CRITICAL, "Invalid atags!\n");
-        return;
+        dprintf(CRITICAL, "Invalid atags - assume 1st-stage boot.\n");
+        parse_smem();
     }
+    dprintf(INFO, "machinetype: %u\n", machinetype);
 
     // parse cmdline
     dprintf(INFO, "cmdline=[%s]\n", command_line);
@@ -693,7 +676,6 @@ void atag_parse(void)
     }
 
     // build and print hwinfo_lk
-#ifndef PLATFORM_MSM7X27A
     {
         uint32_t platform_id = board_platform_id();
         uint32_t foundry_id = (platform_id&0x00ff0000)>>16;
@@ -768,8 +750,8 @@ void atag_parse(void)
         // always use pmicrev from LK until we tested this
     }
 
+    // add info to qciditem list
     uint32_t variant_id = (variant_id_platform_hw) | (variant_id_platform_minor << 8) | (variant_id_platform_major << 16) | (variant_id_subtype << 24);
-
     qciditem_add("qcom,platform_id", platform_id); // libboot_qcdt_platform_id
     qciditem_add("qcom,platform_hw", platform_hw); // libboot_qcdt_hardware_id
     qciditem_add("qcom,subtype", subtype); // libboot_qcdt_hardware_subtype
@@ -781,5 +763,9 @@ void atag_parse(void)
     qciditem_add("qcom,pmic_rev3", pmicrev3); // libboot_qcdt_pmic_target
     qciditem_add("qcom,pmic_rev4", pmicrev4); // libboot_qcdt_pmic_target
     qciditem_add("qcom,foundry_id", foundry_id); // libboot_qcdt_foundry_id
-#endif
+    qciditem_add("qcom,machtype", machinetype);
+
+    // cleanup
+    free(hwinfo_lk);
+    free(hwinfo_tags);
 }
