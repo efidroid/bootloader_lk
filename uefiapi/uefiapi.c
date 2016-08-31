@@ -123,10 +123,7 @@ __WEAK void api_platform_uninit(void)
 
 __WEAK unsigned int api_platform_get_uefi_bootmode(void)
 {
-    switch (lkargs_get_uefi_bootmode()) {
-        default:
-            return LKAPI_UEFI_BM_NORMAL;
-    }
+    return LKAPI_UEFI_BM_NORMAL;
 }
 
 __WEAK const char* api_platform_get_uefi_bootpart(void)
