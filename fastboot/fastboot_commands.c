@@ -697,6 +697,9 @@ static void cmd_boot(const char *arg, void *data, unsigned sz)
             // update loading addresses
             update_ker_tags_rdisk_addr(&context, IS_ARM64(context.kernel_data));
 
+            // add to cmdline
+            libboot_cmdline_addall(&context.cmdline, lkargs_get_command_line(), 1);
+
             // prepare for boot
             rc = libboot_prepare(&context);
             if (!rc) {
