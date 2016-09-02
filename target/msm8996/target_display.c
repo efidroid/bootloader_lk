@@ -287,11 +287,12 @@ int target_panel_clock(uint8_t enable, struct msm_panel_info *pinfo)
 	}
 
 	if (!enable) {
+		mmss_dsi_clock_disable(flags);
+
 		/* stop pll */
 		writel(0x0, pinfo->mipi.phy_base + 0x48);
 		dmb();
 
-		mmss_dsi_clock_disable(flags);
 		goto clks_disable;
 	}
 
