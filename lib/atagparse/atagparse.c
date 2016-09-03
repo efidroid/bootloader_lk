@@ -2,14 +2,21 @@
 #include <string.h>
 #include <malloc.h>
 #include <board.h>
+#include <target.h>
 #include <stdlib.h>
+#include <baseband.h>
 #include <boot_device.h>
+#include <partition_parser.h>
 #include <lib/atagparse.h>
 #include <lib/cmdline.h>
 #include "atags.h"
 
 #include <libfdt.h>
 #include <dev_tree.h>
+
+#ifdef MDTP_SUPPORT
+#include "mdtp.h"
+#endif
 
 typedef struct {
     struct list_node node;
@@ -74,11 +81,16 @@ static size_t tags_size = 0;
 // parsed data: internal
 static char *command_line = NULL;
 static struct list_node meminfo;
+static int is_firststage = 0;
 
 // parsed data: accessible via public functions
 static struct list_node cmdline_list;
 static char *uefi_bootpart = NULL;
 static struct list_node qciditem_list;
+
+extern int get_target_boot_params(const char *cmdline, const char *part,
+                                  char *buf, int buflen);
+static void generate_qcom_cmdline(int is_recovery);
 
 static void qciditem_add(const char *name, uint32_t value)
 {
@@ -112,21 +124,29 @@ uint32_t qciditem_get_zero(const char *name)
 }
 
 
-const char *lkargs_get_command_line(void)
+const char *lkargs_get_command_line(int is_recovery)
 {
-    static char *cache = NULL;
-    if (!cache) {
-        // cmdline
-        size_t cmdline_len = cmdline_length(&cmdline_list);
-        if (cmdline_len) {
-            cache = malloc(cmdline_len);
-            if (cache) {
-                cache[0] = 0;
-                cmdline_generate(&cmdline_list, cache, cmdline_len);
-            }
+    static char *prev = NULL;
+    if (prev) {
+        free(prev);
+        prev = NULL;
+    }
+
+    // we can't do this earlier because all hw needs to be initialized
+    if (is_firststage)
+        generate_qcom_cmdline(is_recovery);
+
+    // cmdline
+    size_t cmdline_len = cmdline_length(&cmdline_list);
+    if (cmdline_len) {
+        prev = malloc(cmdline_len);
+        if (prev) {
+            prev[0] = 0;
+            cmdline_generate(&cmdline_list, prev, cmdline_len);
         }
     }
-    return cache;
+
+    return prev;
 }
 
 struct list_node *lkargs_get_command_line_list(void)
@@ -634,7 +654,140 @@ static void *add_meminfo_cb(void *pdata, uint64_t addr, uint64_t size, bool rese
     return pdata;
 }
 
-static int parse_smem(void)
+#if VERIFIED_BOOT
+#if !VBOOT_MOTA
+// indexed based on enum values, green is 0 by default
+struct verified_boot_verity_mode vbvm[] = {
+    {false, "logging"},
+    {true, "enforcing"},
+};
+struct verified_boot_state_name vbsn[] = {
+    {GREEN, "green"},
+    {ORANGE, "orange"},
+    {YELLOW,"yellow"},
+    {RED,"red" },
+};
+#endif
+#endif
+
+static void generate_qcom_cmdline(int is_recovery)
+{
+    char sn_buf[13];
+    char display_panel_buf[128];
+    char target_boot_params[64];
+
+    // clear the cmdline list
+    cmdline_free(&cmdline_list);
+
+    // boot device
+    if (target_is_emmc_boot()) {
+#if USE_BOOTDEV_CMDLINE
+        char *boot_dev_buf = (char *) malloc(sizeof(char) * 64);
+        ASSERT(boot_dev_buf);
+        platform_boot_dev_cmdline(boot_dev_buf);
+        cmdline_add(&cmdline_list, "androidboot.bootdevice", boot_dev_buf, 1);
+        free(boot_dev_buf);
+#else
+        cmdline_add(&cmdline_list, "androidboot.emmc", "true", 1);
+#endif
+    }
+
+    // serial number
+    sn_buf[0] = 0;
+    target_serialno((unsigned char *)sn_buf);
+    cmdline_add(&cmdline_list, "androidboot.serialno", sn_buf, 1);
+
+    // verity
+#if VERIFIED_BOOT
+#if !VBOOT_MOTA
+    cmdline_add(&cmdline_list, "androidboot.verifiedbootstate", vbsn[boot_verify_get_state()].name, 1);
+    cmdline_add(&cmdline_list, "androidboot.veritymode", vbvm[device.verity_mode].name, 1);
+#endif
+#endif
+
+    // mdtp
+#ifdef MDTP_SUPPORT
+    bool is_mdtp_activated = 0;
+    mdtp_activated(&is_mdtp_activated);
+    if (is_mdtp_activated)
+        cmdline_add(&cmdline_list, "mdtp", NULL, 1);
+#endif
+
+    // bootmode
+    // this probably has to be added to aboot since we don't have access to this from here
+#if 0
+    if (boot_into_ffbm) {
+        cmdline_add(&cmdline_list, "androidboot.mode", ffbm_mode_string, 1);
+        /* reduce kernel console messages to speed-up boot */
+        cmdline_add(&cmdline_list, "quiet", NULL, 1);
+    } else if (boot_reason_alarm) {
+        cmdline_add(&cmdline_list, "androidboot.alarmboot", "true", 1);
+    } else if (device.charger_screen_enabled && target_pause_for_battery_charge()) {
+        cmdline_add(&cmdline_list, "androidboot.mode", "charger", 1);
+    }
+#endif
+
+    // rootfs
+    if (get_target_boot_params("", is_recovery?"recoveryfs":"system", target_boot_params,sizeof(target_boot_params)) == 0) {
+        cmdline_addall(&cmdline_list, target_boot_params, 1);
+    }
+
+    // baseband
+    switch (target_baseband()) {
+        case BASEBAND_APQ:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "apq", 1);
+            break;
+
+        case BASEBAND_MSM:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "msm", 1);
+            break;
+
+        case BASEBAND_CSFB:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "csfb", 1);
+            break;
+
+        case BASEBAND_SVLTE2A:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "svlte2a", 1);
+            break;
+
+        case BASEBAND_MDM:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "mdm", 1);
+            break;
+
+        case BASEBAND_MDM2:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "mdm2", 1);
+            break;
+
+        case BASEBAND_SGLTE:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "sglte", 1);
+            break;
+
+        case BASEBAND_SGLTE2:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "sglte2", 1);
+            break;
+
+        case BASEBAND_DSDA:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "dsda", 1);
+            break;
+
+        case BASEBAND_DSDA2:
+            cmdline_add(&cmdline_list, "androidboot.baseband", "dsda2", 1);
+            break;
+    }
+
+    // display panel
+    display_panel_buf[0] = 0;
+    if (target_display_panel_node(display_panel_buf, sizeof(display_panel_buf)) && strlen(display_panel_buf)) {
+        cmdline_addall(&cmdline_list, display_panel_buf, 1);
+    }
+
+    // warmboot
+    if (target_warm_boot()) {
+        cmdline_add(&cmdline_list, "qpnp-power-on.warm_boot", "1", 1);
+    }
+}
+
+static int handle_firststage(void)
 {
     // Make sure RAM partition table is initialized
     if (!smem_ram_ptable_init_v1()) {
@@ -644,8 +797,7 @@ static int parse_smem(void)
     // add meminfo
     lkargs_platform_get_mmap(NULL, add_meminfo_cb);
 
-    // add empty cmdline
-    command_line = strdup("");
+    is_firststage = 1;
 
     return 0;
 }
@@ -694,13 +846,18 @@ void atag_parse(void)
     // unknown
     else {
         dprintf(CRITICAL, "Invalid atags - assume 1st-stage boot.\n");
-        parse_smem();
+        handle_firststage();
     }
     dprintf(INFO, "machinetype: %u\n", machinetype);
 
-    // parse cmdline
+    // print cmdline
     dprintf(INFO, "cmdline=[%s]\n", command_line);
-    cmdline_addall(&cmdline_list, command_line, true);
+    if (command_line) {
+        cmdline_addall(&cmdline_list, command_line, true);
+
+        // this is for recovery mode only and we'll add it ourselves
+        cmdline_remove(&cmdline_list, "gpt");
+    }
 
     // get bootmode
     const char *bootpart = cmdline_get(&cmdline_list, "uefi.bootpart");

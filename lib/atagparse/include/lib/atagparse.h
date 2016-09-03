@@ -13,7 +13,7 @@ void *lkargs_get_tags_backup(void);
 size_t lkargs_get_tags_backup_size(void);
 
 // parsed data
-const char *lkargs_get_command_line(void);
+const char *lkargs_get_command_line(int is_recovery);
 struct list_node *lkargs_get_command_line_list(void);
 char *lkargs_get_panel_name(const char *key);
 const char *lkargs_get_uefi_bootpart(void);
