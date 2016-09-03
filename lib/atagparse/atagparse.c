@@ -30,7 +30,7 @@ typedef struct {
 typedef struct {
     struct list_node node;
 
-    const char* name;
+    const char *name;
     uint32_t value;
 } qcid_item_t;
 
@@ -68,21 +68,21 @@ typedef struct {
 extern uint32_t lk_boot_args[4];
 
 // atags backup
-static void*  tags_copy = NULL;
+static void  *tags_copy = NULL;
 static size_t tags_size = 0;
 
 // parsed data: internal
-static char* command_line = NULL;
+static char *command_line = NULL;
 static struct list_node meminfo;
 
 // parsed data: accessible via public functions
 static struct list_node cmdline_list;
-static char* uefi_bootpart = NULL;
+static char *uefi_bootpart = NULL;
 static struct list_node qciditem_list;
 
-static void qciditem_add(const char* name, uint32_t value)
+static void qciditem_add(const char *name, uint32_t value)
 {
-    qcid_item_t* item = malloc(sizeof(qcid_item_t));
+    qcid_item_t *item = malloc(sizeof(qcid_item_t));
     ASSERT(item);
 
     item->name = strdup(name);
@@ -91,7 +91,7 @@ static void qciditem_add(const char* name, uint32_t value)
     list_add_tail(&qciditem_list, &item->node);
 }
 
-int qciditem_get(const char* name, uint32_t* datap)
+int qciditem_get(const char *name, uint32_t *datap)
 {
     qcid_item_t *entry;
     list_for_every_entry(&qciditem_list, entry, qcid_item_t, node) {
@@ -104,7 +104,7 @@ int qciditem_get(const char* name, uint32_t* datap)
     return -1;
 }
 
-uint32_t qciditem_get_zero(const char* name)
+uint32_t qciditem_get_zero(const char *name)
 {
     uint32_t data = 0;
     qciditem_get(name, &data);
@@ -112,15 +112,15 @@ uint32_t qciditem_get_zero(const char* name)
 }
 
 
-const char* lkargs_get_command_line(void)
+const char *lkargs_get_command_line(void)
 {
-    static char* cache = NULL;
-    if(!cache) {
+    static char *cache = NULL;
+    if (!cache) {
         // cmdline
         size_t cmdline_len = cmdline_length(&cmdline_list);
         if (cmdline_len) {
             cache = malloc(cmdline_len);
-            if(cache) {
+            if (cache) {
                 cache[0] = 0;
                 cmdline_generate(&cmdline_list, cache, cmdline_len);
             }
@@ -129,12 +129,13 @@ const char* lkargs_get_command_line(void)
     return cache;
 }
 
-struct list_node* lkargs_get_command_line_list(void)
+struct list_node *lkargs_get_command_line_list(void)
 {
     return &cmdline_list;
 }
 
-static char *strsep(char **stringp, const char *delim) {
+static char *strsep(char **stringp, const char *delim)
+{
     if (*stringp == NULL) { return NULL; }
     char *token_start = *stringp;
     *stringp = strpbrk(token_start, delim);
@@ -151,12 +152,12 @@ char *lkargs_get_panel_name(const char *key)
     if (!value) return NULL;
 
     char *valdup = strdup(value);
-    if(!valdup) return NULL;
+    if (!valdup) return NULL;
 
     char *token;
     char *ret = NULL;
     while ((token = strsep(&valdup, ":"))) {
-        if(strncmp(token, "qcom,", 4)) continue;
+        if (strncmp(token, "qcom,", 4)) continue;
 
         ret = strdup(token);
         break;
@@ -165,14 +166,14 @@ char *lkargs_get_panel_name(const char *key)
     return ret;
 }
 
-const char* lkargs_get_uefi_bootpart(void)
+const char *lkargs_get_uefi_bootpart(void)
 {
-    if(uefi_bootpart)
+    if (uefi_bootpart)
         return uefi_bootpart;
     return "";
 }
 
-void* lkargs_get_tags_backup(void)
+void *lkargs_get_tags_backup(void)
 {
     return tags_copy;
 }
@@ -199,13 +200,13 @@ static int save_atags(const struct tag *tags)
     return 0;
 }
 
-static int atags_check_header(void* tags)
+static int atags_check_header(void *tags)
 {
     struct tag *atags = (struct tag *)tags;
     return atags->hdr.tag!=ATAG_CORE;
 }
 
-static int save_fdt(void* fdt)
+static int save_fdt(void *fdt)
 {
     tags_size = fdt_totalsize(fdt);
     tags_copy = malloc(tags_size);
@@ -228,7 +229,7 @@ static void add_meminfo(uint64_t start, uint64_t size)
 {
     dprintf(INFO, "0x%016llx-0x%016llx\n", start, start+size-1);
 
-    meminfo_t* item = malloc(sizeof(meminfo_t));
+    meminfo_t *item = malloc(sizeof(meminfo_t));
     ASSERT(item);
 
     item->start = start;
@@ -276,7 +277,7 @@ static int parse_atag(const struct tag *tag)
     return t < t_end;
 }
 
-static struct tagtable* get_tagtable_entry(const struct tag *tag)
+static struct tagtable *get_tagtable_entry(const struct tag *tag)
 {
     struct tagtable *t;
     struct tagtable *t_end = tagtable+ARRAY_SIZE(tagtable);
@@ -298,7 +299,7 @@ static void parse_atags(const struct tag *t)
                     t->hdr.tag);
 }
 
-void* lkargs_atag_insert_unknown(void* tags)
+void *lkargs_atag_insert_unknown(void *tags)
 {
     struct tag *tag = (struct tag *)tags;
     const struct tag *t;
@@ -316,7 +317,7 @@ void* lkargs_atag_insert_unknown(void* tags)
     return tag;
 }
 
-void* lkargs_get_mmap_callback(void* pdata, lkargs_mmap_cb_t cb)
+void *lkargs_get_mmap_callback(void *pdata, lkargs_mmap_cb_t cb)
 {
     meminfo_t *entry;
     list_for_every_entry(&meminfo, entry, meminfo_t, node) {
@@ -327,7 +328,7 @@ void* lkargs_get_mmap_callback(void* pdata, lkargs_mmap_cb_t cb)
 }
 
 // parse FDT
-static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t* out_size_cell_size)
+static int fdt_get_cell_sizes(void *fdt, uint32_t *out_addr_cell_size, uint32_t *out_size_cell_size)
 {
     int rc;
     int len;
@@ -367,7 +368,7 @@ static int fdt_get_cell_sizes(void* fdt, uint32_t* out_addr_cell_size, uint32_t*
     return 0;
 }
 
-static void print_qchwinfo(const char* prefix, qchwinfo_t* hwinfo)
+static void print_qchwinfo(const char *prefix, qchwinfo_t *hwinfo)
 {
     dprintf(INFO, "%splat=%u/%u variant=%u/%u/%u socrev=%x subtype=%u/%u/%u/%u pmic_rev=<%u/%u/%u> <%u/%u/%u> <%u/%u/%u> <%u/%u/%u>\n",
             prefix?:"",
@@ -382,7 +383,7 @@ static void print_qchwinfo(const char* prefix, qchwinfo_t* hwinfo)
            );
 }
 
-static int parse_fdt(void* fdt, qchwinfo_t** hwinfo)
+static int parse_fdt(void *fdt, qchwinfo_t **hwinfo)
 {
     int ret = 0;
     uint32_t offset;
@@ -405,7 +406,7 @@ static int parse_fdt(void* fdt, qchwinfo_t** hwinfo)
         }
 
         // get reg node
-        const uint32_t* reg = fdt_getprop(fdt, offset, "reg", &len);
+        const uint32_t *reg = fdt_getprop(fdt, offset, "reg", &len);
         if (!reg) {
             dprintf(CRITICAL, "Could not find reg node.\n");
         } else {
@@ -438,7 +439,7 @@ next:
         offset = ret;
 
         // get bootargs
-        const char* bootargs = (const char *)fdt_getprop(fdt, offset, "bootargs", &len);
+        const char *bootargs = (const char *)fdt_getprop(fdt, offset, "bootargs", &len);
         if (bootargs && len>0) {
             command_line = malloc(len);
             memcpy(command_line, bootargs, len);
@@ -454,12 +455,12 @@ next:
 
     // get socinfo property
     int len_socinfo;
-    const struct fdt_property* prop_socinfo = fdt_get_property(fdt, offset, "efidroid-soc-info", &len_socinfo);
+    const struct fdt_property *prop_socinfo = fdt_get_property(fdt, offset, "efidroid-soc-info", &len_socinfo);
     if (!prop_socinfo) {
         dprintf(CRITICAL, "Could not find efidroid-soc-info.\n");
     } else {
         // read info from fdt
-        const efidroid_fdtinfo_t* socinfo = (const efidroid_fdtinfo_t*)prop_socinfo->data;
+        const efidroid_fdtinfo_t *socinfo = (const efidroid_fdtinfo_t *)prop_socinfo->data;
         uint32_t platform_id = fdt32_to_cpu(socinfo->chipset);
         uint32_t variant_id = fdt32_to_cpu(socinfo->platform);
         uint32_t hw_subtype = fdt32_to_cpu(socinfo->subtype);
@@ -477,7 +478,7 @@ next:
         }
 
         // build hwinfo_tags
-        qchwinfo_t* hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
+        qchwinfo_t *hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
         ASSERT(hwinfo_tags);
         hwinfo_tags->msm_id = platform_id&0x0000ffff;
         hwinfo_tags->foundry_id = (platform_id&0x00ff0000)>>16;
@@ -502,7 +503,7 @@ next:
     return 0;
 }
 
-static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void* fdtsrc, int offsetsrc)
+static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void *fdtsrc, int offsetsrc)
 {
     int len;
     int offset;
@@ -519,7 +520,7 @@ static int lkargs_fdt_insert_properties(void *fdtdst, int offsetdst, const void*
             break;
         }
 
-        const char* name = fdt_string(fdtsrc, fdt32_to_cpu(prop->nameoff));
+        const char *name = fdt_string(fdtsrc, fdt32_to_cpu(prop->nameoff));
         dprintf(SPEW, "PROP: %s\n", name);
 
         // blacklist our nodes
@@ -586,7 +587,7 @@ static int lkargs_fdt_insert_nodes(void *fdt, int target_offset)
     return 0;
 }
 
-int lkargs_insert_chosen(void* fdt)
+int lkargs_insert_chosen(void *fdt)
 {
     int ret = 0;
     uint32_t target_offset_chosen;
@@ -606,7 +607,8 @@ int lkargs_insert_chosen(void* fdt)
     return lkargs_fdt_insert_nodes(fdt, target_offset_chosen);
 }
 
-__WEAK void* lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb) {
+__WEAK void *lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb)
+{
     unsigned int i;
     ram_partition ptn_entry;
 
@@ -618,7 +620,7 @@ __WEAK void* lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb) {
     // add meminfo
     for (i = 0; i<smem_get_ram_ptable_len(); i++) {
         smem_get_ram_ptable_entry(&ptn_entry, i);
-        if(ptn_entry.category==SDRAM && ptn_entry.type==SYS_MEMORY) {
+        if (ptn_entry.category==SDRAM && ptn_entry.type==SYS_MEMORY) {
             cb(pdata, ptn_entry.start, ptn_entry.size, 0);
         }
     }
@@ -626,12 +628,14 @@ __WEAK void* lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb) {
     return pdata;
 }
 
-static void* add_meminfo_cb(void* pdata, uint64_t addr, uint64_t size, bool reserved) {
+static void *add_meminfo_cb(void *pdata, uint64_t addr, uint64_t size, bool reserved)
+{
     add_meminfo(addr, size);
     return pdata;
 }
 
-static int parse_smem(void) {
+static int parse_smem(void)
+{
     // Make sure RAM partition table is initialized
     if (!smem_ram_ptable_init_v1()) {
         ASSERT(0);
@@ -649,8 +653,8 @@ static int parse_smem(void) {
 void atag_parse(void)
 {
     uint32_t i;
-    qchwinfo_t* hwinfo_tags = NULL;
-    qchwinfo_t* hwinfo_lk = NULL;
+    qchwinfo_t *hwinfo_tags = NULL;
+    qchwinfo_t *hwinfo_lk = NULL;
     uint32_t machinetype;
 
     dprintf(INFO, "bootargs: 0x%x 0x%x 0x%x 0x%x\n",
@@ -666,13 +670,13 @@ void atag_parse(void)
     list_initialize(&meminfo);
 
     machinetype = board_machtype();
-    if(machinetype==LINUX_MACHTYPE_UNKNOWN) {
+    if (machinetype==LINUX_MACHTYPE_UNKNOWN) {
         // this board probably doesn't have official atags support
         machinetype = board_target_id();
     }
 
     // fdt
-    void* tags = (void*)lk_boot_args[2];
+    void *tags = (void *)lk_boot_args[2];
     if (!fdt_check_header(tags)) {
         save_fdt(tags);
         parse_fdt(tags, &hwinfo_tags);
@@ -699,7 +703,7 @@ void atag_parse(void)
     cmdline_addall(&cmdline_list, command_line, true);
 
     // get bootmode
-    const char* bootpart = cmdline_get(&cmdline_list, "uefi.bootpart");
+    const char *bootpart = cmdline_get(&cmdline_list, "uefi.bootpart");
     if (bootpart) {
         dprintf(INFO, "uefi.bootpart = [%s]\n", bootpart);
 
