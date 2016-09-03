@@ -616,30 +616,16 @@ static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, str
     return num_dcs_commands;
 }
 
-static int process_fdt_on_commands(void* fdt, int offset_panel, dtb_panel_config_t* config) {
+int process_fdt_commands(void* fdt, int offset_panel, dtb_panel_config_t* config, const char* nodename, size_t* out_num, struct mipi_dsi_cmd** out_cmds) {
     ssize_t num;
     const uint8_t *arr = NULL;
 
-    num = fdt_getprop_array(fdt, offset_panel, "qcom,mdss-dsi-on-command", sizeof(*arr), (const void**)&arr);
+    num = fdt_getprop_array(fdt, offset_panel, nodename, sizeof(*arr), (const void**)&arr);
     if(num<0) return -1;
 
-    ssize_t num_dcs_commands = process_fdt_panel_commands(arr, num, &config->on_commands);
+    ssize_t num_dcs_commands = process_fdt_panel_commands(arr, num, out_cmds);
     if(num_dcs_commands<0) return -1;
-    config->num_on_commands = num_dcs_commands;
-
-    return 0;
-}
-
-static int process_fdt_off_commands(void* fdt, int offset_panel, dtb_panel_config_t* config) {
-    ssize_t num;
-    const uint8_t *arr = NULL;
-
-    num = fdt_getprop_array(fdt, offset_panel, "qcom,mdss-dsi-off-command", sizeof(*arr), (const void**)&arr);
-    if(num<0) return -1;
-
-    ssize_t num_dcs_commands = process_fdt_panel_commands(arr, num, &config->off_commands);
-    if(num_dcs_commands<0) return -1;
-    config->num_off_commands = num_dcs_commands;
+    *out_num = num_dcs_commands;
 
     return 0;
 }
@@ -704,11 +690,11 @@ static int process_fdt(void* fdt, const char* name, dtb_panel_config_t* config) 
     // TODO: fbcinfo
 
     // on commands
-    rc = process_fdt_on_commands(fdt, offset_panel, config);
+    rc = process_fdt_commands(fdt, offset_panel, config, "qcom,mdss-dsi-on-command", &config->num_on_commands, &config->on_commands);
     if(rc) goto done;
 
     // off commands
-    rc = process_fdt_off_commands(fdt, offset_panel, config);
+    rc = process_fdt_commands(fdt, offset_panel, config, "qcom,mdss-dsi-off-command", &config->num_off_commands, &config->off_commands);
     if(rc) goto done;
 
     config->cont_splash_enabled = fdt_getprop_bool(fdt, offset_panel, "qcom,cont-splash-enabled");
