@@ -24,6 +24,10 @@ int oem_panel_select(const char *panel_name, struct panel_struct *panelstruct,
         return paneltype;
     }
 
+#ifdef TARGET_MSM8994
+    phy_db->is_pll_20nm = 1;
+#endif
+
     // apply platform changes
     int rc = dtbreader_init_panel_data_post(panelstruct, pinfo, phy_db);
     if(rc) goto err;
