@@ -667,9 +667,17 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     config->panelresetseq = safe_calloc(sizeof(struct panel_reset_sequence), 1);
     config->backlightinfo = safe_calloc(sizeof(struct backlight), 1);
 
+    // get panel node name
+    char* panel_node = lkargs_get_panel_name("mdss_mdp.panel");
+    if(!panel_node) {
+        dprintf(CRITICAL, "lkargs_get_panel_name failed\n");
+        return PANEL_TYPE_UNKNOWN;
+    }
+
     // process fdt
-    rc = process_fdt(lkargs_get_tags_backup(), "qcom,mdss_dsi_mot_inx_qhd_video_v0", config);
+    rc = process_fdt(lkargs_get_tags_backup(), panel_node, config);
     if(rc) {
+        dprintf(CRITICAL, "process_fdt failed\n");
         return PANEL_TYPE_UNKNOWN;
     }
 
