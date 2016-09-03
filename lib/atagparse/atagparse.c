@@ -134,17 +134,35 @@ struct list_node* lkargs_get_command_line_list(void)
     return &cmdline_list;
 }
 
-const char* lkargs_get_panel_name(const char* key)
+static char *strsep(char **stringp, const char *delim) {
+    if (*stringp == NULL) { return NULL; }
+    char *token_start = *stringp;
+    *stringp = strpbrk(token_start, delim);
+    if (*stringp) {
+        **stringp = '\0';
+        (*stringp)++;
+    }
+    return token_start;
+}
+
+char *lkargs_get_panel_name(const char *key)
 {
-    const char* value = cmdline_get(&cmdline_list, key);
+    const char *value = cmdline_get(&cmdline_list, key);
     if (!value) return NULL;
 
-    const char* name;
-    const char* pch=strrchr(value,':');
-    if (!pch) name = pch;
-    else name = pch+1;
+    char *valdup = strdup(value);
+    if(!valdup) return NULL;
 
-    return name;
+    char *token;
+    char *ret = NULL;
+    while ((token = strsep(&valdup, ":"))) {
+        if(strncmp(token, "qcom,", 4)) continue;
+
+        ret = strdup(token);
+        break;
+    }
+
+    return ret;
 }
 
 const char* lkargs_get_uefi_bootpart(void)
