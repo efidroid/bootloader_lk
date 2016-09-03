@@ -719,13 +719,6 @@ done:
     return rc;
 }
 
-__WEAK int dtbreader_init_panel_data_post(struct panel_struct *panelstruct,
-                                struct msm_panel_info *pinfo,
-                                struct mdss_dsi_phy_ctrl *phy_db)
-{
-    return 0;
-}
-
 int dtbreader_init_panel_data(struct panel_struct *panelstruct,
                                 struct msm_panel_info *pinfo,
                                 struct mdss_dsi_phy_ctrl *phy_db)
@@ -787,9 +780,6 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     pinfo->mipi.panel_off_cmds = config->off_commands;
     pinfo->mipi.num_of_panel_off_cmds = config->num_off_commands;
     memcpy(phy_db->timing, config->timing, config->timing_len*sizeof(uint32_t));
-
-    rc = dtbreader_init_panel_data_post(panelstruct, pinfo, phy_db);
-    if(rc) goto err;
 
     dtbpanel_config = config;
 
