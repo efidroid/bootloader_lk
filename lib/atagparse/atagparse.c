@@ -857,6 +857,10 @@ void atag_parse(void)
 
         // this is for recovery mode only and we'll add it ourselves
         cmdline_remove(&cmdline_list, "gpt");
+
+        // this happens if we were loaded by EFIDroid
+        cmdline_remove(&cmdline_list, "rdinit");
+        cmdline_remove(&cmdline_list, "multiboot.debug");
     }
 
     // get bootmode
