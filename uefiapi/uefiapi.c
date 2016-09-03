@@ -616,9 +616,9 @@ static void api_boot_exec(void *kernel, unsigned int zero, unsigned int arch, un
         entry(zero, arch, (unsigned *)tags);
 }
 
-static const char* api_boot_get_cmdline_extension(void)
+static const char* api_boot_get_cmdline_extension(int is_recovery)
 {
-    return lkargs_get_command_line();
+    return lkargs_get_command_line(is_recovery);
 }
 
 static void* api_boot_extend_atags(void *atags)
