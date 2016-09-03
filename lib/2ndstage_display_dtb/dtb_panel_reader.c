@@ -151,7 +151,10 @@ static int process_fdt_paneldata(void* fdt, int offset_panel, struct panel_confi
     // TODO: panel_channelid
     // TODO: dsi_virtualchannel_id
     // TODO: panel_broadcast_mode
-    // TODO: panel_lp11_init
+
+    // panel_lp11_init
+    paneldata->panel_lp11_init = fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lp11-init");
+
     // TODO: panel_init_delay
     // TODO: dsi_stream
     // TODO: interleave_mode
