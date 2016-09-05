@@ -22,6 +22,10 @@
 #include <string.h>
 #include <kernel/event.h>
 
+#ifdef WITH_LIB_PRAM
+#include <lib/persistent_ram.h>
+#endif
+
 #include <uefiapi.h>
 
 static int vnor_init(void);
@@ -59,6 +63,10 @@ void target_uninit(void);
 
 static void api_platform_early_init(void)
 {
+#ifdef WITH_LIB_PRAM
+    persistent_ram_init(PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE);
+#endif
+
     // disable all known interrupts because UEFI enables interrupts before initializing the GIC
     int i;
     for (i=0; i<NR_IRQS; i++) {
@@ -564,6 +572,11 @@ static void *api_mmap_get_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)
     // LK
     pdata = cb(pdata, MEMBASE, MEMBASE, MEMSIZE, LKAPI_MEMORY_WRITE_THROUGH);
 
+    // pram
+#ifdef WITH_LIB_PRAM
+    pdata = cb(pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE, LKAPI_MEMORY_UNCACHED);
+#endif
+
     // platform mappings
     pdata = api_mmap_get_platform_mappings(pdata, cb);
 
@@ -577,7 +590,15 @@ __WEAK void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
 
 static void *api_mmap_get_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
 {
+    // LK
     pdata = cb(pdata, MEMBASE, MEMSIZE);
+
+    // pram
+#ifdef WITH_LIB_PRAM
+    pdata = cb(pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE);
+#endif
+
+    // platform
     pdata = api_mmap_get_platform_lkmem(pdata, cb);
 
     return pdata;
