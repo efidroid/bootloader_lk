@@ -40,5 +40,9 @@ typedef uint8_t   boot_uint8_t;
 typedef uint16_t  boot_uint16_t;
 typedef uint32_t  boot_uint32_t;
 typedef uint64_t  boot_uint64_t;
+typedef int8_t    boot_int8_t;
+typedef int16_t   boot_int16_t;
+typedef int32_t   boot_int32_t;
+typedef int64_t   boot_int64_t;
 
 #endif // LIB_BOOT_PLATFORM_H
