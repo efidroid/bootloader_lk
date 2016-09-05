@@ -44,6 +44,10 @@
 #include <vibrator.h>
 #endif
 
+#ifdef WITH_LIB_PRAM
+#include <lib/persistent_ram.h>
+#endif
+
 
 static void write_dcc(char c)
 {
@@ -116,6 +120,10 @@ void display_fbcon_message(char *str)
 
 void _dputc(char c)
 {
+#if WITH_LIB_PRAM
+	if(c)
+		persistent_ram_write(&c, 1);
+#endif
 #if WITH_DEBUG_LOG_BUF
 	log_putc(c);
 #endif
