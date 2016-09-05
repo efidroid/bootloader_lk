@@ -39,6 +39,10 @@
 #include <lib/atagparse.h>
 #endif
 
+#ifdef WITH_LIB_PRAM
+#include <lib/persistent_ram.h>
+#endif
+
 extern void *__ctor_list;
 extern void *__ctor_end;
 extern int __bss_start;
@@ -91,6 +95,10 @@ void kmain(void)
 	// bring up the kernel heap
 	dprintf(SPEW, "initializing heap\n");
 	heap_init();
+
+#ifdef WITH_LIB_PRAM
+	persistent_ram_init(PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE);
+#endif
 
 	__stack_chk_guard_setup();
 
