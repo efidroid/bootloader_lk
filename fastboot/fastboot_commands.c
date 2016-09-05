@@ -26,6 +26,10 @@
 #include <lib/boot.h>
 #endif
 
+#ifdef WITH_LIB_PRAM
+#include <lib/persistent_ram.h>
+#endif
+
 #include "fastboot.h"
 #include "bootimg.h"
 
@@ -525,14 +529,6 @@ static void cmd_oem_dump_partitiontable(const char *arg, void *data, unsigned sz
     fastboot_okay("");
 }
 
-#define PERSISTENT_RAM_SIG (0x43474244) /* DBGC */
-struct persistent_ram_buffer {
-    uint32_t    sig;
-    int    start;
-    int    size;
-    uint8_t     data[0];
-};
-
 static void cmd_oem_memfill(const char *arg, void *data, unsigned sz)
 {
     uint32_t i;
@@ -545,32 +541,22 @@ static void cmd_oem_memfill(const char *arg, void *data, unsigned sz)
     fastboot_okay("");
 }
 
+#ifdef WITH_LIB_PRAM
 static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz)
 {
     char buf[MAX_RSP_SIZE];
-    uint32_t addr;
 
-#ifdef PERSISTENT_RAM_ADDR
-    addr = PERSISTENT_RAM_ADDR;
-#else
-    addr = hex2unsigned(arg);
-#endif
-
-    struct persistent_ram_buffer *rambuf = (void *)addr;
-    if (rambuf->sig==PERSISTENT_RAM_SIG) {
-        snprintf(buf, sizeof(buf), "found last_kmsg at %p", rambuf);
-        fastboot_info(buf);
-
-
-        uint8_t *data = &rambuf->data[0];
-        fastboot_send_string_human(data, rambuf->size);
+    void *oldbuf = persistent_ram_old();
+    if (oldbuf) {
+        fastboot_send_string_human(oldbuf, persistent_ram_old_size());
     } else {
-        snprintf(buf, sizeof(buf), "last_kmsg not found at %p", rambuf);
+        snprintf(buf, sizeof(buf), "last_kmsg not found");
         fastboot_info(buf);
     }
 
     fastboot_okay("");
 }
+#endif
 
 #if defined(WITH_LIB_ATAGPARSE) && defined(WITH_LIB_BASE64)
 static void cmd_oem_dumpatags(const char *arg, void *data, unsigned sz)
@@ -750,7 +736,9 @@ void aboot_fastboot_register_commands_ex(void)
         {"oem bootaddresses", cmd_oem_bootaddresses},
         {"oem findbootimages", cmd_oem_findbootimages},
         {"oem dump-partitiontable", cmd_oem_dump_partitiontable},
+#ifdef WITH_LIB_PRAM
         {"oem last_kmsg", cmd_oem_lastkmsg},
+#endif
         {"oem memfill", cmd_oem_memfill},
 #if defined(WITH_LIB_ATAGPARSE) && defined(WITH_LIB_BASE64)
         {"oem dump-atags", cmd_oem_dumpatags},
