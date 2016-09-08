@@ -125,6 +125,12 @@ int keys_post_event(uint16_t code, int16_t value)
 			seq[seqsz++] = 0x5b;
 			seq[seqsz++] = 0x42;
 			break;
+
+			case KEY_BACK:
+			seq[seqsz++] = 0x1b;
+			seq[seqsz++] = 0x5b;
+			seq[seqsz++] = 0x44;
+			break;
 		}
 	}
 
