@@ -5,6 +5,7 @@
 #include <mipi_dsi.h>
 #include <lib/atagparse.h>
 
+#include "gcdb_display.h"
 #include "private.h"
 
 dtb_panel_config_t *dtbpanel_config = NULL;
@@ -619,6 +620,118 @@ static void process_fdt_backlightinfo(void *fdt, int offset_panel, struct backli
     free(controltype);
 }
 
+static void process_fdt_platform_regulator(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+{
+    ssize_t num;
+    const uint8_t *arr = NULL;
+    uint32_t i;
+
+    if (config->panel_lane_config)
+        return;
+
+    num = fdt_getprop_array(fdt, offset, nodename, sizeof(*arr), (const void **)&arr);
+    if (num<0) return;
+    if (num<6) {
+        dprintf(CRITICAL, "invalid size for '%s': %lu\n", nodename, num);
+        return;
+    }
+
+    config->panel_regulator = safe_malloc(sizeof(uint32_t)*num);
+    for (i=0; i<(size_t)num; i++) {
+        config->panel_regulator[i] = arr[i];
+    }
+}
+
+static void process_fdt_platform_strength_ctrl(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+{
+    ssize_t num;
+    const uint8_t *arr = NULL;
+    uint32_t i;
+
+    if (config->panel_lane_config)
+        return;
+
+    num = fdt_getprop_array(fdt, offset, nodename, sizeof(*arr), (const void **)&arr);
+    if (num<0) return;
+    if (num!=2) {
+        dprintf(CRITICAL, "invalid size for '%s': %lu\n", nodename, num);
+        return;
+    }
+
+    config->panel_strength_ctrl = safe_malloc(sizeof(uint32_t)*2);
+    for (i=0; i<(size_t)num; i++) {
+        config->panel_strength_ctrl[i] = arr[i];
+    }
+}
+
+static void process_fdt_platform_bist_ctrl(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+{
+    ssize_t num;
+    const uint8_t *arr = NULL;
+    uint32_t i;
+
+    if (config->panel_lane_config)
+        return;
+
+    num = fdt_getprop_array(fdt, offset, nodename, sizeof(*arr), (const void **)&arr);
+    if (num<0) return;
+    if (num!=6) {
+        dprintf(CRITICAL, "invalid size for '%s': %lu\n", nodename, num);
+        return;
+    }
+
+    config->panel_bist_ctrl = safe_malloc(sizeof(uint8_t)*6);
+    for (i=0; i<6; i++) {
+        config->panel_bist_ctrl[i] = arr[i];
+    }
+}
+
+static void process_fdt_platform_laneconfig(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+{
+    ssize_t num;
+    const uint8_t *arr = NULL;
+    uint32_t i, j;
+
+    if (config->panel_lane_config)
+        return;
+
+    num = fdt_getprop_array(fdt, offset, nodename, sizeof(*arr), (const void **)&arr);
+    if (num<0) return;
+
+    // 4 lanes + clk lane configuration
+    if (num!=45 && num!=30) {
+        dprintf(CRITICAL, "invalid size for '%s': %lu\n", nodename, num);
+        return;
+    }
+
+    config->panel_lane_config = safe_malloc(sizeof(uint8_t)*45);
+
+    // lane config n * (0 - 4) & DataPath setup
+    // CFG0, CFG1, CFG2, CFG3, TEST_DATAPATH, TEST_STR0, TEST_STR1, TEST_STR2, TEST_STR3
+    if (num==45) {
+        for (i=0; i<5; i++) {
+            for (j=0; j<9; j++) {
+                config->panel_lane_config[i*9 + j] = arr[i*9 + j];
+            }
+        }
+    }
+
+    // CFG0, CFG1, CFG2, TEST_DATAPATH, TEST_STR0, TEST_STR1
+    else if (num==30) {
+        for (i=0; i<5; i++) {
+            config->panel_lane_config[i*9 + 0] = arr[i*6 + 0]; // CFG0
+            config->panel_lane_config[i*9 + 1] = arr[i*6 + 1]; // CFG1
+            config->panel_lane_config[i*9 + 2] = arr[i*6 + 2]; // CFG2
+            config->panel_lane_config[i*9 + 3] = 0x00;         // CFG3
+            config->panel_lane_config[i*9 + 4] = arr[i*6 + 3]; // TEST_DATAPATH
+            config->panel_lane_config[i*9 + 5] = arr[i*6 + 4]; // TEST_STR0
+            config->panel_lane_config[i*9 + 6] = arr[i*6 + 5]; // TEST_STR1
+            config->panel_lane_config[i*9 + 7] = 0x00;         // TEST_STR2
+            config->panel_lane_config[i*9 + 8] = 0x00;         // TEST_STR3
+        }
+    }
+}
+
 static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
 {
     char buf[4096];
@@ -630,6 +743,8 @@ static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
         dprintf(CRITICAL, "can't find panel node: %s\n", fdt_strerror(offset_panel));
         return -1;
     }
+
+    int offset_mdss_dsi = fdt_path_offset(fdt, "/soc/qcom,mdss_dsi");
 
     // paneldata
     config->paneldata->panel_node_id = safe_strdup(name);
@@ -676,7 +791,21 @@ static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
     process_fdt_commands(fdt, offset_panel, config, "somc,mdss-dsi-early-init-command", &config->num_earlyinit_commands, &config->earlyinit_commands);
     process_fdt_commands(fdt, offset_panel, config, "somc,mdss-dsi-init-command", &config->num_init_commands, &config->init_commands);
 
+    // platform: regulator
+    process_fdt_platform_regulator(fdt, offset_mdss_dsi, config, "qcom,platform-regulator-settings");
 
+    // platform: strength ctrl
+    process_fdt_platform_strength_ctrl(fdt, offset_mdss_dsi, config, "qcom,platform-strength-ctrl");
+
+    // platform: bist ctrl
+    process_fdt_platform_bist_ctrl(fdt, offset_mdss_dsi, config, "qcom,platform-bist-ctrl");
+
+    // platform: lane config
+    process_fdt_platform_laneconfig(fdt, offset_panel, config, "somc,mdss-dsi-lane-config");
+    process_fdt_platform_laneconfig(fdt, offset_panel, config, "qcom,panel-phy-laneConfig");
+    process_fdt_platform_laneconfig(fdt, offset_mdss_dsi, config, "qcom,platform-lane-config");
+
+    // cont splash
     config->cont_splash_enabled = fdt_getprop_bool(fdt, offset_panel, "qcom,cont-splash-enabled");
 
     return 0;

@@ -47,6 +47,10 @@ typedef struct {
     size_t num_init_commands;
 
     int cont_splash_enabled;
+    uint32_t *panel_regulator;
+    uint32_t *panel_strength_ctrl;
+    uint8_t *panel_bist_ctrl;
+    uint8_t *panel_lane_config;
 } dtb_panel_config_t;
 
 extern dtb_panel_config_t *dtbpanel_config;
