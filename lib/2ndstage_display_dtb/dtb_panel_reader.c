@@ -648,6 +648,11 @@ static int process_fdt(void* fdt, const char* name, dtb_panel_config_t* config) 
     // off commands
     process_fdt_commands(fdt, offset_panel, config, "qcom,mdss-dsi-off-command", &config->num_off_commands, &config->off_commands);
 
+    // sony init commands
+    process_fdt_commands(fdt, offset_panel, config, "somc,mdss-dsi-early-init-command", &config->num_earlyinit_commands, &config->earlyinit_commands);
+    process_fdt_commands(fdt, offset_panel, config, "somc,mdss-dsi-init-command", &config->num_init_commands, &config->init_commands);
+
+
     config->cont_splash_enabled = fdt_getprop_bool(fdt, offset_panel, "qcom,cont-splash-enabled");
 
     return 0;
@@ -711,6 +716,25 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     pinfo->mipi.num_of_panel_off_cmds = config->num_off_commands;
     if(config->timing)
         memcpy(phy_db->timing, config->timing, config->timing_len*sizeof(uint32_t));
+
+    // merge sony commands into one
+    if(config->num_earlyinit_commands || config->num_init_commands) {
+        size_t num_on_commands_merged = config->num_earlyinit_commands + config->num_init_commands + config->num_on_commands;
+        struct mipi_dsi_cmd* on_commands_merged = calloc(sizeof(struct mipi_dsi_cmd), num_on_commands_merged);
+
+        struct mipi_dsi_cmd* cmdptr = on_commands_merged;
+        memcpy(cmdptr, config->earlyinit_commands, config->num_earlyinit_commands*sizeof(*cmdptr));
+        cmdptr += config->num_earlyinit_commands;
+
+        memcpy(cmdptr, config->init_commands, config->num_init_commands*sizeof(*cmdptr));
+        cmdptr += config->num_init_commands;
+
+        memcpy(cmdptr, config->on_commands, config->num_on_commands*sizeof(*cmdptr));
+        cmdptr += config->num_on_commands;
+
+        pinfo->mipi.panel_on_cmds = on_commands_merged;
+        pinfo->mipi.num_of_panel_on_cmds = num_on_commands_merged;
+    }
 
     // set global config variable
     dtbpanel_config = config;

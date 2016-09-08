@@ -40,6 +40,12 @@ typedef struct {
     struct mipi_dsi_cmd* off_commands;
     size_t num_off_commands;
 
+    // sony init commands
+    struct mipi_dsi_cmd* earlyinit_commands;
+    size_t num_earlyinit_commands;
+    struct mipi_dsi_cmd* init_commands;
+    size_t num_init_commands;
+
     int cont_splash_enabled;
 } dtb_panel_config_t;
 
