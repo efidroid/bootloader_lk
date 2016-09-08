@@ -286,7 +286,10 @@ static void process_fdt_paneldata(void* fdt, int offset_panel, struct panel_conf
     // TODO: panel_interface
     // TODO: panel_orientation
     // TODO: panel_channelid
-    // TODO: dsi_virtualchannel_id
+
+    // dsi_virtualchannel_id
+    paneldata->dsi_virtualchannel_id = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-virtual-channel-id");
+
     // TODO: panel_broadcast_mode
 
     // panel_lp11_init
