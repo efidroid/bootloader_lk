@@ -327,6 +327,10 @@ static int mdss_dsi_bl_enable(uint8_t enable)
 	return ret;
 }
 
+__WEAK void target_gcdb_post_init_platform_data(struct mdss_dsi_phy_ctrl *phy_db) {
+
+}
+
 static void init_platform_data(void)
 {
 	memcpy(dsi_video_mode_phy_db.regulator, panel_regulator_settings,
@@ -337,6 +341,8 @@ static void init_platform_data(void)
 							STRENGTH_SIZE);
 	memcpy(dsi_video_mode_phy_db.bistCtrl, panel_bist_ctrl, BIST_SIZE);
 	memcpy(dsi_video_mode_phy_db.laneCfg, panel_lane_config, LANE_SIZE);
+
+	target_gcdb_post_init_platform_data(&dsi_video_mode_phy_db);
 }
 
 static void mdss_edp_panel_init(struct msm_panel_info *pinfo)
