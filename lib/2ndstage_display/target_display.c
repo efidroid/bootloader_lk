@@ -27,17 +27,17 @@
  */
 static int check_aboot_addr_range_overlap(uint32_t start, uint32_t size)
 {
-	/* Check for boundary conditions. */
-	if ((UINT_MAX - start) < size)
-		return -1;
+    /* Check for boundary conditions. */
+    if ((UINT_MAX - start) < size)
+        return -1;
 
-	/* Check for memory overlap. */
-	if ((start < MEMBASE) && ((start + size) <= MEMBASE))
-		return 0;
-	else if (start >= (MEMBASE + MEMSIZE))
-		return 0;
-	else
-		return -1;
+    /* Check for memory overlap. */
+    if ((start < MEMBASE) && ((start + size) <= MEMBASE))
+        return 0;
+    else if (start >= (MEMBASE + MEMSIZE))
+        return 0;
+    else
+        return -1;
 }
 
 #if defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP3)
@@ -92,19 +92,18 @@ static void mdp_dump_pipe_info(uint32_t *pipe_type, uint32_t *dual_pipe)
 
     *dual_pipe = 0;
 
-    if(left_staging_level==0x0000200 || left_staging_level==0x0001200) {
+    if (left_staging_level==0x0000200 || left_staging_level==0x0001200) {
         *pipe_type = MDSS_MDP_PIPE_TYPE_RGB;
-        if(left_staging_level==0x0001200)
+        if (left_staging_level==0x0001200)
             *dual_pipe = 1;
     }
-    if(left_staging_level==0x0040000 || left_staging_level==0x0240000) {
+    if (left_staging_level==0x0040000 || left_staging_level==0x0240000) {
         *pipe_type = MDSS_MDP_PIPE_TYPE_DMA;
-        if(left_staging_level==0x0240000)
+        if (left_staging_level==0x0240000)
             *dual_pipe = 1;
-    }
-    else {
+    } else {
         *pipe_type = MDSS_MDP_PIPE_TYPE_VIG;
-        if(left_staging_level==0x9)
+        if (left_staging_level==0x9)
             *dual_pipe = 1;
     }
 }
@@ -121,10 +120,10 @@ static void mdp_select_pipe_type(uint32_t pipe_type, uint32_t *left_pipe, uint32
             *right_pipe = MDP_VP_0_DMA_1_BASE;
             break;
         case MDSS_MDP_PIPE_TYPE_VIG:
-            default:
+        default:
             *left_pipe = MDP_VP_0_VIG_0_BASE;
             *right_pipe = MDP_VP_0_VIG_1_BASE;
-        break;
+            break;
     }
 }
 

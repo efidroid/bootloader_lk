@@ -7,39 +7,43 @@
 
 #include "private.h"
 
-dtb_panel_config_t* dtbpanel_config = NULL;
+dtb_panel_config_t *dtbpanel_config = NULL;
 
-static char *safe_strdup(const char *s) {
+static char *safe_strdup(const char *s)
+{
     char *ret = strdup(s);
     ASSERT(ret);
 
     return ret;
 }
 
-static void *safe_malloc(size_t size) {
+static void *safe_malloc(size_t size)
+{
     char *ret = malloc(size);
     ASSERT(ret);
 
     return ret;
 }
 
-static void *safe_calloc(size_t num, size_t size) {
+static void *safe_calloc(size_t num, size_t size)
+{
     char *ret = calloc(num, size);
     ASSERT(ret);
 
     return ret;
 }
 
-static char* fdt_getprop_str(void* fdt, int offset, const char* name) {
+static char *fdt_getprop_str(void *fdt, int offset, const char *name)
+{
     int len;
-    const struct fdt_property* prop;
+    const struct fdt_property *prop;
 
     // get property
     prop = fdt_get_property(fdt, offset, name, &len);
-    if(!prop) return NULL;
+    if (!prop) return NULL;
 
     // allocate data
-    char* str = safe_malloc(len+1);
+    char *str = safe_malloc(len+1);
 
     memcpy(str, prop->data, len);
     str[len] = 0;
@@ -47,35 +51,38 @@ static char* fdt_getprop_str(void* fdt, int offset, const char* name) {
     return str;
 }
 
-static uint32_t fdt_getprop_u32(void* fdt, int offset, const char* name) {
+static uint32_t fdt_getprop_u32(void *fdt, int offset, const char *name)
+{
     int len;
-    const struct fdt_property* prop;
+    const struct fdt_property *prop;
 
     // get property
     prop = fdt_get_property(fdt, offset, name, &len);
-    if(!prop) return 0;
+    if (!prop) return 0;
 
-    return fdt32_to_cpu(*((uint32_t*)prop->data));
+    return fdt32_to_cpu(*((uint32_t *)prop->data));
 }
 
-static int fdt_getprop_bool(void* fdt, int offset, const char* name) {
+static int fdt_getprop_bool(void *fdt, int offset, const char *name)
+{
     int len;
-    const struct fdt_property* prop;
+    const struct fdt_property *prop;
 
     // get property
     prop = fdt_get_property(fdt, offset, name, &len);
     return !!prop;
 }
 
-static ssize_t fdt_getprop_array(void* fdt, int offset, const char* name, size_t itemsize, const void** datap) {
+static ssize_t fdt_getprop_array(void *fdt, int offset, const char *name, size_t itemsize, const void **datap)
+{
     int len;
-    const struct fdt_property* prop;
+    const struct fdt_property *prop;
 
     // get property
     prop = fdt_get_property(fdt, offset, name, &len);
-    if(!prop) return -1;
+    if (!prop) return -1;
 
-    if(len%itemsize) {
+    if (len%itemsize) {
         return -1;
     }
 
@@ -83,26 +90,28 @@ static ssize_t fdt_getprop_array(void* fdt, int offset, const char* name, size_t
     return len/itemsize;
 }
 
-static char* str2upper(char *s) {
-    char* ret = s;
-    for(;*s;s++) {
+static char *str2upper(char *s)
+{
+    char *ret = s;
+    for (; *s; s++) {
         *s = toupper(*s);
     }
     return ret;
 }
 
-static int trigger2int(const char* s) {
+static int trigger2int(const char *s)
+{
     // dsi_mdp_trigger
     int trigger_int;
-    if(!strcmp(s, "none"))
+    if (!strcmp(s, "none"))
         trigger_int = 0;
-    else if(!strcmp(s, "trigger_te"))
+    else if (!strcmp(s, "trigger_te"))
         trigger_int = 2;
-    else if(!strcmp(s, "trigger_sw"))
+    else if (!strcmp(s, "trigger_sw"))
         trigger_int = 4;
-    else if(!strcmp(s, "trigger_sw_seof"))
+    else if (!strcmp(s, "trigger_sw_seof"))
         trigger_int = 5;
-    else if(!strcmp(s, "trigger_sw_te"))
+    else if (!strcmp(s, "trigger_sw_te"))
         trigger_int = 6;
     else {
         dprintf(CRITICAL, "invalid trigger: %s\n", s);
@@ -112,12 +121,13 @@ static int trigger2int(const char* s) {
     return trigger_int;
 }
 
-static int cmdstate2int(const char* s) {
+static int cmdstate2int(const char *s)
+{
     // dsi_mdp_trigger
     int state_int;
-    if(!strcmp(s, "dsi_lp_mode"))
+    if (!strcmp(s, "dsi_lp_mode"))
         state_int = 0;
-    else if(!strcmp(s, "dsi_hs_mode"))
+    else if (!strcmp(s, "dsi_hs_mode"))
         state_int = 1;
     else {
         dprintf(CRITICAL, "invalid command state: %s\n", s);
@@ -127,13 +137,14 @@ static int cmdstate2int(const char* s) {
     return state_int;
 }
 
-static ssize_t get_num_dcs_commands(const uint8_t* stream, size_t streamsz) {
+static ssize_t get_num_dcs_commands(const uint8_t *stream, size_t streamsz)
+{
     ssize_t ret = 0;
     size_t stream_left = streamsz;
-    while(stream_left>0) {
+    while (stream_left>0) {
         // get command data
-        const uint8_t* cmd = stream;
-        if(stream_left<7) {
+        const uint8_t *cmd = stream;
+        if (stream_left<7) {
             dprintf(CRITICAL, "command stream is too short\n");
             return -1;
         }
@@ -141,7 +152,7 @@ static ssize_t get_num_dcs_commands(const uint8_t* stream, size_t streamsz) {
 
         // get cmd size
         size_t cmdsize = 7 + payloadsz;
-        if(stream_left<cmdsize) {
+        if (stream_left<cmdsize) {
             dprintf(CRITICAL, "command stream is too short\n");
             return -1;
         }
@@ -156,52 +167,53 @@ static ssize_t get_num_dcs_commands(const uint8_t* stream, size_t streamsz) {
     return ret;
 }
 
-static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, struct mipi_dsi_cmd** out_panel_cmds) {
+static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, struct mipi_dsi_cmd **out_panel_cmds)
+{
     uint32_t i;
 
     // count dcs commands
     ssize_t num_dcs_commands = get_num_dcs_commands(arr, arrsz);
-    if(num_dcs_commands<0) return -1;
+    if (num_dcs_commands<0) return -1;
 
     // allocate cmd array
     uint32_t panel_cmds_idx = 0;
-    struct mipi_dsi_cmd* panel_cmds = safe_calloc(sizeof(struct mipi_dsi_cmd), num_dcs_commands);
+    struct mipi_dsi_cmd *panel_cmds = safe_calloc(sizeof(struct mipi_dsi_cmd), num_dcs_commands);
 
-    const uint8_t* streamp = arr;
+    const uint8_t *streamp = arr;
     size_t stream_left = arrsz;
-    while(stream_left>0) {
+    while (stream_left>0) {
         // get command data
-        const uint8_t* cmd = streamp;
-        if(stream_left<7) {
+        const uint8_t *cmd = streamp;
+        if (stream_left<7) {
             dprintf(CRITICAL, "command stream is too short\n");
             return -1;
         }
         uint8_t dcstype = cmd[0];
         uint8_t wait = cmd[4];
         uint16_t payloadsz = cmd[5]<<16 | cmd[6];
-        const uint8_t* payload  = &cmd[7];
+        const uint8_t *payload  = &cmd[7];
         uint8_t is_lwrite = (dcstype==DTYPE_GEN_LWRITE || dcstype==DTYPE_DCS_LWRITE);
 
         // get cmd size
         size_t cmdsize = 7 + payloadsz;
-        if(stream_left<cmdsize) {
+        if (stream_left<cmdsize) {
             dprintf(CRITICAL, "command stream is too short\n");
             return -1;
         }
 
         // get lk payload size
         size_t lkpayloadsz;
-        if(is_lwrite)
-                lkpayloadsz = 4 + ROUNDUP(payloadsz, 4);
+        if (is_lwrite)
+            lkpayloadsz = 4 + ROUNDUP(payloadsz, 4);
         else
-                lkpayloadsz = ROUNDUP(payloadsz, 2) + 2;
+            lkpayloadsz = ROUNDUP(payloadsz, 2) + 2;
 
         // allocate payload
-        uint8_t* lkpayload = safe_calloc(lkpayloadsz, 1);
+        uint8_t *lkpayload = safe_calloc(lkpayloadsz, 1);
         uint32_t lkpayload_idx = 0;
 
         // write LWRITE hdr
-        if(is_lwrite) {
+        if (is_lwrite) {
             lkpayload[lkpayload_idx++] = (uint8_t)payloadsz;
             lkpayload[lkpayload_idx++] = 0x00;
             lkpayload[lkpayload_idx++] = dcstype;
@@ -209,20 +221,20 @@ static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, str
         }
         // write padding
         uint32_t alignment = is_lwrite?4:2;
-        for(i=0; i<(size_t)ROUNDUP(payloadsz, alignment); i++) {
+        for (i=0; i<(size_t)ROUNDUP(payloadsz, alignment); i++) {
             uint8_t val = i>=payloadsz?0xff:payload[i];
             lkpayload[lkpayload_idx++] = val;
         }
         // write short write footer
-        if(!is_lwrite) {
+        if (!is_lwrite) {
             lkpayload[lkpayload_idx++] = dcstype;
             lkpayload[lkpayload_idx++] = 0x80;
         }
 
         // add command to list
-        struct mipi_dsi_cmd* panel_cmd = &panel_cmds[panel_cmds_idx++];
+        struct mipi_dsi_cmd *panel_cmd = &panel_cmds[panel_cmds_idx++];
         panel_cmd->size = lkpayloadsz;
-        panel_cmd->payload = (void*)lkpayload;
+        panel_cmd->payload = (void *)lkpayload;
         panel_cmd->wait = wait;
 
         // skip to next command
@@ -234,37 +246,39 @@ static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, str
     return num_dcs_commands;
 }
 
-static int process_fdt_commands(void* fdt, int offset_panel, dtb_panel_config_t* config, const char* nodename, size_t* out_num, struct mipi_dsi_cmd** out_cmds) {
+static int process_fdt_commands(void *fdt, int offset_panel, dtb_panel_config_t *config, const char *nodename, size_t *out_num, struct mipi_dsi_cmd **out_cmds)
+{
     ssize_t num;
     const uint8_t *arr = NULL;
 
-    num = fdt_getprop_array(fdt, offset_panel, nodename, sizeof(*arr), (const void**)&arr);
-    if(num<0) return -1;
+    num = fdt_getprop_array(fdt, offset_panel, nodename, sizeof(*arr), (const void **)&arr);
+    if (num<0) return -1;
 
     ssize_t num_dcs_commands = process_fdt_panel_commands(arr, num, out_cmds);
-    if(num_dcs_commands<0) return -1;
+    if (num_dcs_commands<0) return -1;
     *out_num = num_dcs_commands;
 
     return 0;
 }
 
 
-static void process_fdt_paneldata(void* fdt, int offset_panel, struct panel_config* paneldata) {
-    char* destination = NULL;
-    char* paneltype = NULL;
+static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_config *paneldata)
+{
+    char *destination = NULL;
+    char *paneltype = NULL;
 
     // panel_controller
     paneldata->panel_controller = safe_strdup("dsi:0:");
-    
+
     // compatible
     paneldata->panel_compatible = safe_strdup("qcom,mdss-dsi-panel");
 
     // panel_type
     paneltype = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-panel-type");
-    if(paneltype) { 
-        if(!strcmp(paneltype, "dsi_video_mode"))
+    if (paneltype) {
+        if (!strcmp(paneltype, "dsi_video_mode"))
             paneldata->panel_type = 0;
-        else if(!strcmp(paneltype, "dsi_cmd_mode"))
+        else if (!strcmp(paneltype, "dsi_cmd_mode"))
             paneldata->panel_type = 1;
         else {
             dprintf(CRITICAL, "invalid panel type: %s\n", paneltype);
@@ -273,7 +287,7 @@ static void process_fdt_paneldata(void* fdt, int offset_panel, struct panel_conf
 
     // destination
     destination = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-panel-destination");
-    if(destination) {
+    if (destination) {
         str2upper(destination);
         paneldata->panel_destination = safe_strdup(destination);
     }
@@ -313,7 +327,8 @@ static void process_fdt_paneldata(void* fdt, int offset_panel, struct panel_conf
     free(paneltype);
 }
 
-static void process_fdt_panelres(void* fdt, int offset_panel, struct panel_resolution* panelres) {
+static void process_fdt_panelres(void *fdt, int offset_panel, struct panel_resolution *panelres)
+{
     // panel_width
     panelres->panel_width = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-panel-width");
     // panel_height
@@ -348,7 +363,8 @@ static void process_fdt_panelres(void* fdt, int offset_panel, struct panel_resol
     // TODO: invert_hsync_polarity
 }
 
-static void process_fdt_color(void* fdt, int offset_panel, struct color_info* color) {
+static void process_fdt_color(void *fdt, int offset_panel, struct color_info *color)
+{
     //  color_format
     color->color_format = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-bpp");
     //  color_order
@@ -363,8 +379,9 @@ static void process_fdt_color(void* fdt, int offset_panel, struct color_info* co
     // TODO: pixel_alignment
 }
 
-static void process_fdt_videopanel(void* fdt, int offset_panel, struct videopanel_info* videopanel) {
-    char* trafficmode = NULL;
+static void process_fdt_videopanel(void *fdt, int offset_panel, struct videopanel_info *videopanel)
+{
+    char *trafficmode = NULL;
 
     // hsync_pulse
     videopanel->hsync_pulse = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-h-sync-pulse");
@@ -382,13 +399,13 @@ static void process_fdt_videopanel(void* fdt, int offset_panel, struct videopane
 
     // traffic_mode
     trafficmode = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-traffic-mode");
-    if(trafficmode) {
+    if (trafficmode) {
         uint32_t trafficmode_int = 0;
-        if(!strcmp(trafficmode, "non_burst_sync_pulse"))
+        if (!strcmp(trafficmode, "non_burst_sync_pulse"))
             trafficmode_int = 0;
-        else if(!strcmp(trafficmode, "non_burst_sync_event"))
+        else if (!strcmp(trafficmode, "non_burst_sync_event"))
             trafficmode_int = 1;
-        else if(!strcmp(trafficmode, "burst_mode"))
+        else if (!strcmp(trafficmode, "burst_mode"))
             trafficmode_int = 2;
         else {
             dprintf(CRITICAL, "invalid trafficmode: %s\n", trafficmode);
@@ -402,7 +419,8 @@ static void process_fdt_videopanel(void* fdt, int offset_panel, struct videopane
     free(trafficmode);
 }
 
-static void process_fdt_commandpanel(void* fdt, int offset_panel, struct commandpanel_info* commandpanel) {
+static void process_fdt_commandpanel(void *fdt, int offset_panel, struct commandpanel_info *commandpanel)
+{
 
     // techeck_enable
     commandpanel->techeck_enable = fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-te-check-enable");
@@ -429,24 +447,25 @@ static void process_fdt_commandpanel(void* fdt, int offset_panel, struct command
     // TODO: cmdmode_idletime
 }
 
-static void process_fdt_state(void* fdt, int offset_panel, struct command_state* state) {
-    char* state_on = NULL;
-    char* state_off = NULL;
+static void process_fdt_state(void *fdt, int offset_panel, struct command_state *state)
+{
+    char *state_on = NULL;
+    char *state_off = NULL;
 
     // oncommand_state
     state_on = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-on-command-state");
-    if(state_on) {
+    if (state_on) {
         int state_on_int = cmdstate2int(state_on);
-        if(state_on_int>=0) {
+        if (state_on_int>=0) {
             state->oncommand_state = state_on_int;
         }
     }
 
     // offcommand_state
     state_off = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-off-command-state");
-    if(state_off) {
+    if (state_off) {
         int state_off_int = cmdstate2int(state_off);
-        if(state_off_int>=0) {
+        if (state_off_int>=0) {
             state->offcommand_state = state_off_int;
         }
     }
@@ -455,53 +474,54 @@ static void process_fdt_state(void* fdt, int offset_panel, struct command_state*
     free(state_off);
 }
 
-static void process_fdt_laneconfig(void* fdt, int offset_panel, struct lane_configuration* laneconfig) {
-    char* lane_map = NULL;
+static void process_fdt_laneconfig(void *fdt, int offset_panel, struct lane_configuration *laneconfig)
+{
+    char *lane_map = NULL;
 
     // dsi_lanemap
     lane_map = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-lane-map");
-    if(lane_map) {
+    if (lane_map) {
         int lane_map_int = 0;
-        if(!strcmp(lane_map, "lane_map_0123"))
+        if (!strcmp(lane_map, "lane_map_0123"))
             lane_map_int = 0;
-        else if(!strcmp(lane_map, "lane_map_3012"))
+        else if (!strcmp(lane_map, "lane_map_3012"))
             lane_map_int = 1;
-        else if(!strcmp(lane_map, "lane_map_2301"))
+        else if (!strcmp(lane_map, "lane_map_2301"))
             lane_map_int = 2;
-        else if(!strcmp(lane_map, "lane_map_1230"))
+        else if (!strcmp(lane_map, "lane_map_1230"))
             lane_map_int = 3;
-        else if(!strcmp(lane_map, "lane_map_0321"))
+        else if (!strcmp(lane_map, "lane_map_0321"))
             lane_map_int = 4;
-        else if(!strcmp(lane_map, "lane_map_1032"))
+        else if (!strcmp(lane_map, "lane_map_1032"))
             lane_map_int = 5;
-        else if(!strcmp(lane_map, "lane_map_2103"))
+        else if (!strcmp(lane_map, "lane_map_2103"))
             lane_map_int = 6;
-        else if(!strcmp(lane_map, "lane_map_3210"))
+        else if (!strcmp(lane_map, "lane_map_3210"))
             lane_map_int = 7;
         else {
             dprintf(CRITICAL, "invalid lane map: %s\n", lane_map);
         }
         laneconfig->dsi_lanemap = lane_map_int;
     }
-    
+
     // lane0_state
     uint32_t dsi_lanes = 0;
-    if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-0-state")) {
+    if (fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-0-state")) {
         dsi_lanes++;
         laneconfig->lane0_state = 1;
     }
     // lane1_state
-    if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-1-state")) {
+    if (fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-1-state")) {
         dsi_lanes++;
         laneconfig->lane1_state = 1;
     }
     // lane2_state
-    if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-2-state")) {
+    if (fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-2-state")) {
         dsi_lanes++;
         laneconfig->lane2_state = 1;
     }
     // lane3_state
-    if(fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-3-state")) {
+    if (fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lane-3-state")) {
         dsi_lanes++;
         laneconfig->lane3_state = 1;
     }
@@ -514,24 +534,25 @@ static void process_fdt_laneconfig(void* fdt, int offset_panel, struct lane_conf
     free(lane_map);
 }
 
-static void process_fdt_paneltiminginfo(void* fdt, int offset_panel, struct panel_timing* paneltiminginfo) {
-    char* mdp_trigger = NULL;
-    char* dma_trigger = NULL;
+static void process_fdt_paneltiminginfo(void *fdt, int offset_panel, struct panel_timing *paneltiminginfo)
+{
+    char *mdp_trigger = NULL;
+    char *dma_trigger = NULL;
 
     // dsi_mdp_trigger
     mdp_trigger = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-mdp-trigger");
-    if(mdp_trigger) {
+    if (mdp_trigger) {
         int mdp_trigger_int = trigger2int(mdp_trigger);
-        if(mdp_trigger_int>=0) {
+        if (mdp_trigger_int>=0) {
             paneltiminginfo->dsi_mdp_trigger = mdp_trigger_int;
         }
     }
 
     // dsi_dma_trigger
     dma_trigger = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-dma-trigger");
-    if(dma_trigger) {
+    if (dma_trigger) {
         int dma_trigger_int = trigger2int(dma_trigger);
-        if(dma_trigger_int>=0) {
+        if (dma_trigger_int>=0) {
             paneltiminginfo->dsi_dma_trigger = dma_trigger_int;
         }
     }
@@ -545,24 +566,26 @@ static void process_fdt_paneltiminginfo(void* fdt, int offset_panel, struct pane
     free(dma_trigger);
 }
 
-static void process_fdt_timing(void* fdt, int offset_panel, dtb_panel_config_t* config) {
+static void process_fdt_timing(void *fdt, int offset_panel, dtb_panel_config_t *config)
+{
     ssize_t num;
     const uint8_t *arr = NULL;
     uint32_t i;
 
-    num = fdt_getprop_array(fdt, offset_panel, "qcom,mdss-dsi-panel-timings", sizeof(*arr), (const void**)&arr);
-    if(num<0) return;
+    num = fdt_getprop_array(fdt, offset_panel, "qcom,mdss-dsi-panel-timings", sizeof(*arr), (const void **)&arr);
+    if (num<0) return;
 
     config->timing = safe_malloc(sizeof(uint32_t)*num);
     config->timing_len = num;
 
-    for(i=0; i<(size_t)num; i++) {
+    for (i=0; i<(size_t)num; i++) {
         config->timing[i] = arr[i];
     }
 }
 
-static void process_fdt_backlightinfo(void* fdt, int offset_panel, struct backlight* backlightinfo) {
-    char* controltype = NULL;
+static void process_fdt_backlightinfo(void *fdt, int offset_panel, struct backlight *backlightinfo)
+{
+    char *controltype = NULL;
 
     // bl_min_level
     backlightinfo->bl_min_level = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-bl-min-level");
@@ -573,13 +596,13 @@ static void process_fdt_backlightinfo(void* fdt, int offset_panel, struct backli
 
     // bl_pmic_controltype
     controltype = fdt_getprop_str(fdt, offset_panel, "qcom,mdss-dsi-bl-pmic-control-type");
-    if(controltype) {
+    if (controltype) {
         uint32_t controltype_int = 0;
-        if(!strcmp(controltype, "bl_ctrl_pwm"))
+        if (!strcmp(controltype, "bl_ctrl_pwm"))
             controltype_int = 0;
-        else if(!strcmp(controltype, "bl_ctrl_wled"))
+        else if (!strcmp(controltype, "bl_ctrl_wled"))
             controltype_int = 1;
-        else if(!strcmp(controltype, "bl_ctrl_dcs"))
+        else if (!strcmp(controltype, "bl_ctrl_dcs"))
             controltype_int = 2;
         else {
             dprintf(CRITICAL, "invalid controltype: %s\n", controltype);
@@ -596,13 +619,14 @@ static void process_fdt_backlightinfo(void* fdt, int offset_panel, struct backli
     free(controltype);
 }
 
-static int process_fdt(void* fdt, const char* name, dtb_panel_config_t* config) {
+static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
+{
     char buf[4096];
 
     snprintf(buf, sizeof(buf), "/soc/qcom,mdss_mdp/%s", name);
 
     int offset_panel = fdt_path_offset(fdt, buf);
-    if(offset_panel<0) {
+    if (offset_panel<0) {
         dprintf(CRITICAL, "can't find panel node: %s\n", fdt_strerror(offset_panel));
         return -1;
     }
@@ -659,11 +683,11 @@ static int process_fdt(void* fdt, const char* name, dtb_panel_config_t* config) 
 }
 
 int dtbreader_init_panel_data(struct panel_struct *panelstruct,
-                                struct msm_panel_info *pinfo,
-                                struct mdss_dsi_phy_ctrl *phy_db)
+                              struct msm_panel_info *pinfo,
+                              struct mdss_dsi_phy_ctrl *phy_db)
 {
     int rc;
-    dtb_panel_config_t* config = NULL;
+    dtb_panel_config_t *config = NULL;
 
     // allocate data
     config = safe_calloc(sizeof(dtb_panel_config_t), 1);
@@ -679,21 +703,21 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     config->backlightinfo = safe_calloc(sizeof(struct backlight), 1);
 
     // get panel node name
-    char* panel_node = lkargs_get_panel_name("mdss_mdp.panel");
-    if(!panel_node) {
+    char *panel_node = lkargs_get_panel_name("mdss_mdp.panel");
+    if (!panel_node) {
         dprintf(CRITICAL, "lkargs_get_panel_name failed\n");
         return PANEL_TYPE_UNKNOWN;
     }
 
     // process fdt
     rc = process_fdt(lkargs_get_tags_backup(), panel_node, config);
-    if(rc) {
+    if (rc) {
         dprintf(CRITICAL, "process_fdt failed\n");
         return PANEL_TYPE_UNKNOWN;
     }
 
     // check if we have commands
-    if(!config->num_on_commands || !config->off_commands) {
+    if (!config->num_on_commands || !config->off_commands) {
         dprintf(CRITICAL, "no on/off commands found\n");
         return PANEL_TYPE_UNKNOWN;
     }
@@ -714,15 +738,15 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     pinfo->mipi.num_of_panel_on_cmds = config->num_on_commands;
     pinfo->mipi.panel_off_cmds = config->off_commands;
     pinfo->mipi.num_of_panel_off_cmds = config->num_off_commands;
-    if(config->timing)
+    if (config->timing)
         memcpy(phy_db->timing, config->timing, config->timing_len*sizeof(uint32_t));
 
     // merge sony commands into one
-    if(config->num_earlyinit_commands || config->num_init_commands) {
+    if (config->num_earlyinit_commands || config->num_init_commands) {
         size_t num_on_commands_merged = config->num_earlyinit_commands + config->num_init_commands + config->num_on_commands;
-        struct mipi_dsi_cmd* on_commands_merged = calloc(sizeof(struct mipi_dsi_cmd), num_on_commands_merged);
+        struct mipi_dsi_cmd *on_commands_merged = calloc(sizeof(struct mipi_dsi_cmd), num_on_commands_merged);
 
-        struct mipi_dsi_cmd* cmdptr = on_commands_merged;
+        struct mipi_dsi_cmd *cmdptr = on_commands_merged;
         memcpy(cmdptr, config->earlyinit_commands, config->num_earlyinit_commands*sizeof(*cmdptr));
         cmdptr += config->num_earlyinit_commands;
 

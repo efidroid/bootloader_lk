@@ -14,7 +14,7 @@ static inline __ALWAYS_INLINE void enter_critical_section(void)
     arch_disable_ints();
 
     // UEFI wants them enabled, but we thought they were disabled
-    if(enabled && critical_section_count>=1) {
+    if (enabled && critical_section_count>=1) {
         critical_section_count = 0;
     }
 

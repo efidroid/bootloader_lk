@@ -8,9 +8,9 @@ b64_ntop(unsigned char const *src, size_t srclength, char *target, size_t targsi
 
 int
 b64_pton(
-  char const *src,
-  unsigned char *target,
-  size_t targsize
-  );
+    char const *src,
+    unsigned char *target,
+    size_t targsize
+);
 
 #endif // BASE64_H

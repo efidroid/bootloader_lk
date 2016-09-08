@@ -27,7 +27,7 @@
 #include <uefiapi.h>
 #include <platform/timer.h>
 
-extern void* edk2_base;
+extern void *edk2_base;
 
 /* the global critical section count */
 int critical_section_count = 1;

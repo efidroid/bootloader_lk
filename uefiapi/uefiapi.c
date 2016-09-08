@@ -134,7 +134,7 @@ __WEAK unsigned int api_platform_get_uefi_bootmode(void)
     return LKAPI_UEFI_BM_NORMAL;
 }
 
-__WEAK const char* api_platform_get_uefi_bootpart(void)
+__WEAK const char *api_platform_get_uefi_bootpart(void)
 {
     return lkargs_get_uefi_bootpart();
 }
@@ -637,12 +637,12 @@ static void api_boot_exec(void *kernel, unsigned int zero, unsigned int arch, un
         entry(zero, arch, (unsigned *)tags);
 }
 
-static const char* api_boot_get_cmdline_extension(int is_recovery)
+static const char *api_boot_get_cmdline_extension(int is_recovery)
 {
     return lkargs_get_command_line(is_recovery);
 }
 
-static void* api_boot_extend_atags(void *atags)
+static void *api_boot_extend_atags(void *atags)
 {
     return lkargs_atag_insert_unknown(atags);
 }
@@ -652,7 +652,8 @@ static void api_boot_extend_fdt(void *fdt)
     lkargs_insert_chosen(fdt);
 }
 
-static int api_boot_get_hwid(const char* id, unsigned int* datap) {
+static int api_boot_get_hwid(const char *id, unsigned int *datap)
+{
     return qciditem_get(id, datap);
 }
 

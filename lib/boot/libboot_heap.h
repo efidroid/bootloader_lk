@@ -29,7 +29,7 @@ void *libboot_platform_heap_alloc(size_t, unsigned int alignment);
 void *libboot_platform_heap_realloc(void *ptr, size_t size);
 void libboot_platform_heap_free(void *);
 
-void libboot_platform_heap_init(void* base, size_t len);
+void libboot_platform_heap_init(void *base, size_t len);
 
 
 
