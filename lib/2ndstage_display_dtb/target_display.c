@@ -3,6 +3,8 @@
 #include <string.h>
 #include <msm_panel.h>
 #include <mipi_dsi.h>
+#include <arch/defines.h>
+#include <platform/timer.h>
 
 #include "include/panel.h"
 #include "include/display_resource.h"
@@ -10,8 +12,40 @@
 
 #include "private.h"
 
+int mdp_dma_on(struct msm_panel_info *pinfo);
+
+static void mdss_mdp_cmd_kickoff(void)
+{
+    mdp_dma_on(dtbpanel_config->pinfo);
+    dsb();
+    mdelay(15);
+}
+
 int target_backlight_ctrl(struct backlight *bl, uint8_t enable)
 {
+    struct fbcon_config *config = fbcon_display();
+
+    if (!dtbpanel_config)
+        return NO_ERROR;
+
+    if (!config)
+        return NO_ERROR;
+
+    if (!enable)
+        return NO_ERROR;
+
+    // dsi_cmd_mode
+    if (dtbpanel_config->paneldata->panel_type!=1)
+        return NO_ERROR;
+
+    // its weird to do this here but it's the only callback we can use without modifying the LK source code
+    if (dtbpanel_config->commandpanel->teusing_tepin || dtbpanel_config->hw_vsync_mode) {
+        config->update_start = mdss_mdp_cmd_kickoff;
+
+        // mdp_dma_on just got called without a delay, so do this now
+        mdelay(15);
+    }
+
     return NO_ERROR;
 }
 

@@ -20,6 +20,8 @@
 #define DTYPE_GEN_READ2     0x24    /* long read, 2 parameter */
 
 typedef struct {
+    struct msm_panel_info *pinfo;
+
     struct panel_config         *paneldata;
     struct panel_resolution     *panelres;
     struct color_info           *color;
@@ -47,6 +49,8 @@ typedef struct {
     size_t num_init_commands;
 
     int cont_splash_enabled;
+    int hw_vsync_mode;
+
     uint32_t *panel_regulator;
     uint32_t *panel_strength_ctrl;
     uint8_t *panel_bist_ctrl;

@@ -807,6 +807,7 @@ static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
 
     // cont splash
     config->cont_splash_enabled = fdt_getprop_bool(fdt, offset_panel, "qcom,cont-splash-enabled");
+    config->hw_vsync_mode = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-hw-vsync-mode");
 
     return 0;
 }
@@ -820,6 +821,7 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
 
     // allocate data
     config = safe_calloc(sizeof(dtb_panel_config_t), 1);
+    config->pinfo = pinfo;
     config->paneldata = safe_calloc(sizeof(struct panel_config), 1);
     config->panelres = safe_calloc(sizeof(struct panel_resolution), 1);
     config->color = safe_calloc(sizeof(struct color_info), 1);
