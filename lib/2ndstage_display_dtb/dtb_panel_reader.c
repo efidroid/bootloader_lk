@@ -296,7 +296,10 @@ static void process_fdt_paneldata(void* fdt, int offset_panel, struct panel_conf
     paneldata->panel_lp11_init = fdt_getprop_bool(fdt, offset_panel, "qcom,mdss-dsi-lp11-init");
 
     // TODO: panel_init_delay
-    // TODO: dsi_stream
+
+    // dsi_stream
+    paneldata->dsi_stream = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-stream");
+
     // TODO: interleave_mode
     // TODO: panel_bitclock_freq
     // TODO: panel_operating_mode
