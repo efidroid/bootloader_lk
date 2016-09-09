@@ -263,7 +263,7 @@ static int process_fdt_commands(void *fdt, int offset_panel, dtb_panel_config_t 
 }
 
 
-static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_config *paneldata)
+static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_config *paneldata, const char* nodename)
 {
     char *destination = NULL;
     char *paneltype = NULL;
@@ -322,7 +322,7 @@ static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_conf
     // TODO: mode_gpio_state
 
     // slave_panel_node_id;
-    paneldata->slave_panel_node_id = safe_strdup("");
+    paneldata->slave_panel_node_id = safe_strdup(nodename);
 
     free(destination);
     free(paneltype);
@@ -748,7 +748,7 @@ static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
 
     // paneldata
     config->paneldata->panel_node_id = safe_strdup(name);
-    process_fdt_paneldata(fdt, offset_panel, config->paneldata);
+    process_fdt_paneldata(fdt, offset_panel, config->paneldata, name);
 
     // panelres
     process_fdt_panelres(fdt, offset_panel, config->panelres);
