@@ -9,7 +9,7 @@ typedef void *(*lkargs_mmap_cb_t)(void *pdata, uint64_t addr, uint64_t size, boo
 void atag_parse(void);
 
 // raw tags
-void *lkargs_get_tags_backup(void);
+const void *lkargs_get_tags_backup(void);
 size_t lkargs_get_tags_backup_size(void);
 
 // parsed data

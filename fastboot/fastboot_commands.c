@@ -561,7 +561,7 @@ static void cmd_oem_lastkmsg(const char *arg, void *data, unsigned sz)
 #if defined(WITH_LIB_ATAGPARSE) && defined(WITH_LIB_BASE64)
 static void cmd_oem_dumpatags(const char *arg, void *data, unsigned sz)
 {
-    void *tags = lkargs_get_tags_backup();
+    const void *tags = lkargs_get_tags_backup();
     size_t tags_size = lkargs_get_tags_backup_size();
 
     if (tags && tags_size)

@@ -34,7 +34,7 @@ static void *safe_calloc(size_t num, size_t size)
     return ret;
 }
 
-static char *fdt_getprop_str(void *fdt, int offset, const char *name)
+static char *fdt_getprop_str(const void *fdt, int offset, const char *name)
 {
     int len;
     const struct fdt_property *prop;
@@ -52,7 +52,7 @@ static char *fdt_getprop_str(void *fdt, int offset, const char *name)
     return str;
 }
 
-static uint32_t fdt_getprop_u32(void *fdt, int offset, const char *name)
+static uint32_t fdt_getprop_u32(const void *fdt, int offset, const char *name)
 {
     int len;
     const struct fdt_property *prop;
@@ -64,7 +64,7 @@ static uint32_t fdt_getprop_u32(void *fdt, int offset, const char *name)
     return fdt32_to_cpu(*((uint32_t *)prop->data));
 }
 
-static int fdt_getprop_bool(void *fdt, int offset, const char *name)
+static int fdt_getprop_bool(const void *fdt, int offset, const char *name)
 {
     int len;
     const struct fdt_property *prop;
@@ -74,7 +74,7 @@ static int fdt_getprop_bool(void *fdt, int offset, const char *name)
     return !!prop;
 }
 
-static ssize_t fdt_getprop_array(void *fdt, int offset, const char *name, size_t itemsize, const void **datap)
+static ssize_t fdt_getprop_array(const void *fdt, int offset, const char *name, size_t itemsize, const void **datap)
 {
     int len;
     const struct fdt_property *prop;
@@ -247,7 +247,7 @@ static ssize_t process_fdt_panel_commands(const uint8_t *arr, ssize_t arrsz, str
     return num_dcs_commands;
 }
 
-static int process_fdt_commands(void *fdt, int offset_panel, dtb_panel_config_t *config, const char *nodename, size_t *out_num, struct mipi_dsi_cmd **out_cmds)
+static int process_fdt_commands(const void *fdt, int offset_panel, dtb_panel_config_t *config, const char *nodename, size_t *out_num, struct mipi_dsi_cmd **out_cmds)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -263,7 +263,7 @@ static int process_fdt_commands(void *fdt, int offset_panel, dtb_panel_config_t 
 }
 
 
-static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_config *paneldata, const char* nodename)
+static void process_fdt_paneldata(const void *fdt, int offset_panel, struct panel_config *paneldata, const char* nodename)
 {
     char *destination = NULL;
     char *paneltype = NULL;
@@ -328,7 +328,7 @@ static void process_fdt_paneldata(void *fdt, int offset_panel, struct panel_conf
     free(paneltype);
 }
 
-static void process_fdt_panelres(void *fdt, int offset_panel, struct panel_resolution *panelres)
+static void process_fdt_panelres(const void *fdt, int offset_panel, struct panel_resolution *panelres)
 {
     // panel_width
     panelres->panel_width = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-panel-width");
@@ -364,7 +364,7 @@ static void process_fdt_panelres(void *fdt, int offset_panel, struct panel_resol
     // TODO: invert_hsync_polarity
 }
 
-static void process_fdt_color(void *fdt, int offset_panel, struct color_info *color)
+static void process_fdt_color(const void *fdt, int offset_panel, struct color_info *color)
 {
     //  color_format
     color->color_format = fdt_getprop_u32(fdt, offset_panel, "qcom,mdss-dsi-bpp");
@@ -380,7 +380,7 @@ static void process_fdt_color(void *fdt, int offset_panel, struct color_info *co
     // TODO: pixel_alignment
 }
 
-static void process_fdt_videopanel(void *fdt, int offset_panel, struct videopanel_info *videopanel)
+static void process_fdt_videopanel(const void *fdt, int offset_panel, struct videopanel_info *videopanel)
 {
     char *trafficmode = NULL;
 
@@ -420,7 +420,7 @@ static void process_fdt_videopanel(void *fdt, int offset_panel, struct videopane
     free(trafficmode);
 }
 
-static void process_fdt_commandpanel(void *fdt, int offset_panel, struct commandpanel_info *commandpanel)
+static void process_fdt_commandpanel(const void *fdt, int offset_panel, struct commandpanel_info *commandpanel)
 {
 
     // techeck_enable
@@ -448,7 +448,7 @@ static void process_fdt_commandpanel(void *fdt, int offset_panel, struct command
     // TODO: cmdmode_idletime
 }
 
-static void process_fdt_state(void *fdt, int offset_panel, struct command_state *state)
+static void process_fdt_state(const void *fdt, int offset_panel, struct command_state *state)
 {
     char *state_on = NULL;
     char *state_off = NULL;
@@ -475,7 +475,7 @@ static void process_fdt_state(void *fdt, int offset_panel, struct command_state 
     free(state_off);
 }
 
-static void process_fdt_laneconfig(void *fdt, int offset_panel, struct lane_configuration *laneconfig)
+static void process_fdt_laneconfig(const void *fdt, int offset_panel, struct lane_configuration *laneconfig)
 {
     char *lane_map = NULL;
 
@@ -535,7 +535,7 @@ static void process_fdt_laneconfig(void *fdt, int offset_panel, struct lane_conf
     free(lane_map);
 }
 
-static void process_fdt_paneltiminginfo(void *fdt, int offset_panel, struct panel_timing *paneltiminginfo)
+static void process_fdt_paneltiminginfo(const void *fdt, int offset_panel, struct panel_timing *paneltiminginfo)
 {
     char *mdp_trigger = NULL;
     char *dma_trigger = NULL;
@@ -567,7 +567,7 @@ static void process_fdt_paneltiminginfo(void *fdt, int offset_panel, struct pane
     free(dma_trigger);
 }
 
-static void process_fdt_timing(void *fdt, int offset_panel, dtb_panel_config_t *config)
+static void process_fdt_timing(const void *fdt, int offset_panel, dtb_panel_config_t *config)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -584,7 +584,7 @@ static void process_fdt_timing(void *fdt, int offset_panel, dtb_panel_config_t *
     }
 }
 
-static void process_fdt_backlightinfo(void *fdt, int offset_panel, struct backlight *backlightinfo)
+static void process_fdt_backlightinfo(const void *fdt, int offset_panel, struct backlight *backlightinfo)
 {
     char *controltype = NULL;
 
@@ -620,7 +620,7 @@ static void process_fdt_backlightinfo(void *fdt, int offset_panel, struct backli
     free(controltype);
 }
 
-static void process_fdt_platform_regulator(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+static void process_fdt_platform_regulator(const void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -642,7 +642,7 @@ static void process_fdt_platform_regulator(void *fdt, int offset, dtb_panel_conf
     }
 }
 
-static void process_fdt_platform_strength_ctrl(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+static void process_fdt_platform_strength_ctrl(const void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -664,7 +664,7 @@ static void process_fdt_platform_strength_ctrl(void *fdt, int offset, dtb_panel_
     }
 }
 
-static void process_fdt_platform_bist_ctrl(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+static void process_fdt_platform_bist_ctrl(const void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -686,7 +686,7 @@ static void process_fdt_platform_bist_ctrl(void *fdt, int offset, dtb_panel_conf
     }
 }
 
-static void process_fdt_platform_laneconfig(void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
+static void process_fdt_platform_laneconfig(const void *fdt, int offset, dtb_panel_config_t *config, const char *nodename)
 {
     ssize_t num;
     const uint8_t *arr = NULL;
@@ -732,7 +732,7 @@ static void process_fdt_platform_laneconfig(void *fdt, int offset, dtb_panel_con
     }
 }
 
-static int process_fdt(void *fdt, const char *name, dtb_panel_config_t *config)
+static int process_fdt(const void *fdt, const char *name, dtb_panel_config_t *config)
 {
     char buf[4096];
 

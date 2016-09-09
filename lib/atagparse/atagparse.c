@@ -193,7 +193,7 @@ const char *lkargs_get_uefi_bootpart(void)
     return "";
 }
 
-void *lkargs_get_tags_backup(void)
+const void *lkargs_get_tags_backup(void)
 {
     return tags_copy;
 }
