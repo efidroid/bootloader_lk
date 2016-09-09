@@ -4,6 +4,7 @@
 #include <msm_panel.h>
 #include <mipi_dsi.h>
 #include <lib/atagparse.h>
+#include <lib/cmdline.h>
 
 #include "gcdb_display.h"
 #include "private.h"
@@ -812,6 +813,130 @@ static int process_fdt(const void *fdt, const char *name, dtb_panel_config_t *co
     return 0;
 }
 
+static int startswith(const char *str, const char *pre)
+{
+    return strncmp(pre, str, strlen(pre)) == 0;
+}
+
+static int sony_panel_is_compatible(const void *fdt, int node, uint32_t lcdid_adc)
+{
+    ssize_t num;
+    const uint32_t *arr = NULL;
+
+    num = fdt_getprop_array(fdt, node, "somc,lcd-id-adc", sizeof(*arr), (const void **)&arr);
+    if (num<0 || num!=2)
+        return 0;
+
+    if(lcdid_adc>=arr[0] && lcdid_adc<=arr[1])
+        return 1;
+
+    return 0;
+}
+
+#define MAX_LEVEL	32		/* how deeply nested we will go */
+static int sony_panel_by_id(const void *fdt, int node, uint32_t lcdid_adc, const char** nodename)
+{
+	int nextoffset;		/* next node offset from libfdt */
+	uint32_t tag;		/* current tag */
+	int level = 0;		/* keep track of nesting level */
+	const char *pathp;
+	int depth = 1;		/* the assumed depth of this node */
+
+	while (level >= 0) {
+		tag = fdt_next_tag(fdt, node, &nextoffset);
+		switch (tag) {
+		case FDT_BEGIN_NODE:
+			if (level <= depth) {
+				if (level == 1) {
+                    if(sony_panel_is_compatible(fdt, node, lcdid_adc)) {
+                        if(nodename) {
+                            pathp = fdt_get_name(fdt, node, NULL);
+			                if (pathp == NULL)
+				                pathp = "/* NULL pointer error */";
+			                if (*pathp == '\0')
+				                pathp = "/";	/* root is nameless */
+
+                            *nodename = pathp;
+                        }
+
+                        return node;
+                    }
+                }
+			}
+			level++;
+			if (level >= MAX_LEVEL) {
+				dprintf(CRITICAL, "Nested too deep, aborting.\n");
+				return -FDT_ERR_NOTFOUND;
+			}
+			break;
+		case FDT_END_NODE:
+			level--;
+			if (level == 0)
+				level = -1;		/* exit the loop */
+			break;
+		case FDT_END:
+			return -FDT_ERR_NOTFOUND;
+		case FDT_PROP:
+			break;
+		default:
+			if (level <= depth)
+				dprintf(CRITICAL, "Unknown tag 0x%08X\n", tag);
+			return -FDT_ERR_NOTFOUND;
+		}
+		node = nextoffset;
+	}
+	return -FDT_ERR_NOTFOUND;
+}
+
+static unsigned hex2unsigned(const char *x)
+{
+    unsigned n = 0;
+
+    if(strlen(x)>=2 && x[0]=='0' && x[1]=='x')
+        x+=2;
+
+    while(*x) {
+        switch(*x) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            n = (n << 4) | (*x - '0');
+            break;
+        case 'a': case 'b': case 'c':
+        case 'd': case 'e': case 'f':
+            n = (n << 4) | (*x - 'a' + 10);
+            break;
+        case 'A': case 'B': case 'C':
+        case 'D': case 'E': case 'F':
+            n = (n << 4) | (*x - 'A' + 10);
+            break;
+        default:
+            return n;
+        }
+        x++;
+    }
+
+    return n;
+}
+
+static char* sony_get_panel_nodename(const void *fdt) {
+    const char *value = cmdline_get(lkargs_get_command_line_list(), "lcdid_adc");
+    if (!value) return NULL;
+    uint32_t lcdid_adc = hex2unsigned(value);
+
+    int offset_soc = fdt_path_offset(fdt, "/soc/qcom,mdss_mdp");
+    if (offset_soc<0) {
+        dprintf(CRITICAL, "can't find soc node: %s\n", fdt_strerror(offset_soc));
+        return NULL;
+    }
+
+    const char* nodename = NULL;
+    sony_panel_by_id(fdt, offset_soc, lcdid_adc, &nodename);
+    if(nodename)
+        return safe_strdup(nodename);
+
+    return NULL;
+}
+
 int dtbreader_init_panel_data(struct panel_struct *panelstruct,
                               struct msm_panel_info *pinfo,
                               struct mdss_dsi_phy_ctrl *phy_db)
@@ -836,7 +961,10 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
     // get panel node name
     char *panel_node = lkargs_get_panel_name("mdss_mdp.panel");
     if (!panel_node) {
-        dprintf(CRITICAL, "lkargs_get_panel_name failed\n");
+        panel_node = sony_get_panel_nodename(lkargs_get_tags_backup());
+    }
+    if (!panel_node) {
+        dprintf(CRITICAL, "can't find panel node\n");
         return PANEL_TYPE_UNKNOWN;
     }
 
