@@ -21,6 +21,7 @@
 #include <bootimg.h>
 #include <string.h>
 #include <kernel/event.h>
+#include <reboot.h>
 
 #ifdef WITH_LIB_PRAM
 #include <lib/persistent_ram.h>
@@ -469,10 +470,6 @@ static void api_lcd_shutdown(void)
 /////////////////////////////////////////////////////////////////////////
 //                               RESET                                 //
 /////////////////////////////////////////////////////////////////////////
-
-#define NORMAL_MODE          0x77665501
-#define RECOVERY_MODE        0x77665502
-#define FASTBOOT_MODE        0x77665500
 
 static void api_reset_cold(const char *reason)
 {
