@@ -477,6 +477,10 @@ static void mdss_dsi_set_pll_src(void)
 			~USE_DSI1_PLL_FLAG;
 }
 
+__WEAK void target_gcdb_post_init_platform_data(struct mdss_dsi_phy_ctrl *phy_db) {
+
+}
+
 int gcdb_display_init(const char *panel_name, uint32_t rev, void *base)
 {
 	int ret = NO_ERROR;
@@ -488,6 +492,7 @@ int gcdb_display_init(const char *panel_name, uint32_t rev, void *base)
 
 	if (pan_type == PANEL_TYPE_DSI) {
 		target_dsi_phy_config(&dsi_video_mode_phy_db);
+		target_gcdb_post_init_platform_data(&dsi_video_mode_phy_db);
 		mdss_dsi_check_swap_status();
 		mdss_dsi_set_pll_src();
 		if (dsi_panel_init(&(panel.panel_info), &panelstruct)) {
