@@ -607,10 +607,47 @@ static int lkargs_fdt_insert_nodes(void *fdt, int target_offset)
     return 0;
 }
 
+static int disable_sony_ric(void *fdt)
+{
+    int i;
+    int ret;
+    uint32_t offset_ric_info;
+    int len;
+    const struct fdt_property *prop;
+
+    // get node
+    ret = fdt_path_offset(fdt, "/soc/sony,ric_info");
+    if (ret < 0) {
+        return 0;
+    }
+    offset_ric_info = ret;
+
+    // get property
+    prop = fdt_get_property(fdt, offset_ric_info, "sony,partition-names", &len);
+    if(!prop) return -1;
+
+    // patch partition names
+    char* data = (char*)prop->data;
+    for(i=0; i<len; i++) {
+        char* partname = &data[i];
+        partname[0] = '_';
+
+        // next
+        i+= strlen(partname);
+    }
+
+    return 0;
+}
+
 int lkargs_insert_chosen(void *fdt)
 {
     int ret = 0;
     uint32_t target_offset_chosen;
+
+    if (disable_sony_ric(fdt)) {
+        dprintf(CRITICAL, "Can't disable Sony RIC security.\n");
+        return -1;
+    }
 
     if (!tags_copy || fdt_check_header(tags_copy))
         return 0;
