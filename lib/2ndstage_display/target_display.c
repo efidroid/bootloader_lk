@@ -6,6 +6,7 @@
 #include <string.h>
 #include <mipi_dsi.h>
 #include <platform.h>
+#include <platform/timer.h>
 
 #if defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP3)
 #include <mdp3.h>
@@ -127,6 +128,18 @@ static void mdp_select_pipe_type(uint32_t pipe_type, uint32_t *left_pipe, uint32
     }
 }
 
+int mdp_dma_on(struct msm_panel_info *pinfo);
+
+#ifdef WITH_2NDSTAGE_DISPLAY_DMA_TRIGGER
+static struct msm_panel_info pinfo = {0};
+static void mdss_mdp_cmd_kickoff(void)
+{
+    mdp_dma_on(&pinfo);
+    dsb();
+    mdelay(15);
+}
+#endif
+
 static int mdp_dump_config(struct fbcon_config *fb)
 {
     uint32_t pipe_type;
@@ -148,6 +161,13 @@ static int mdp_dump_config(struct fbcon_config *fb)
     fb->stride = fb->width;
     fb->bpp = 24;
     fb->format = FB_FORMAT_RGB888;
+
+#ifdef WITH_2NDSTAGE_DISPLAY_DMA_TRIGGER
+    pinfo.pipe_type = pipe_type;
+    pinfo.dest = DISPLAY_1;
+
+    fb->update_start = mdss_mdp_cmd_kickoff;
+#endif
 
     return NO_ERROR;
 }
