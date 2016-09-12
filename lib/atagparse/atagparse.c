@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <baseband.h>
 #include <boot_device.h>
+#include <reboot.h>
 #include <partition_parser.h>
 #include <lib/atagparse.h>
 #include <lib/cmdline.h>
@@ -85,6 +86,7 @@ static int is_firststage = 0;
 
 // parsed data: accessible via public functions
 static struct list_node cmdline_list;
+static unsigned int uefi_bootmode = LKARGS_BOOTMODE_NORMAL;
 static char *uefi_bootpart = NULL;
 static struct list_node qciditem_list;
 
@@ -184,6 +186,11 @@ char *lkargs_get_panel_name(const char *key)
     }
 
     return ret;
+}
+
+unsigned int lkargs_get_uefi_bootmode(void)
+{
+    return uefi_bootmode;
 }
 
 const char *lkargs_get_uefi_bootpart(void)
