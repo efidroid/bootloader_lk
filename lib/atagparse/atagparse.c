@@ -624,12 +624,12 @@ static int disable_sony_ric(void *fdt)
 
     // get property
     prop = fdt_get_property(fdt, offset_ric_info, "sony,partition-names", &len);
-    if(!prop) return -1;
+    if (!prop) return -1;
 
     // patch partition names
-    char* data = (char*)prop->data;
-    for(i=0; i<len; i++) {
-        char* partname = &data[i];
+    char *data = (char *)prop->data;
+    for (i=0; i<len; i++) {
+        char *partname = &data[i];
         partname[0] = '_';
 
         // next
