@@ -10,6 +10,7 @@
 #include <partition_parser.h>
 #include <lib/atagparse.h>
 #include <lib/cmdline.h>
+#include <lib/hex2unsigned.h>
 #include "atags.h"
 
 #include <libfdt.h>
@@ -917,6 +918,19 @@ void atag_parse(void)
 
         // remove from list so it doesn't end up in the kernel cmdline
         cmdline_remove(&cmdline_list, "uefi.bootpart");
+    }
+
+    // SONY: warmboot bootmode
+    const char *warmboot_str = cmdline_get(&cmdline_list, "warmboot");
+    if (warmboot_str) {
+        unsigned int warmboot = efidroid_hex2unsigned(warmboot_str);
+        dprintf(INFO, "warmboot: 0x%08x\n", warmboot);
+
+        switch (warmboot) {
+            case RECOVERY_MODE:
+                uefi_bootmode = LKARGS_BOOTMODE_RECOVERY;
+                break;
+        }
     }
 
     // build and print hwinfo_lk
