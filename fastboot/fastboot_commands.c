@@ -13,6 +13,7 @@
 #include <linux/elf.h>
 #include <kernel/thread.h>
 #include <boot_stats.h>
+#include <lib/hex2unsigned.h>
 
 #if WITH_LIB_BIO
 #include <lib/bio.h>
@@ -120,34 +121,6 @@ struct fastboot_cmd_desc {
     const char *name;
     fastboot_cmd_fn cb;
 };
-
-/* todo: give lk strtoul and nuke this */
-static unsigned hex2unsigned(const char *x)
-{
-    unsigned n = 0;
-
-    while(*x) {
-        switch(*x) {
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-            n = (n << 4) | (*x - '0');
-            break;
-        case 'a': case 'b': case 'c':
-        case 'd': case 'e': case 'f':
-            n = (n << 4) | (*x - 'a' + 10);
-            break;
-        case 'A': case 'B': case 'C':
-        case 'D': case 'E': case 'F':
-            n = (n << 4) | (*x - 'A' + 10);
-            break;
-        default:
-            return n;
-        }
-        x++;
-    }
-
-    return n;
-}
 
 void cmd_oem_reboot_recovery(const char *arg, void *data, unsigned sz)
 {
@@ -532,9 +505,9 @@ static void cmd_oem_dump_partitiontable(const char *arg, void *data, unsigned sz
 static void cmd_oem_memfill(const char *arg, void *data, unsigned sz)
 {
     uint32_t i;
-    uint32_t testbase = hex2unsigned(arg);
+    uint32_t testbase = efidroid_hex2unsigned(arg);
     arg += 9;
-    uint32_t length = hex2unsigned(arg);
+    uint32_t length = efidroid_hex2unsigned(arg);
     for (i = 0; i < length; i++) {
         *(volatile uint8_t *)(testbase + i) = 0xff;
     }
@@ -574,9 +547,9 @@ static void cmd_oem_dumpatags(const char *arg, void *data, unsigned sz)
 #if defined(WITH_LIB_BASE64)
 static void cmd_oem_dumpmem(const char *arg, void *data, unsigned sz)
 {
-    uint32_t addr = hex2unsigned(arg);
+    uint32_t addr = efidroid_hex2unsigned(arg);
     arg += 9;
-    uint32_t size = hex2unsigned(arg);
+    uint32_t size = efidroid_hex2unsigned(arg);
 
     if (addr && size)
         fastboot_send_buf((void *)addr, size);
