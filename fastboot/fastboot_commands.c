@@ -10,10 +10,10 @@
 #include <platform/timer.h>
 #include <platform/iomap.h>
 #include <dev/fbcon.h>
-#include <linux/elf.h>
 #include <kernel/thread.h>
 #include <boot_stats.h>
 #include <lib/hex2unsigned.h>
+#include "elf.h"
 
 #if WITH_LIB_BIO
 #include <lib/bio.h>
