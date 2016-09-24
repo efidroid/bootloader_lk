@@ -357,6 +357,11 @@ void pm8994_reset_configure(uint8_t reset_type)
 	uint8_t slave_id[] = {0, 2};
 	uint8_t i;
 
+#ifdef QCOM_REBOOT_FORCE_WARM_RESET
+	if(reset_type==PON_PSHOLD_HARD_RESET)
+		reset_type = PON_PSHOLD_WARM_RESET;
+#endif
+
 	/* Reset sequence
 	1. Disable the ps hold for pm8994
 	2. set reset type for both pm8994 & pmi8994
@@ -380,6 +385,11 @@ void pm8x41_v2_reset_configure(uint8_t reset_type)
 {
 	uint8_t val;
 
+#ifdef QCOM_REBOOT_FORCE_WARM_RESET
+	if(reset_type==PON_PSHOLD_HARD_RESET)
+		reset_type = PON_PSHOLD_WARM_RESET;
+#endif
+
 	/* disable PS_HOLD_RESET */
 	REG_WRITE(PON_PS_HOLD_RESET_CTL, 0x0);
 
@@ -398,6 +408,11 @@ void pm8x41_v2_reset_configure(uint8_t reset_type)
 
 void pm8x41_reset_configure(uint8_t reset_type)
 {
+#ifdef QCOM_REBOOT_FORCE_WARM_RESET
+	if(reset_type==PON_PSHOLD_HARD_RESET)
+		reset_type = PON_PSHOLD_WARM_RESET;
+#endif
+
 	/* disable PS_HOLD_RESET */
 	REG_WRITE(PON_PS_HOLD_RESET_CTL2, 0x0);
 
