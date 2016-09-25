@@ -82,6 +82,18 @@ boot_uintn_t libboot_platform_machtype(void)
     return qciditem_get_zero("qcom,machtype");
 }
 
+boot_uint32_t libboot_qcdt_get_lge_rev(void) {
+    return qciditem_get_zero("lge,lge_rev");
+}
+
+boot_uint32_t libboot_qcdt_get_oppo_id0(void) {
+    return qciditem_get_zero("oppo,id0");
+}
+
+boot_uint32_t libboot_qcdt_get_oppo_id1(void) {
+    return qciditem_get_zero("oppo,id1");
+}
+
 void libboot_platform_memmove(void *dst, const void *src, boot_uintn_t num)
 {
     memmove(dst, src, num);
