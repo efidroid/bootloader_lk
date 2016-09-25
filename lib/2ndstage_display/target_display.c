@@ -87,26 +87,29 @@ static int mdp_dump_config(struct fbcon_config *fb)
 }
 
 #elif defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP5)
-static void mdp_dump_pipe_info(uint32_t *pipe_type, uint32_t *dual_pipe)
+static int mdp_dump_pipe_info(uint32_t *pipe_type, uint32_t *dual_pipe)
 {
-    uint32_t left_staging_level = readl(MDP_CTL_0_BASE + CTL_LAYER_0);
+    int rc;
 
     *dual_pipe = 0;
 
-    if (left_staging_level==0x0000200 || left_staging_level==0x0001200) {
-        *pipe_type = MDSS_MDP_PIPE_TYPE_RGB;
-        if (left_staging_level==0x0001200)
-            *dual_pipe = 1;
-    }
-    if (left_staging_level==0x0040000 || left_staging_level==0x0240000) {
-        *pipe_type = MDSS_MDP_PIPE_TYPE_DMA;
-        if (left_staging_level==0x0240000)
-            *dual_pipe = 1;
-    } else {
+    if (readl(MDP_VP_0_VIG_0_BASE + PIPE_SSPP_SRC0_ADDR)) {
         *pipe_type = MDSS_MDP_PIPE_TYPE_VIG;
-        if (left_staging_level==0x9)
-            *dual_pipe = 1;
+        rc = 0;
     }
+    else if (readl(MDP_VP_0_RGB_0_BASE + PIPE_SSPP_SRC0_ADDR)) {
+        *pipe_type = MDSS_MDP_PIPE_TYPE_RGB;
+        rc = 0;
+    }
+    else if (readl(MDP_VP_0_DMA_0_BASE + PIPE_SSPP_SRC0_ADDR)) {
+        *pipe_type = MDSS_MDP_PIPE_TYPE_DMA;
+        rc = 0;
+    }
+    else {
+        rc = -1;
+    }
+
+    return rc;
 }
 
 static void mdp_select_pipe_type(uint32_t pipe_type, uint32_t *left_pipe, uint32_t *right_pipe)
@@ -142,13 +145,17 @@ static void mdss_mdp_cmd_kickoff(void)
 
 static int mdp_dump_config(struct fbcon_config *fb)
 {
+    int rc;
     uint32_t pipe_type;
     uint32_t dual_pipe;
     uint32_t left_pipe;
     uint32_t right_pipe;
 
     // dump pipe info
-    mdp_dump_pipe_info(&pipe_type, &dual_pipe);
+    rc = mdp_dump_pipe_info(&pipe_type, &dual_pipe);
+    if(rc) {
+        return -1;
+    }
     dprintf(INFO, "%s: pipe_type=%u dual_pipe=%u\n", __func__, pipe_type, dual_pipe);
 
     // select pipes
