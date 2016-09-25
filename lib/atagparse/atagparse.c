@@ -14,7 +14,8 @@
 #include "atags.h"
 
 #include <libfdt.h>
-#include <dev_tree.h>
+#include <lib/boot.h>
+#include <lib/boot/qcdt.h>
 
 #ifdef MDTP_SUPPORT
 #include "mdtp.h"
@@ -488,17 +489,12 @@ next:
         dprintf(CRITICAL, "Could not find efidroid-soc-info.\n");
     } else {
         // read info from fdt
-        const efidroid_fdtinfo_t *socinfo = (const efidroid_fdtinfo_t *)prop_socinfo->data;
-        uint32_t platform_id = fdt32_to_cpu(socinfo->chipset);
-        uint32_t variant_id = fdt32_to_cpu(socinfo->platform);
-        uint32_t hw_subtype = fdt32_to_cpu(socinfo->subtype);
-        uint32_t soc_rev = fdt32_to_cpu(socinfo->revNum);
-        uint32_t pmic_model[4] = {
-            fdt32_to_cpu(socinfo->pmic_model[0]),
-            fdt32_to_cpu(socinfo->pmic_model[1]),
-            fdt32_to_cpu(socinfo->pmic_model[2]),
-            fdt32_to_cpu(socinfo->pmic_model[3]),
-        };
+        const dt_entry_local_t *dt_entry = (const dt_entry_local_t *)prop_socinfo->data;
+        uint32_t platform_id = dt_entry->platform_id;
+        uint32_t variant_id = dt_entry->variant_id;
+        uint32_t hw_subtype = dt_entry->board_hw_subtype;
+        uint32_t soc_rev = dt_entry->soc_rev;
+        const uint32_t *pmic_model = dt_entry->pmic_rev;
 
         // if subtype is 0, we have to use the subtype id from the variant_id
         if (hw_subtype==0) {
