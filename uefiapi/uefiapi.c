@@ -661,6 +661,15 @@ static int api_boot_get_hwid(const char *id, unsigned int *datap)
     return qciditem_get(id, datap);
 }
 
+static const char* api_boot_get_default_fdt_parser(void)
+{
+#ifdef DEVICE_DEFAULT_FDT_PARSER
+    return DEVICE_DEFAULT_FDT_PARSER;
+#else
+    return NULL;
+#endif
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                           USB GADGET                                //
@@ -1180,6 +1189,7 @@ lkapi_t uefiapi = {
     .boot_exec = api_boot_exec,
 
     .boot_get_hwid = api_boot_get_hwid,
+    .boot_get_default_fdt_parser = api_boot_get_default_fdt_parser,
     .boot_get_cmdline_extension = api_boot_get_cmdline_extension,
     .boot_extend_atags = api_boot_extend_atags,
     .boot_extend_fdt = api_boot_extend_fdt,
