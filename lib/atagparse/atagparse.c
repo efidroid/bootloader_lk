@@ -412,6 +412,25 @@ static void print_qchwinfo(const char *prefix, qchwinfo_t *hwinfo)
            );
 }
 
+static char *fdt_getprop_str(const void *fdt, int offset, const char *name)
+{
+    int len;
+    const struct fdt_property *prop;
+
+    // get property
+    prop = fdt_get_property(fdt, offset, name, &len);
+    if (!prop) return NULL;
+
+    // allocate data
+    char *str = malloc(len+1);
+    if(!str) return NULL;
+
+    memcpy(str, prop->data, len);
+    str[len] = 0;
+
+    return str;
+}
+
 static int parse_fdt(void *fdt, qchwinfo_t **hwinfo)
 {
     int ret = 0;
@@ -485,11 +504,16 @@ next:
     // get socinfo property
     int len_socinfo;
     const struct fdt_property *prop_socinfo = fdt_get_property(fdt, offset, "efidroid-soc-info", &len_socinfo);
+    const char *fdt_parser_name = fdt_getprop_str(fdt, offset, "efidroid-fdt-parser");
     if (!prop_socinfo) {
         dprintf(CRITICAL, "Could not find efidroid-soc-info.\n");
+    } else if(len_socinfo!=sizeof(dt_entry_data_t)) {
+        dprintf(CRITICAL, "Invalid efidroid-soc-info size %u/%u.\n", len_socinfo, sizeof(dt_entry_data_t));
+    } else if(!fdt_parser_name) {
+        dprintf(CRITICAL, "Could not find efidroid-fdt-parser.\n");
     } else {
         // read info from fdt
-        const dt_entry_local_t *dt_entry = (const dt_entry_local_t *)prop_socinfo->data;
+        const dt_entry_data_t *dt_entry = (const dt_entry_data_t *)prop_socinfo->data;
         uint32_t platform_id = dt_entry->platform_id;
         uint32_t variant_id = dt_entry->variant_id;
         uint32_t hw_subtype = dt_entry->board_hw_subtype;
