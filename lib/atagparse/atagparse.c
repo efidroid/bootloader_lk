@@ -525,6 +525,15 @@ next:
             hw_subtype = (variant_id&0xff000000)>>24;
         }
 
+        if(!strcmp(fdt_parser_name, "qcom_oppo") && dt_entry->version>=DEV_TREE_VERSION_V2) {
+            qciditem_add("oppo,id0", dt_entry->u.oppo.id0);
+            qciditem_add("oppo,id1", dt_entry->u.oppo.id1);
+        }
+
+        if(!strcmp(fdt_parser_name, "qcom_lge")) {
+            qciditem_add("lge,lge_rev", dt_entry->u.lge.lge_rev);
+        }
+
         // build hwinfo_tags
         qchwinfo_t *hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
         ASSERT(hwinfo_tags);
