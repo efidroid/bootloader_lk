@@ -55,6 +55,16 @@ static int mdp_dump_config(struct fbcon_config *fb)
 }
 
 #elif defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP4)
+extern void mdp_start_dma(void);
+
+static void mipi_update_sw_trigger(void) {
+	mdp_start_dma();
+	dsb();
+	mdelay(10);
+	dsb();
+	writel(0x1, DSI_CMD_MODE_MDP_SW_TRIGGER);
+}
+
 static int mdp_dump_config(struct fbcon_config *fb)
 {
     fb->base = (void *) readl(MDP_DMA_P_BUF_ADDR);
