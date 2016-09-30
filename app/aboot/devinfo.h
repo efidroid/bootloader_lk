@@ -1,5 +1,5 @@
 /*
- * * Copyright (c) 2011,2014-2015, The Linux Foundation. All rights reserved.
+ * * Copyright (c) 2011,2014-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -37,6 +37,11 @@ typedef struct device_info device_info;
 #define MAX_PANEL_ID_LEN 64
 #define MAX_VERSION_LEN  64
 
+enum unlock_type {
+	UNLOCK = 0,
+	UNLOCK_CRITICAL,
+};
+
 #if VBOOT_MOTA
 struct device_info
 {
@@ -48,6 +53,7 @@ struct device_info
 	char display_panel[MAX_PANEL_ID_LEN];
 	char bootloader_version[MAX_VERSION_LEN];
 	char radio_version[MAX_VERSION_LEN];
+	bool is_unlock_critical;
 };
 #else
 struct device_info
@@ -60,6 +66,7 @@ struct device_info
 	char bootloader_version[MAX_VERSION_LEN];
 	char radio_version[MAX_VERSION_LEN];
 	bool verity_mode; // 1 = enforcing, 0 = logging
+	bool is_unlock_critical;
 };
 #endif
 #endif
