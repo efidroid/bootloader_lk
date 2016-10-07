@@ -30,17 +30,22 @@
 #include <debug.h>
 #include <smem.h>
 #include <err.h>
+#include <string.h>
 #include <msm_panel.h>
 #include <mipi_dsi.h>
+#include <mdss_hdmi.h>
 #include <pm8x41.h>
 #include <pm8x41_wled.h>
 #include <board.h>
 #include <mdp5.h>
+#include <edp.h>
 #include <scm.h>
 #include <endian.h>
+#include <target.h>
 #include <platform/gpio.h>
 #include <platform/clock.h>
 #include <platform/iomap.h>
+#include <platform/timer.h>
 #include <target/display.h>
 #include "include/panel.h"
 #include "include/display_resource.h"
@@ -244,7 +249,7 @@ int target_ldo_ctrl(uint8_t enable, struct msm_panel_info *pinfo)
 			0x100 * ldo_entry_array[ldocounter].ldo_id),
 			ldo_entry_array[ldocounter].ldo_type);
 
-		dprintf(SPEW, "Setting %s\n",
+		dprintf(SPEW, "Setting %u\n",
 				ldo_entry_array[ldocounter].ldo_id);
 
 		/* Set voltage during power on */
@@ -261,7 +266,7 @@ int target_ldo_ctrl(uint8_t enable, struct msm_panel_info *pinfo)
 	return NO_ERROR;
 }
 
-int target_display_pre_on()
+int target_display_pre_on(void)
 {
 	writel(0x000000FA, MDP_QOS_REMAPPER_CLASS_0);
 	writel(0x00000055, MDP_QOS_REMAPPER_CLASS_1);
@@ -306,7 +311,7 @@ int target_hdmi_pll_clock(uint8_t enable, struct msm_panel_info *pinfo)
 	return NO_ERROR;
 }
 
-int target_hdmi_panel_clock(uint8_t enable)
+int target_hdmi_panel_clock(uint8_t enable, struct msm_panel_info *pinfo)
 {
 	uint32_t ret;
 
@@ -365,7 +370,7 @@ static void target_hdmi_vreg_enable(bool enable)
 	}
 }
 
-int target_hdmi_regulator_ctrl(bool enable)
+int target_hdmi_regulator_ctrl(uint8_t enable)
 {
 	target_hdmi_mvs_enable(enable);
 	target_hdmi_vreg_enable(enable);
@@ -373,7 +378,7 @@ int target_hdmi_regulator_ctrl(bool enable)
 	return 0;
 }
 
-int target_hdmi_gpio_ctrl(bool enable)
+int target_hdmi_gpio_ctrl(uint8_t enable)
 {
 	gpio_tlmm_config(hdmi_cec_gpio.pin_id, 1,	/* gpio 31, CEC */
 		hdmi_cec_gpio.pin_direction, hdmi_cec_gpio.pin_pull,
@@ -534,11 +539,11 @@ void target_display_init(const char *panel_name)
 		return;
 	} else if (!strcmp(oem.panel, HDMI_PANEL_NAME)) {
 		dprintf(INFO, "%s: HDMI is primary\n", __func__);
-		mdss_hdmi_display_init(MDP_REV_50, HDMI_FB_ADDR);
+		mdss_hdmi_display_init(MDP_REV_50, (void *)HDMI_FB_ADDR);
 		return;
 	}
 
-	ret = gcdb_display_init(oem.panel, MDP_REV_50, MIPI_FB_ADDR);
+	ret = gcdb_display_init(oem.panel, MDP_REV_50, (void *)MIPI_FB_ADDR);
 	if (ret) {
 		target_force_cont_splash_disable(true);
 		msm_display_off();

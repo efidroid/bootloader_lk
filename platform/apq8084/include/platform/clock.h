@@ -125,6 +125,15 @@ void mmss_dsi_clock_disable(uint32_t dual_dsi);
 void mmss_bus_clock_enable(void);
 void mmss_bus_clock_disable(void);
 void mdp_clock_enable(void);
-void mdp_clock_disable();
+void mdp_clock_disable(void);
+
+void hdmi_clk_enable(void);
+void hdmi_clk_disable(void);
+void hdmi_pixel_clk_enable(uint32_t rate);
+void hdmi_pixel_clk_disable(void);
+void hdmi_ahb_core_clk_enable(void);
+void hdmi_core_ahb_clk_disable(void);
+void edp_clk_enable(void);
+void edp_clk_disable(void);
 
 #endif

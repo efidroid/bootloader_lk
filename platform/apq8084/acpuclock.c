@@ -34,6 +34,7 @@
 #include <pm8x41.h>
 #include <platform/clock.h>
 #include <platform/iomap.h>
+#include <platform/timer.h>
 
 void hsusb_clock_init(void)
 {
