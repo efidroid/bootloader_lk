@@ -39,8 +39,10 @@
 
 #define LOCAL_TRACE 0
 
+// CLASSIC BITMAP
 static unsigned long key_bitmap[BITMAP_NUM_WORDS(MAX_KEYS)];
 
+// NEW EVENTS
 typedef struct {
 	struct list_node node;
 	uint16_t code;
@@ -50,41 +52,11 @@ typedef struct {
 static struct list_node event_queue;
 static struct list_node event_sources;
 
-int keys_poll(void)
-{
-	key_event_source_t *source;
-	list_for_every_entry(&event_sources, source, key_event_source_t, node) {
-		// update time
-		time_t current = current_time();
-		source->delta = current-source->last;
-		source->last = current;
-
-		source->poll(source);
-	}
-
-	return 0;
-}
-
 void keys_init(void)
 {
 	memset(key_bitmap, 0, sizeof(key_bitmap));
 	list_initialize(&event_queue);
 	list_initialize(&event_sources);
-}
-
-void keys_add_source(key_event_source_t* source) {
-	int i;
-
-	source->last = INFINITE_TIME;
-
-	for(i=0; i<MAX_KEYS; i++) {
-		source->keymap[i].time = 0;
-		source->keymap[i].repeat = false;
-		source->keymap[i].longpress = false;
-		source->keymap[i].state = KEYSTATE_RELEASED;
-	}
-
-	list_add_tail(&event_sources, &source->node);
 }
 
 int keys_post_event(uint16_t code, int16_t value)
@@ -101,10 +73,11 @@ int keys_post_event(uint16_t code, int16_t value)
 	else
 		bitmap_clear(key_bitmap, code);
 
-	// signal
 	LTRACEF("key state change: %d %d\n", code, value);
 
 	if(!value) return NO_ERROR;
+
+    // EVENTS
 
 	uint8_t seq[3];
 	uint8_t seqsz = 0;
@@ -155,6 +128,39 @@ int keys_get_state(uint16_t code)
 	}
 
 	return bitmap_test(key_bitmap, code);
+}
+
+
+// EVENT FUNCTIONS
+
+int keys_poll(void)
+{
+	key_event_source_t *source;
+	list_for_every_entry(&event_sources, source, key_event_source_t, node) {
+		// update time
+		time_t current = current_time();
+		source->delta = current-source->last;
+		source->last = current;
+
+		source->poll(source);
+	}
+
+	return 0;
+}
+
+void keys_add_source(key_event_source_t* source) {
+	int i;
+
+	source->last = INFINITE_TIME;
+
+	for(i=0; i<MAX_KEYS; i++) {
+		source->keymap[i].time = 0;
+		source->keymap[i].repeat = false;
+		source->keymap[i].longpress = false;
+		source->keymap[i].state = KEYSTATE_RELEASED;
+	}
+
+	list_add_tail(&event_sources, &source->node);
 }
 
 void keys_clear_all(void)
