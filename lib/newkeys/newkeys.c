@@ -12,13 +12,37 @@ typedef struct {
     uint16_t value;
 } newkey_event_t;
 
+static unsigned long key_bitmap[BITMAP_NUM_WORDS(MAX_KEYS)];
 static struct list_node event_queue;
 static struct list_node event_sources;
 
 void newkeys_init(void)
 {
+    memset(key_bitmap, 0, sizeof(key_bitmap));
     list_initialize(&event_queue);
     list_initialize(&event_sources);
+}
+
+static inline int newkeys_set_keystate(uint16_t code, int16_t value)
+{
+    if (code >= MAX_KEYS) {
+        return ERR_INVALID_ARGS;
+    }
+
+    if (value)
+        bitmap_set(key_bitmap, code);
+    else
+        bitmap_clear(key_bitmap, code);
+
+    return NO_ERROR;
+}
+
+static inline int newkeys_get_keystate(uint16_t code)
+{
+    if (code >= MAX_KEYS) {
+        return ERR_INVALID_ARGS;
+    }
+    return bitmap_test(key_bitmap, code);
 }
 
 int newkeys_post_event(uint16_t code, int16_t value)
@@ -136,6 +160,9 @@ int newkeys_has_event(void)
 
 int newkeys_set_report_key(newkey_event_source_t *source, uint16_t code, uint16_t value)
 {
+    // keep track of the actual state
+    newkeys_set_keystate(code, value);
+
     // update key time
     source->keymap[code].time+=source->delta;
 
@@ -143,50 +170,46 @@ int newkeys_set_report_key(newkey_event_source_t *source, uint16_t code, uint16_
         case KEYSTATE_RELEASED:
             if (value) {
                 // change to pressed
-                if (source->keymap[code].enable_longpress) {
-                    source->keymap[code].time=0;
-                    source->keymap[code].state = KEYSTATE_LONGPRESS_WAIT;
-                } else {
-                    newkeys_post_event(code, 1);
-                    source->keymap[code].time=0;
-                    source->keymap[code].state = KEYSTATE_PRESSED;
-                }
+                source->keymap[code].time=0;
+                source->keymap[code].state = KEYSTATE_PRESSED;
             }
             break;
 
         case KEYSTATE_PRESSED:
-            if (!value && source->keymap[code].time>50) {
-                // change to released
-                source->keymap[code].time=0;
-                source->keymap[code].repeat=false;
-                source->keymap[code].longpress = false;
-                source->keymap[code].state = KEYSTATE_RELEASED;
-                newkeys_post_event(code, 0);
-            }
-
-            // key repeat
-            else if ((source->keymap[code].repeat && source->keymap[code].time>=200) || source->keymap[code].time>=500) {
-                newkeys_post_event(code, 1);
-                source->keymap[code].time=0;
-                source->keymap[code].repeat=true;
-            }
-            break;
-
-        case KEYSTATE_LONGPRESS_WAIT:
             if (value) {
-                if (!source->keymap[code].longpress && source->keymap[code].time>=500) {
-                    if (keys_get_state(KEY_VOLUMEDOWN)) {
-                        // report 's'
-                        newkeys_post_event(0x73, 1);
-                        newkeys_post_event(0x73, 0);
-                    } else if (keys_get_state(KEY_VOLUMEUP)) {
-                        // report 'e'
-                        newkeys_post_event(0x65, 1);
-                        newkeys_post_event(0x65, 0);
-                    } else {
-                        // report spacebar
-                        newkeys_post_event(32, 1);
-                        newkeys_post_event(32, 0);
+                // keyrepeat
+                if(source->keymap[code].repeat && source->keymap[code].time>=200) {
+                    newkeys_post_event(code, 1);
+                    source->keymap[code].time=0;
+                    source->keymap[code].repeat=true;
+                }
+
+                else if (!source->keymap[code].longpress && source->keymap[code].time>=500) {
+                    // POWER, handle key combos
+                    if(code==13) {
+                        if (newkeys_get_keystate(KEY_VOLUMEDOWN)) {
+                            // report 's'
+                            newkeys_post_event(0x73, 1);
+                            newkeys_post_event(0x73, 0);
+                        } else if (newkeys_get_keystate(KEY_VOLUMEUP)) {
+                            // report 'e'
+                            newkeys_post_event(0x65, 1);
+                            newkeys_post_event(0x65, 0);
+                        } else {
+                            // report spacebar
+                            newkeys_post_event(32, 1);
+                            newkeys_post_event(32, 0);
+                        }
+                    }
+
+                    // post first keyrepeat event
+                    else {
+                        // only start keyrepeat if we're not doing a combo
+                        if (!newkeys_get_keystate(13)) {
+                            newkeys_post_event(code, 1);
+                            source->keymap[code].time=0;
+                            source->keymap[code].repeat=true;
+                        }
                     }
 
                     source->keymap[code].longpress=true;
@@ -200,8 +223,8 @@ int newkeys_set_report_key(newkey_event_source_t *source, uint16_t code, uint16_
                     source->keymap[code].state = KEYSTATE_LONGPRESS_RELEASE;
                 }
 
-                else if (source->keymap[code].time>50) {
-                    // we reported a longpress already
+                else if (source->keymap[code].time>=10) {
+                    // we reported another key already
                     source->keymap[code].time=0;
                     source->keymap[code].repeat=false;
                     source->keymap[code].longpress = false;

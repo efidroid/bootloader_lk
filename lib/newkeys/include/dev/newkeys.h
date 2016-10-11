@@ -44,7 +44,6 @@ typedef int (*newkey_event_poll_t)(newkey_event_source_t *source);
 typedef enum {
     KEYSTATE_RELEASED,
     KEYSTATE_PRESSED,
-    KEYSTATE_LONGPRESS_WAIT,
     KEYSTATE_LONGPRESS_RELEASE,
 } newkeystate_t;
 
@@ -53,8 +52,6 @@ typedef struct {
     bool repeat;
     bool longpress;
     newkeystate_t state;
-
-    bool enable_longpress;
 } newkeymap_t;
 
 struct newkey_event_source {
