@@ -4,16 +4,13 @@
 #include <debug.h>
 #include <string.h>
 #include <malloc.h>
-#include <dev/keys.h>
+#include <dev/newkeys.h>
 
-#define LOCAL_TRACE 0
-
-// NEW EVENTS
 typedef struct {
     struct list_node node;
     uint16_t code;
     uint16_t value;
-} key_event_t;
+} newkey_event_t;
 
 static struct list_node event_queue;
 static struct list_node event_sources;
@@ -29,6 +26,9 @@ int newkeys_post_event(uint16_t code, int16_t value)
     int i;
     uint8_t seq[3];
     uint8_t seqsz = 0;
+
+    // we do not report up events
+    if (!value) return NO_ERROR;
 
     if (code >= MAX_KEYS) {
         return ERR_INVALID_ARGS;
@@ -60,7 +60,7 @@ int newkeys_post_event(uint16_t code, int16_t value)
 
     for (i=0; i<seqsz; i++) {
         // create event
-        key_event_t *event = malloc(sizeof(key_event_t));
+        newkey_event_t *event = malloc(sizeof(newkey_event_t));
         event->code = seq[i];
         event->value = value;
 
@@ -105,7 +105,7 @@ void newkeys_add_source(newkey_event_source_t *source)
 void newkeys_delete_all_events(void)
 {
     while (newkeys_has_event()) {
-        key_event_t *event = list_remove_tail_type(&event_queue, key_event_t, node);
+        newkey_event_t *event = list_remove_tail_type(&event_queue, newkey_event_t, node);
         free(event);
     }
 }
@@ -117,7 +117,7 @@ int newkeys_get_next_event(uint16_t *code, uint16_t *value)
         return ERR_NOT_READY;
 
     // get event
-    key_event_t *event = list_remove_head_type(&event_queue, key_event_t, node);
+    newkey_event_t *event = list_remove_head_type(&event_queue, newkey_event_t, node);
 
     // set result code
     *code = event->code;

@@ -36,6 +36,7 @@
 #include <list.h>
 #include <platform.h>
 #include <assert.h>
+#include <dev/keys.h>
 
 typedef struct newkey_event_source newkey_event_source_t;
 typedef int (*newkey_event_poll_t)(newkey_event_source_t *source);
@@ -67,17 +68,15 @@ struct newkey_event_source {
 };
 
 void newkeys_init(void);
+int newkeys_post_event(uint16_t code, int16_t value);
 int newkeys_poll(void);
 void newkeys_add_source(newkey_event_source_t *source);
 void newkeys_delete_all_events(void);
 int newkeys_get_next_event(uint16_t *code, uint16_t *value);
 int newkeys_has_event(void);
 
-static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t code, uint16_t *pvalue)
+static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t code, uint16_t value)
 {
-    int rc = 0;
-    uint16_t value = *pvalue;
-
     // update key time
     source->keymap[code].time+=source->delta;
 
@@ -89,8 +88,7 @@ static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t
                     source->keymap[code].time=0;
                     source->keymap[code].state = KEYSTATE_LONGPRESS_WAIT;
                 } else {
-                    *pvalue = 1;
-                    rc = 1;
+                    newkeys_post_event(code, 1);
                     source->keymap[code].time=0;
                     source->keymap[code].state = KEYSTATE_PRESSED;
                 }
@@ -104,14 +102,12 @@ static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t
                 source->keymap[code].repeat=false;
                 source->keymap[code].longpress = false;
                 source->keymap[code].state = KEYSTATE_RELEASED;
-                *pvalue = 0;
-                rc = 1;
+                newkeys_post_event(code, 0);
             }
 
             // key repeat
             else if ((source->keymap[code].repeat && source->keymap[code].time>=200) || source->keymap[code].time>=500) {
-                *pvalue = 1;
-                rc = 1;
+                newkeys_post_event(code, 1);
                 source->keymap[code].time=0;
                 source->keymap[code].repeat=true;
             }
@@ -122,16 +118,16 @@ static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t
                 if (!source->keymap[code].longpress && source->keymap[code].time>=500) {
                     if (keys_get_state(KEY_VOLUMEDOWN)) {
                         // report 's'
-                        keys_post_event(0x73, 1);
-                        keys_post_event(0x73, 0);
+                        newkeys_post_event(0x73, 1);
+                        newkeys_post_event(0x73, 0);
                     } else if (keys_get_state(KEY_VOLUMEUP)) {
                         // report 'e'
-                        keys_post_event(0x65, 1);
-                        keys_post_event(0x65, 0);
+                        newkeys_post_event(0x65, 1);
+                        newkeys_post_event(0x65, 0);
                     } else {
                         // report spacebar
-                        keys_post_event(32, 1);
-                        keys_post_event(32, 0);
+                        newkeys_post_event(32, 1);
+                        newkeys_post_event(32, 0);
                     }
 
                     source->keymap[code].longpress=true;
@@ -141,8 +137,7 @@ static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t
             else {
                 if (!source->keymap[code].longpress) {
                     // we supressed down, so report it now
-                    *pvalue = 1;
-                    rc = 1;
+                    newkeys_post_event(code, 1);
                     source->keymap[code].state = KEYSTATE_LONGPRESS_RELEASE;
                 }
 
@@ -162,15 +157,14 @@ static inline int newkeys_set_report_key(newkey_event_source_t *source, uint16_t
             source->keymap[code].repeat=false;
             source->keymap[code].longpress = false;
             source->keymap[code].state = KEYSTATE_RELEASED;
-            *pvalue = 0;
-            rc = 1;
+            newkeys_post_event(code, 0);
             break;
 
         default:
             ASSERT(0);
     }
 
-    return rc;
+    return NO_ERROR;
 }
 
 #endif /* __DEV_NEWKEYS_H */
