@@ -49,6 +49,10 @@
 #include <platform/timer.h>
 #include <platform.h>
 
+#ifdef WITH_KERNEL_UEFIAPI
+#include <dev/newkeys.h>
+#endif
+
 #define LINUX_MACHTYPE_8660_QT      3298
 
 struct gpio_kp {
@@ -470,7 +474,7 @@ scan_qwerty_gpio_keypad(struct timer *timer, time_t now, void *arg)
 
 #ifdef WITH_KERNEL_UEFIAPI
 static int
-report_qwerty_gpio_keypad(key_event_source_t* source)
+report_qwerty_gpio_keypad(newkey_event_source_t* source)
 {
 	int i=0;
 	int num =0;
@@ -489,28 +493,18 @@ report_qwerty_gpio_keypad(key_event_source_t* source)
 		keypad->key_gpio_get(keypad->gpiomap[i], &key_status);
 
 		/*Post event if key pressed*/
-		uint16_t value = key_status;
-		if(keys_set_report_key(source, keypad->keymap[i], &value)) {
-			switch(keypad->keymap[i]) {
-				case KEY_VOLUMEUP:
-					keys_post_event(KEY_VOLUMEUP, value);
-					break;
-				case KEY_VOLUMEDOWN:
-					keys_post_event(KEY_VOLUMEDOWN, value);
-					break;
-			}
-		}
+		newkeys_set_report_key(source, keypad->keymap[i], key_status);
 	}
 
 	return 0;
 }
 
-static int event_source_poll(key_event_source_t* source) {
+static int event_source_poll(newkey_event_source_t* source) {
 	report_qwerty_gpio_keypad(source);
 	return NO_ERROR;
 }
 
-static key_event_source_t event_source = {
+static newkey_event_source_t event_source = {
 	.poll = event_source_poll
 };
 #endif
@@ -529,7 +523,7 @@ void ssbi_gpio_keypad_init(struct qwerty_keypad_info  *qwerty_kp)
 #ifdef WITH_KERNEL_UEFIAPI
 	// register event source
 	event_source.pdata = qwerty_kp;
-	keys_add_source(&event_source);
+	newkeys_add_source(&event_source);
 #else
 	event_init(&qwerty_keypad->full_scan, false, EVENT_FLAG_AUTOUNSIGNAL);
 	timer_initialize(&qwerty_keypad->timer);
