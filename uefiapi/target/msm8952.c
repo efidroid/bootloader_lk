@@ -2,7 +2,7 @@
 #include <board.h>
 #include <stdint.h>
 #include <pm8x41.h>
-#include <dev/keys.h>
+#include <dev/newkeys.h>
 #include <platform/iomap.h>
 
 #include <uefiapi.h>
@@ -19,27 +19,16 @@ static int target_power_key(void)
     return pm8x41_get_pwrkey_is_pressed();
 }
 
-static int event_source_poll(key_event_source_t *source)
+static int event_source_poll(newkey_event_source_t *source)
 {
-    uint16_t value = target_power_key();
-    if (keys_set_report_key(source, 0, &value)) {
-        keys_post_event(13, value);
-    }
-
-    value = target_volume_up();
-    if (keys_set_report_key(source, 1, &value)) {
-        keys_post_event(KEY_VOLUMEUP, value);
-    }
-
-    value = target_volume_down();
-    if (keys_set_report_key(source, 2, &value)) {
-        keys_post_event(KEY_VOLUMEDOWN, value);
-    }
+    newkeys_set_report_key(source, 13, target_power_key());
+    newkeys_set_report_key(source, KEY_VOLUMEUP, target_volume_up());
+    newkeys_set_report_key(source, KEY_VOLUMEDOWN, target_volume_down());
 
     return NO_ERROR;
 }
 
-static key_event_source_t event_source = {
+static newkey_event_source_t event_source = {
     .poll = event_source_poll
 };
 
@@ -49,8 +38,7 @@ static key_event_source_t event_source = {
 
 void uefiapi_platform_init_post(void)
 {
-    keys_add_source(&event_source);
-    event_source.keymap[0].enable_longpress = true;
+    newkeys_add_source(&event_source);
 }
 
 void *api_mmap_get_platform_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)

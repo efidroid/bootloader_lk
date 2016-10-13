@@ -5,7 +5,7 @@
 #include <malloc.h>
 #include <lib/bio.h>
 #include <lib/heap.h>
-#include <dev/keys.h>
+#include <dev/newkeys.h>
 #include <dev/fbcon.h>
 #include <kernel/thread.h>
 #include <platform/irqs.h>
@@ -67,6 +67,8 @@ static void api_platform_early_init(void)
 #ifdef WITH_LIB_PRAM
     persistent_ram_init(PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE);
 #endif
+
+    newkeys_init();
 
     // disable all known interrupts because UEFI enables interrupts before initializing the GIC
     int i;
@@ -153,6 +155,11 @@ __WEAK const char *api_platform_get_uefi_bootpart(void)
 /////////////////////////////////////////////////////////////////////////
 static int api_serial_poll_char(void)
 {
+    // poll keys
+    newkeys_poll();
+    if(newkeys_has_event()) return 1;
+
+    // check UART
     return dtstc();
 }
 
@@ -166,7 +173,7 @@ static int api_serial_read_char(char *cp)
     // return keys if available
     uint16_t code;
     uint16_t value;
-    if (keys_get_next(&code, &value)==NO_ERROR) {
+    if (newkeys_get_next_event(&code, &value)==NO_ERROR) {
         *cp = (char)code;
         return 1;
     }
