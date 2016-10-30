@@ -143,19 +143,6 @@ static struct mdtp_fbimage* mdtp_read_mmc_image(uint32_t offset, uint32_t width,
 }
 
 /**
- * flush fbcon display
- *
- * The function is duplicated from fbcon.c
- */
-static void fbcon_flush(void)
-{
-	if (fb_config->update_start)
-		fb_config->update_start();
-	if (fb_config->update_done)
-		while (!fb_config->update_done());
-}
-
-/**
  * Clear complete section on the screen.
  * The section is of section_height, and is located from the y
  * coordinate and down.
