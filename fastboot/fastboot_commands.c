@@ -230,13 +230,13 @@ static void cmd_oem_bootaddresses(const char *arg, void *data, unsigned sz)
 #ifdef ABOOT_IGNORE_BOOT_HEADER_ADDRS
     char buf[1024];
 
-    snprintf(buf, sizeof(buf), "kernel: 0x%08x", ABOOT_FORCE_KERNEL_ADDR);
+    snprintf(buf, sizeof(buf), "kernel: 0x%016llx", (uint64_t)ABOOT_FORCE_KERNEL_ADDR);
     fastboot_info(buf);
-    snprintf(buf, sizeof(buf), "kernel64: 0x%016x", ABOOT_FORCE_KERNEL64_ADDR);
+    snprintf(buf, sizeof(buf), "kernel64: 0x%016llx", (uint64_t)ABOOT_FORCE_KERNEL64_ADDR);
     fastboot_info(buf);
-    snprintf(buf, sizeof(buf), "ramdisk: 0x%08x", ABOOT_FORCE_RAMDISK_ADDR);
+    snprintf(buf, sizeof(buf), "ramdisk: 0x%016llx", (uint64_t)ABOOT_FORCE_RAMDISK_ADDR);
     fastboot_info(buf);
-    snprintf(buf, sizeof(buf), "tags: 0x%08x", ABOOT_FORCE_TAGS_ADDR);
+    snprintf(buf, sizeof(buf), "tags: 0x%016llx", (uint64_t)ABOOT_FORCE_TAGS_ADDR);
     fastboot_info(buf);
 #else
     fastboot_info("from boot image");
