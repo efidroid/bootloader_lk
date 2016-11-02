@@ -149,7 +149,7 @@ static void mdss_mdp_cmd_kickoff(void)
 {
     mdp_dma_on(&pinfo);
     dsb();
-    mdelay(15);
+    mdelay(20);
 }
 #endif
 

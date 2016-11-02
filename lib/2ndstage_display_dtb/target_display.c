@@ -18,7 +18,7 @@ static void mdss_mdp_cmd_kickoff(void)
 {
     mdp_dma_on(dtbpanel_config->pinfo);
     dsb();
-    mdelay(15);
+    mdelay(20);
 }
 
 int target_backlight_ctrl(struct backlight *bl, uint8_t enable)
