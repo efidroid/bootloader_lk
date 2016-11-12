@@ -59,6 +59,11 @@ __WEAK void uefiapi_platform_init_post(void)
 
 }
 
+__WEAK void uefiapi_platform_init_late(void)
+{
+
+}
+
 void platform_uninit(void);
 void target_uninit(void);
 
@@ -115,6 +120,7 @@ static void api_platform_init(void)
 
     // target specific INIT
     uefiapi_platform_init_post();
+    uefiapi_platform_init_late();
 
     // init VBOR
     vnor_init();
