@@ -74,6 +74,20 @@ typedef struct {
     qcpmicinfo_t pmic_rev[4];
 } qchwinfo_t;
 
+typedef struct {
+    char project_name[8];
+    uint32_t hw_version;
+    uint32_t rf_v1;
+    uint32_t rf_v2;
+    uint32_t rf_v3;
+    uint32_t modem;
+    uint32_t operator;
+    uint32_t ddr_manufacture_info;
+    uint32_t ddr_raw;
+    uint32_t ddr_column;
+    uint32_t ddr_reserve_info;
+} oppo_project_info_t;
+
 // lk boot args
 extern uint32_t lk_boot_args[4];
 
@@ -900,6 +914,25 @@ void atag_parse(void)
         // this board probably doesn't have official atags support
         machinetype = board_target_id();
     }
+
+#ifdef DEVICE_DEFAULT_FDT_PARSER
+    if (!strcmp(DEVICE_DEFAULT_FDT_PARSER, "qcom_oppo")) {
+        oppo_project_info_t project_info;
+        unsigned int ret = smem_read_alloc_entry_offset(136, &project_info, sizeof(project_info), 0);
+        if (ret) {
+            dprintf(CRITICAL, "can't read SMEM_PROJECT_INFO: %u\n", ret);
+        }
+        else {
+            dprintf(INFO, "project_name:%s hw_version:%u rf_v1:%u rf_v2:%u: rf_v3:%u\n",
+                    project_info.project_name, project_info.hw_version,
+                    project_info.rf_v1, project_info.rf_v2, project_info.rf_v3);
+
+            dprintf(INFO, "modem:%u operator:%u ddr_manufacture_info:%u ddr_raw:%u: ddr_column:%u ddr_reserve_info:%u\n",
+                    project_info.modem, project_info.operator,
+                    project_info.ddr_manufacture_info, project_info.ddr_raw, project_info.ddr_column, project_info.ddr_reserve_info);
+        }
+    }
+#endif
 
     // fdt
     void *tags = (void *)lk_boot_args[2];
