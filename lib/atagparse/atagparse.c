@@ -526,11 +526,13 @@ next:
         }
 
         if(!strcmp(fdt_parser_name, "qcom_oppo") && dt_entry->version>=DEV_TREE_VERSION_V2) {
+            dprintf(SPEW, "OPPO: id0=%u id1=%u\n", dt_entry->u.oppo.id0, dt_entry->u.oppo.id1);
             qciditem_add("oppo,id0", dt_entry->u.oppo.id0);
             qciditem_add("oppo,id1", dt_entry->u.oppo.id1);
         }
 
         if(!strcmp(fdt_parser_name, "qcom_lge")) {
+            dprintf(SPEW, "LGE: lge_rev=%u\n", dt_entry->u.lge.lge_rev);
             qciditem_add("lge,lge_rev", dt_entry->u.lge.lge_rev);
         }
 
