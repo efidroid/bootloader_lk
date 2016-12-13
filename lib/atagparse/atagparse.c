@@ -1012,6 +1012,7 @@ void atag_parse(void)
     uint32_t foundry_id = hwinfo_lk->foundry_id; // EQ
 
     // improve info using hwinfo_tags
+#ifdef DEVICE_PREFER_ATAGS_HWID
     if (hwinfo_tags) {
         // print hwinfo
         print_qchwinfo("[TAGS] ", hwinfo_tags);
@@ -1038,6 +1039,7 @@ void atag_parse(void)
 
         // always use pmicrev from LK until we tested this
     }
+#endif
 
     // add info to qciditem list
     uint32_t variant_id = (variant_id_platform_hw) | (variant_id_platform_minor << 8) | (variant_id_platform_major << 16) | (variant_id_subtype << 24);
