@@ -637,7 +637,7 @@ static void libboot_patch_fdt(void *fdt)
 static void cmd_boot(const char *arg, void *data, unsigned sz)
 {
     // init
-    libboot_platform_heap_init(data + sz, target_get_max_flash_size() - sz);
+    libboot_platform_heap_init((void *)ROUNDUP((size_t)(data + sz), sizeof(void *)), target_get_max_flash_size() - sz);
     libboot_init();
 
     // setup context
