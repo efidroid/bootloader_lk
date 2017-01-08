@@ -163,7 +163,7 @@ static int api_serial_poll_char(void)
 {
     // poll keys
     newkeys_poll();
-    if(newkeys_has_event()) return 1;
+    if (newkeys_has_event()) return 1;
 
     // check UART
     return dtstc();
@@ -676,7 +676,7 @@ static int api_boot_get_hwid(const char *id, unsigned int *datap)
     return qciditem_get(id, datap);
 }
 
-static const char* api_boot_get_default_fdt_parser(void)
+static const char *api_boot_get_default_fdt_parser(void)
 {
 #ifdef DEVICE_DEFAULT_FDT_PARSER
     return DEVICE_DEFAULT_FDT_PARSER;
