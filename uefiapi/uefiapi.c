@@ -631,22 +631,24 @@ static void *api_mmap_get_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
 
 typedef void entry_func_ptr(unsigned, unsigned, unsigned *);
 
-static void api_boot_update_addrs(unsigned int *kernel, unsigned int *ramdisk, unsigned int *tags)
+static void api_boot_update_addrs(int is64, unsigned int *kernel, unsigned int *ramdisk, unsigned int *tags)
 {
     /* overwrite the destination of specified for the project */
 #ifdef ABOOT_IGNORE_BOOT_HEADER_ADDRS
-    *kernel = ABOOT_FORCE_KERNEL_ADDR;
+    if (is64)
+        *kernel = ABOOT_FORCE_KERNEL64_ADDR;
+    else
+        *kernel = ABOOT_FORCE_KERNEL_ADDR;
     *ramdisk = ABOOT_FORCE_RAMDISK_ADDR;
     *tags = ABOOT_FORCE_TAGS_ADDR;
 #endif
 }
 
-static void api_boot_exec(void *kernel, unsigned int zero, unsigned int arch, unsigned int tags)
+static void api_boot_exec(int is64, void *kernel, unsigned int zero, unsigned int arch, unsigned int tags)
 {
-    struct kernel64_hdr *kptr = (struct kernel64_hdr *)kernel;
     void (*entry)(unsigned, unsigned, unsigned *) = (entry_func_ptr *)kernel;
 
-    if (IS_ARM64(kptr))
+    if (is64)
         /* Jump to a 64bit kernel */
         scm_elexec_call((paddr_t)kernel, tags);
     else
