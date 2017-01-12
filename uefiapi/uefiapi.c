@@ -741,7 +741,6 @@ static int usb30_usb_read(struct udc_gadget *udc_gadget, void *_buf, unsigned le
     uint32_t trans_len = len;
     const char *buf = _buf;
     udc_gadget_context_t *context = udc_gadget->context;
-    struct udc_endpoint *in = udc_gadget->ept[0];
     struct udc_endpoint *out = udc_gadget->ept[1];
 
     ASSERT(buf);
@@ -810,7 +809,6 @@ static int usb30_usb_write(struct udc_gadget *udc_gadget, void *buf, unsigned le
     struct udc_request req;
     udc_gadget_context_t *context = udc_gadget->context;
     struct udc_endpoint *in = udc_gadget->ept[0];
-    struct udc_endpoint *out = udc_gadget->ept[1];
 
     ASSERT(buf);
     ASSERT(len);
