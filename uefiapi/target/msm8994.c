@@ -41,23 +41,25 @@ void uefiapi_platform_init_post(void)
     newkeys_add_source(&event_source);
 }
 
-void *api_mmap_get_platform_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)
+void* uefiapi_mmap_add_platform_mappings(void *pdata, lkapi_mmap_add_cb_t cb)
 {
-    pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORY_DEVICE);
-    pdata = cb(pdata, SYSTEM_IMEM_BASE, SYSTEM_IMEM_BASE, 1*MB, LKAPI_MEMORY_DEVICE);
-    pdata = cb(pdata, MSM_SHARED_BASE, MSM_SHARED_BASE, 2*MB, LKAPI_MEMORY_DEVICE);
+    // iomap
+    pdata = cb(pdata, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MMAP_RANGEFLAG_RESERVED,
+                      LKAPI_MEMORYATTR_DEVICE, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+
+    // imem
+    pdata = cb(pdata, SYSTEM_IMEM_BASE, 1*MB, LKAPI_MMAP_RANGEFLAG_RESERVED,
+                      LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+
+    // shared memory
+    pdata = cb(pdata, MSM_SHARED_BASE, 2*MB, LKAPI_MMAP_RANGEFLAG_RESERVED,
+                      LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+
 #ifdef RPMB_SND_RCV_BUF
-    pdata = cb(pdata, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ*MB, LKAPI_MEMORY_DEVICE);
+    // RPMB
+    pdata = cb(pdata, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ*MB, LKAPI_MMAP_RANGEFLAG_RESERVED,
+                      LKAPI_MEMORYATTR_DEVICE, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
 #endif
 
-    return pdata;
-}
-
-void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
-{
-    pdata = cb(pdata, MSM_SHARED_BASE, 2*MB);
-#ifdef RPMB_SND_RCV_BUF
-    pdata = cb(pdata, RPMB_SND_RCV_BUF, RPMB_SND_RCV_BUF_SZ*MB);
-#endif
     return pdata;
 }

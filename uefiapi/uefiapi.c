@@ -22,6 +22,7 @@
 #include <string.h>
 #include <kernel/event.h>
 #include <reboot.h>
+#include <target/display.h>
 
 #ifdef WITH_LIB_PRAM
 #include <lib/persistent_ram.h>
@@ -549,77 +550,67 @@ static int api_rtc_settime(unsigned int time)
 
 #include <platform.h>
 
-static void *api_mmap_get_dram(void *pdata, lkapi_mmap_cb_t cb)
-{
-    return lkargs_get_mmap_callback(pdata, (lkargs_mmap_cb_t)cb);
-}
-
 typedef struct {
     void *pdata;
-    lkapi_mmap_mappings_cb_t cb;
-} dram_cb_arg_t;
+    lkapi_mmap_add_cb_t cb;
+} get_mmap_pdata_t;
 
-static void *add_dram_callback(void *pdata, unsigned long long addr, unsigned long long size, int reserved)
-{
-    dram_cb_arg_t *arg = pdata;
-    if (!reserved)
-        arg->pdata = arg->cb(arg->pdata, addr, addr, size, LKAPI_MEMORY_WRITE_BACK);
+int mdp_dump_config(struct fbcon_config *fb);
 
-    return pdata;
-}
-
-__WEAK void *api_mmap_get_platform_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)
+__WEAK void* uefiapi_mmap_add_platform_mappings(void *pdata, lkapi_mmap_add_cb_t cb)
 {
     return pdata;
 }
 
-static void *api_mmap_get_mappings(void *pdata, lkapi_mmap_mappings_cb_t cb)
+static void* mmap_add_dram_cb(void *_pdata, uint64_t addr, uint64_t size)
 {
-    if (platform_use_identity_mmu_mappings()) {
-        // identity map
-        pdata = cb(pdata, 0x0, 0x0, 0x80000000, LKAPI_MEMORY_DEVICE);
-        pdata = cb(pdata, 0x80000000, 0x80000000, 0x80000000, LKAPI_MEMORY_DEVICE);
-    }
+    get_mmap_pdata_t* pdata = _pdata;
+    pdata->pdata = pdata->cb(pdata->pdata, addr, size, LKAPI_MMAP_RANGEFLAG_DRAM,
+                             LKAPI_MEMORYATTR_WRITE_BACK, 0, LKAPI_MMAP_RANGEFLAG_UNUSED);
+    return pdata;
+}
 
-    // dram map
-    dram_cb_arg_t arg = {pdata, cb};
-    api_mmap_get_dram(&arg, add_dram_callback);
-    pdata = arg.pdata;
+static void* api_mmap_get_all(void *_pdata, lkapi_mmap_add_cb_t cb) {
+    get_mmap_pdata_t pdata = {_pdata, cb};
 
-    // LK
-    pdata = cb(pdata, MEMBASE, MEMBASE, MEMSIZE, LKAPI_MEMORY_WRITE_THROUGH);
+    // add DRAM as reported by atags
+    lkargs_get_mmap_callback(&pdata, mmap_add_dram_cb);
 
-    // pram
-#ifdef WITH_LIB_PRAM
-    pdata = cb(pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE, LKAPI_MEMORY_UNCACHED);
-#endif
+    // reserve LK
+    pdata.pdata = pdata.cb(pdata.pdata, MEMBASE, MEMSIZE, LKAPI_MMAP_RANGEFLAG_RESERVED|LKAPI_MMAP_RANGEFLAG_DRAM,
+                           LKAPI_MEMORYATTR_WRITE_THROUGH, LKAPI_MEMORYTYPE_RUNTIMESERVICES_CODE,
+                           LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
 
     // platform mappings
-    pdata = api_mmap_get_platform_mappings(pdata, cb);
+    pdata.pdata = uefiapi_mmap_add_platform_mappings(pdata.pdata, pdata.cb);
 
-    return pdata;
-}
-
-__WEAK void *api_mmap_get_platform_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
-{
-    return pdata;
-}
-
-static void *api_mmap_get_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
-{
-    // LK
-    pdata = cb(pdata, MEMBASE, MEMSIZE);
+    // the framebuffer may cover unused areas, so make sure there's a range for it
+#if defined(WITH_LIB_2NDSTAGE_DISPLAY)
+    struct fbcon_config fbconfig;
+    if(!mdp_dump_config(&fbconfig) && fbconfig.base && fbconfig.width && fbconfig.height) {
+        pdata.pdata = pdata.cb(pdata.pdata, (uint64_t)(addr_t)fbconfig.base, LCD_VRAM_SIZE, LKAPI_MMAP_RANGEFLAG_DRAM,
+                          LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+    }
+#elif defined(MIPI_FB_ADDR)
+    pdata.pdata = pdata.cb(pdata->pdata, MIPI_FB_ADDR, LCD_VRAM_SIZE, LKAPI_MMAP_RANGEFLAG_DRAM,
+                      LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+#endif
 
     // pram
 #ifdef WITH_LIB_PRAM
-    pdata = cb(pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE);
+    pdata.pdata = pdata.cb(pdata->pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE,
+                           LKAPI_MMAP_RANGEFLAG_RESERVED|LKAPI_MMAP_RANGEFLAG_DRAM,
+                           LKAPI_MEMORYATTR_UNCACHED, LKAPI_MEMORYTYPE_PERSISTENT,
+                           LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
 #endif
 
-    // platform
-    pdata = api_mmap_get_platform_lkmem(pdata, cb);
-
-    return pdata;
+    return pdata.pdata;
 }
+
+static int api_mmap_needs_identity_map(void) {
+    return platform_use_identity_mmu_mappings();
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 //                              BOOT                                   //
@@ -630,6 +621,11 @@ static void *api_mmap_get_lkmem(void *pdata, lkapi_mmap_lkmem_cb_t cb)
 #define IS_ARM64(ptr) (ptr->magic_64 == KERNEL64_HDR_MAGIC) ? true : false
 
 typedef void entry_func_ptr(unsigned, unsigned, unsigned *);
+
+static void *api_boot_get_mmap(void *pdata, lkapi_boot_mmap_cb_t cb)
+{
+    return lkargs_get_mmap_callback(pdata, (lkapi_boot_mmap_cb_t)cb);
+}
 
 static void api_boot_update_addrs(int is64, unsigned int *kernel, unsigned int *ramdisk, unsigned int *tags)
 {
@@ -1196,10 +1192,10 @@ lkapi_t uefiapi = {
     .rtc_gettime = api_rtc_gettime,
     .rtc_settime = api_rtc_settime,
 
-    .mmap_get_dram = api_mmap_get_dram,
-    .mmap_get_mappings = api_mmap_get_mappings,
-    .mmap_get_lkmem = api_mmap_get_lkmem,
+    .mmap_get_all = api_mmap_get_all,
+    .mmap_needs_identity_map = api_mmap_needs_identity_map,
 
+    .boot_get_mmap = api_boot_get_mmap,
     .boot_update_addrs = api_boot_update_addrs,
     .boot_exec = api_boot_exec,
 
