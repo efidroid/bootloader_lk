@@ -42,7 +42,7 @@ static int check_aboot_addr_range_overlap(uint32_t start, uint32_t size)
 }
 
 #if defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP3)
-static int mdp_dump_config(struct fbcon_config *fb)
+int mdp_dump_config(struct fbcon_config *fb)
 {
     fb->base = (void *) readl(MDP_DMA_P_BUF_ADDR);
     fb->width = readl(MDP_DMA_P_BUF_Y_STRIDE)/3;
@@ -65,7 +65,7 @@ static void mipi_update_sw_trigger(void) {
 	writel(0x1, DSI_CMD_MODE_MDP_SW_TRIGGER);
 }
 
-static int mdp_dump_config(struct fbcon_config *fb)
+int mdp_dump_config(struct fbcon_config *fb)
 {
     fb->base = (void *) readl(MDP_DMA_P_BUF_ADDR);
     fb->width = readl(MDP_DMA_P_BUF_Y_STRIDE)/3;
@@ -153,7 +153,7 @@ static void mdss_mdp_cmd_kickoff(void)
 }
 #endif
 
-static int mdp_dump_config(struct fbcon_config *fb)
+int mdp_dump_config(struct fbcon_config *fb)
 {
     int rc;
     uint32_t pipe_type;
