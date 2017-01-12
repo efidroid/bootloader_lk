@@ -135,7 +135,7 @@ static atag_mem_info msm8930_default_first_256M[] = {
 
 static unsigned *target_mem_atag_create(void *ptr, lkargs_mmap_cb_t cb, uint32_t size, uint32_t addr)
 {
-    ptr = cb(ptr, (uint64_t)addr, (uint64_t)size, 0);
+    ptr = cb(ptr, (uint64_t)addr, (uint64_t)size);
     return ptr;
 }
 

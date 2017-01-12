@@ -350,7 +350,7 @@ void *lkargs_get_mmap_callback(void *pdata, lkargs_mmap_cb_t cb)
 {
     meminfo_t *entry;
     list_for_every_entry(&meminfo, entry, meminfo_t, node) {
-        pdata = cb(pdata, entry->start, entry->size, false);
+        pdata = cb(pdata, entry->start, entry->size);
     }
 
     return pdata;
@@ -717,14 +717,14 @@ __WEAK void *lkargs_platform_get_mmap(void *pdata, lkargs_mmap_cb_t cb)
     for (i = 0; i<smem_get_ram_ptable_len(); i++) {
         smem_get_ram_ptable_entry(&ptn_entry, i);
         if (ptn_entry.category==SDRAM && ptn_entry.type==SYS_MEMORY) {
-            cb(pdata, ptn_entry.start, ptn_entry.size, 0);
+            cb(pdata, ptn_entry.start, ptn_entry.size);
         }
     }
 
     return pdata;
 }
 
-static void *add_meminfo_cb(void *pdata, uint64_t addr, uint64_t size, bool reserved)
+static void *add_meminfo_cb(void *pdata, uint64_t addr, uint64_t size)
 {
     add_meminfo(addr, size);
     return pdata;
