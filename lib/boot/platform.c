@@ -159,7 +159,7 @@ typedef struct {
     libboot_platform_getmemory_callback_t cb;
 } libboot_mmap_pdata_t;
 
-static void *lkargs_get_mmap_cb(void *_pdata, uint64_t addr, uint64_t size, bool reserved)
+static void *lkargs_get_mmap_cb(void *_pdata, uint64_t addr, uint64_t size)
 {
     libboot_mmap_pdata_t *pdata = _pdata;
 
