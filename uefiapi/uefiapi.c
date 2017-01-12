@@ -598,7 +598,7 @@ static void* api_mmap_get_all(void *_pdata, lkapi_mmap_add_cb_t cb) {
 
     // pram
 #ifdef WITH_LIB_PRAM
-    pdata.pdata = pdata.cb(pdata->pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE,
+    pdata.pdata = pdata.cb(pdata.pdata, PERSISTENT_RAM_ADDR, PERSISTENT_RAM_SIZE,
                            LKAPI_MMAP_RANGEFLAG_RESERVED|LKAPI_MMAP_RANGEFLAG_DRAM,
                            LKAPI_MEMORYATTR_UNCACHED, LKAPI_MEMORYTYPE_PERSISTENT,
                            LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
