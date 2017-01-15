@@ -169,7 +169,11 @@ static const char *verified_state= " androidboot.verifiedbootstate=";
 
 struct verified_boot_verity_mode vbvm[] =
 {
+#if ENABLE_VB_ATTEST
+	{false, "eio"},
+#else
 	{false, "logging"},
+#endif
 	{true, "enforcing"},
 };
 struct verified_boot_state_name vbsn[] =
@@ -181,7 +185,8 @@ struct verified_boot_state_name vbsn[] =
 };
 #endif
 #endif
-
+/*As per spec delay wait time before shutdown in Red state*/
+#define DELAY_WAIT 30000
 static unsigned page_size = 0;
 static unsigned page_mask = 0;
 static char ffbm_mode_string[FFBM_MODE_BUF_SIZE];
@@ -189,6 +194,7 @@ static bool boot_into_ffbm;
 static char target_boot_params[64];
 static bool boot_reason_alarm;
 static bool devinfo_present = true;
+static uint32_t dt_size = 0;
 
 /* Assuming unauthorized kernel image by default */
 static int auth_kernel_img = 0;
@@ -673,7 +679,7 @@ unsigned *atag_end(unsigned *ptr)
 void generate_atags(unsigned *ptr, const char *cmdline,
                     void *ramdisk, unsigned ramdisk_size)
 {
-
+	unsigned *orig_ptr = ptr;
 	ptr = atag_core(ptr);
 	ptr = atag_ramdisk(ptr, ramdisk, ramdisk_size);
 	ptr = target_atag_mem(ptr);
@@ -683,8 +689,18 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 		ptr = atag_ptable(&ptr);
 	}
 
-	ptr = atag_cmdline(ptr, cmdline);
-	ptr = atag_end(ptr);
+	/*
+	 * Atags size filled till + cmdline size + 1 unsigned for 4-byte boundary + 4 unsigned
+	 * for atag identifier in atag_cmdline and atag_end should be with in MAX_TAGS_SIZE bytes
+	 */
+	if (((ptr - orig_ptr) + strlen(cmdline) + 5 * sizeof(unsigned)) <  MAX_TAGS_SIZE) {
+		ptr = atag_cmdline(ptr, cmdline);
+		ptr = atag_end(ptr);
+	}
+	else {
+		dprintf(CRITICAL,"Crossing ATAGs Max size allowed\n");
+		ASSERT(0);
+	}
 }
 
 typedef void entry_func_ptr(unsigned, unsigned, unsigned*);
@@ -727,7 +743,11 @@ void boot_linux(void *kernel, unsigned *tags,
 #if !VBOOT_MOTA
 	if (device.verity_mode == 0) {
 #if FBCON_DISPLAY_MSG
+#if ENABLE_VB_ATTEST
+		display_bootverify_menu(DISPLAY_MENU_EIO);
+#else
 		display_bootverify_menu(DISPLAY_MENU_LOGGING);
+#endif
 		wait_for_users_action();
 #else
 		dprintf(CRITICAL,
@@ -861,7 +881,12 @@ static void verify_signed_bootimg(uint32_t bootimg_addr, uint32_t bootimg_size)
 		case RED:
 #if FBCON_DISPLAY_MSG
 			display_bootverify_menu(DISPLAY_MENU_RED);
+#if ENABLE_VB_ATTEST
+			mdelay(DELAY_WAIT);
+			shutdown_device();
+#else
 			wait_for_users_action();
+#endif
 #else
 			dprintf(CRITICAL,
 					"Your device has failed verification and may not work properly.\nWait for 5 seconds before proceeding\n");
@@ -1067,7 +1092,10 @@ int boot_linux_from_mmc(void)
 	image_addr = (unsigned char *)target_get_scratch_address();
 
 #if DEVICE_TREE
-	dt_actual = ROUND_TO_PAGE(hdr->dt_size, page_mask);
+#ifndef OSVERSION_IN_BOOTIMAGE
+	dt_size = hdr->dt_size;
+#endif
+	dt_actual = ROUND_TO_PAGE(dt_size, page_mask);
 	if (UINT_MAX < ((uint64_t)kernel_actual + (uint64_t)ramdisk_actual+ (uint64_t)dt_actual + page_size)) {
 		dprintf(CRITICAL, "Integer overflow detected in bootimage header fields at %u in %s\n",__LINE__,__FILE__);
 		return -1;
@@ -1244,12 +1272,19 @@ int boot_linux_from_mmc(void)
 	memmove((void*) hdr->ramdisk_addr, (char *)(image_addr + page_size + kernel_actual), hdr->ramdisk_size);
 
 	#if DEVICE_TREE
-	if(hdr->dt_size) {
+	if(dt_size) {
 		dt_table_offset = ((uint32_t)image_addr + page_size + kernel_actual + ramdisk_actual + second_actual);
 		table = (struct dt_table*) dt_table_offset;
 
 		if (dev_tree_validate(table, hdr->page_size, &dt_hdr_size) != 0) {
 			dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
+			return -1;
+		}
+
+		/* Its Error if, dt_hdr_size (table->num_entries * dt_entry size + Dev_Tree Header)
+		goes beyound hdr->dt_size*/
+		if (dt_hdr_size > ROUND_TO_PAGE(dt_size,hdr->page_size)) {
+			dprintf(CRITICAL, "ERROR: Invalid Device Tree size \n");
 			return -1;
 		}
 
@@ -1313,13 +1348,16 @@ int boot_linux_from_flash(void)
 	unsigned kernel_actual;
 	unsigned ramdisk_actual;
 	unsigned imagesize_actual;
-	unsigned second_actual;
+	unsigned second_actual = 0;
 
 #if DEVICE_TREE
 	struct dt_table *table;
 	struct dt_entry dt_entry;
+	unsigned dt_table_offset;
 	uint32_t dt_actual;
 	uint32_t dt_hdr_size;
+	unsigned int dtb_size =0;
+	unsigned char *best_match_dt_addr = NULL;
 #endif
 
 	if (target_is_emmc_boot()) {
@@ -1411,7 +1449,10 @@ int boot_linux_from_flash(void)
 		offset = 0;
 
 #if DEVICE_TREE
-		dt_actual = ROUND_TO_PAGE(hdr->dt_size, page_mask);
+#ifndef OSVERSION_IN_BOOTIMAGE
+	dt_size = hdr->dt_size;
+#endif
+		dt_actual = ROUND_TO_PAGE(dt_size, page_mask);
 
 		if (UINT_MAX < ((uint64_t)kernel_actual + (uint64_t)ramdisk_actual+ (uint64_t)dt_actual + page_size)) {
 			dprintf(CRITICAL, "Integer overflow detected in bootimage header fields\n");
@@ -1420,7 +1461,7 @@ int boot_linux_from_flash(void)
 
 		imagesize_actual = (page_size + kernel_actual + ramdisk_actual + dt_actual);
 
-		if (check_aboot_addr_range_overlap(hdr->tags_addr, hdr->dt_size))
+		if (check_aboot_addr_range_overlap(hdr->tags_addr, dt_size))
 		{
 			dprintf(CRITICAL, "Device tree addresses overlap with aboot addresses.\n");
 			return -1;
@@ -1460,14 +1501,30 @@ int boot_linux_from_flash(void)
 		memmove((void*) hdr->kernel_addr, (char*) (image_addr + page_size), hdr->kernel_size);
 		memmove((void*) hdr->ramdisk_addr, (char*) (image_addr + page_size + kernel_actual), hdr->ramdisk_size);
 #if DEVICE_TREE
-		/* Validate and Read device device tree in the "tags_add */
-		if (check_aboot_addr_range_overlap(hdr->tags_addr, dt_entry.size))
-		{
-			dprintf(CRITICAL, "Device tree addresses overlap with aboot addresses.\n");
-			return -1;
-		}
+		if(dt_size != 0) {
 
-		memmove((void*) hdr->tags_addr, (char *)(image_addr + page_size + kernel_actual + ramdisk_actual), hdr->dt_size);
+			dt_table_offset = ((uint32_t)image_addr + page_size + kernel_actual + ramdisk_actual + second_actual);
+			table = (struct dt_table*) dt_table_offset;
+			if (dev_tree_validate(table, hdr->page_size, &dt_hdr_size) != 0){
+				dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
+				return -1;
+			}
+			/* Find index of device tree within device tree table */
+			if(dev_tree_get_entry_info(table, &dt_entry) != 0){
+				dprintf(CRITICAL, "ERROR: Getting device tree address failed\n");
+				return -1;
+			}
+
+			/* Validate and Read device device tree in the "tags_add */
+			if (check_aboot_addr_range_overlap(hdr->tags_addr, dt_entry.size)){
+				dprintf(CRITICAL, "Device tree addresses overlap with aboot addresses.\n");
+				return -1;
+			}
+
+			best_match_dt_addr = (unsigned char *)table + dt_entry.offset;
+			dtb_size = dt_entry.size;
+			memmove((void *)hdr->tags_addr, (char *)best_match_dt_addr, dtb_size);
+		}
 #endif
 
 		/* Make sure everything from scratch address is read before next step!*/
@@ -1491,16 +1548,26 @@ int boot_linux_from_flash(void)
 				kernel_actual + ramdisk_actual);
 		bs_set_timestamp(BS_KERNEL_LOAD_START);
 
+		if (UINT_MAX - offset < kernel_actual)
+		{
+			dprintf(CRITICAL, "ERROR: Integer overflow in boot image header %s\t%d\n",__func__,__LINE__);
+			return -1;
+		}
 		if (flash_read(ptn, offset, (void *)hdr->kernel_addr, kernel_actual)) {
 			dprintf(CRITICAL, "ERROR: Cannot read kernel image\n");
 			return -1;
 		}
 		offset += kernel_actual;
-
+		if (UINT_MAX - offset < ramdisk_actual)
+		{
+			dprintf(CRITICAL, "ERROR: Integer overflow in boot image header %s\t%d\n",__func__,__LINE__);
+			return -1;
+		}
 		if (flash_read(ptn, offset, (void *)hdr->ramdisk_addr, ramdisk_actual)) {
 			dprintf(CRITICAL, "ERROR: Cannot read ramdisk image\n");
 			return -1;
 		}
+
 		offset += ramdisk_actual;
 
 		dprintf(INFO, "Loading boot image (%d): done\n",
@@ -1508,13 +1575,18 @@ int boot_linux_from_flash(void)
 		bs_set_timestamp(BS_KERNEL_LOAD_DONE);
 
 		if(hdr->second_size != 0) {
+			if (UINT_MAX - offset < second_actual)
+			{
+				dprintf(CRITICAL, "ERROR: Integer overflow in boot image header %s\t%d\n",__func__,__LINE__);
+				return -1;
+			}
 			offset += second_actual;
 			/* Second image loading not implemented. */
 			ASSERT(0);
 		}
 
 #if DEVICE_TREE
-		if(hdr->dt_size != 0) {
+		if(dt_size != 0) {
 
 			/* Read the device tree table into buffer */
 			if(flash_read(ptn, offset, (void *) dt_buf, page_size)) {
@@ -1526,6 +1598,13 @@ int boot_linux_from_flash(void)
 
 			if (dev_tree_validate(table, hdr->page_size, &dt_hdr_size) != 0) {
 				dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
+				return -1;
+			}
+
+			/* Its Error if, dt_hdr_size (table->num_entries * dt_entry size + Dev_Tree Header)
+			goes beyound hdr->dt_size*/
+			if (dt_hdr_size > ROUND_TO_PAGE(dt_size,hdr->page_size)) {
+				dprintf(CRITICAL, "ERROR: Invalid Device Tree size \n");
 				return -1;
 			}
 
@@ -1998,7 +2077,11 @@ int copy_dtb(uint8_t *boot_image_start)
 
 	struct boot_img_hdr *hdr = (struct boot_img_hdr *) (boot_image_start);
 
-	if(hdr->dt_size != 0) {
+#ifndef OSVERSION_IN_BOOTIMAGE
+dt_size = hdr->dt_size;
+#endif
+
+	if(dt_size != 0) {
 		/* add kernel offset */
 		dt_image_offset += page_size;
 		n = ROUND_TO_PAGE(hdr->kernel_size, page_mask);
@@ -2021,6 +2104,14 @@ int copy_dtb(uint8_t *boot_image_start)
 			dprintf(CRITICAL, "ERROR: Cannot validate Device Tree Table \n");
 			return -1;
 		}
+
+		/* Its Error if, dt_hdr_size (table->num_entries * dt_entry size + Dev_Tree Header)
+		goes beyound hdr->dt_size*/
+		if (dt_hdr_size > ROUND_TO_PAGE(dt_size,hdr->page_size)) {
+			dprintf(CRITICAL, "ERROR: Invalid Device Tree size \n");
+			return -1;
+		}
+
 		/* Find index of device tree within device tree table */
 		if(dev_tree_get_entry_info(table, &dt_entry) != 0){
 			dprintf(CRITICAL, "ERROR: Getting device tree address failed\n");
@@ -2052,7 +2143,7 @@ void cmd_boot(const char *arg, void *data, unsigned sz)
 	unsigned ramdisk_actual;
 	uint32_t image_actual;
 	uint32_t dt_actual = 0;
-	uint32_t sig_actual = SIGNATURE_SIZE;
+	uint32_t sig_actual = 0;
 	struct boot_img_hdr *hdr = NULL;
 	struct kernel64_hdr *kptr = NULL;
 	char *ptr = ((char*) data);
@@ -2098,15 +2189,23 @@ void cmd_boot(const char *arg, void *data, unsigned sz)
 	kernel_actual = ROUND_TO_PAGE(hdr->kernel_size, page_mask);
 	ramdisk_actual = ROUND_TO_PAGE(hdr->ramdisk_size, page_mask);
 #if DEVICE_TREE
-	dt_actual = ROUND_TO_PAGE(hdr->dt_size, page_mask);
+#ifndef OSVERSION_IN_BOOTIMAGE
+	dt_size = hdr->dt_size;
+#endif
+
+	dt_actual = ROUND_TO_PAGE(dt_size, page_mask);
 #endif
 
 	image_actual = ADD_OF(page_size, kernel_actual);
 	image_actual = ADD_OF(image_actual, ramdisk_actual);
 	image_actual = ADD_OF(image_actual, dt_actual);
 
-	if (target_use_signed_kernel() && (!device.is_unlocked))
+	if (target_use_signed_kernel() && (!device.is_unlocked)) {
+		/* Calculate the signature length from boot image */
+		sig_actual = read_der_message_length(
+				(unsigned char*)(data + image_actual),sz);
 		image_actual = ADD_OF(image_actual, sig_actual);
+	}
 
 	/* sz should have atleast raw boot image */
 	if (image_actual > sz) {
@@ -2389,7 +2488,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 					fastboot_fail("unlock device to flash keystore");
 					return;
 				}
-				if(!boot_verify_validate_keystore((unsigned char *)data))
+				if(!boot_verify_validate_keystore((unsigned char *)data,sz))
 				{
 					fastboot_fail("image is not a keystore file");
 					return;
@@ -2436,8 +2535,29 @@ void cmd_flash_meta_img(const char *arg, void *data, unsigned sz)
 	int i, images;
 	meta_header_t *meta_header;
 	img_header_entry_t *img_header_entry;
+	/*End of the image address*/
+	uintptr_t data_end;
+
+	if( (UINT_MAX - sz) > (uintptr_t)data )
+		data_end  = (uintptr_t)data + sz;
+	else
+	{
+		fastboot_fail("Cannot  flash: image header corrupt");
+		return;
+	}
+
+	if( data_end < ((uintptr_t)data + sizeof(meta_header_t)))
+	{
+		fastboot_fail("Cannot  flash: image header corrupt");
+		return;
+	}
 
 	meta_header = (meta_header_t*) data;
+	if( data_end < ((uintptr_t)data + meta_header->img_hdr_sz))
+	{
+		fastboot_fail("Cannot  flash: image header corrupt");
+		return;
+	}
 	img_header_entry = (img_header_entry_t*) (data+sizeof(meta_header_t));
 
 	images = meta_header->img_hdr_sz / sizeof(img_header_entry_t);
@@ -2448,6 +2568,13 @@ void cmd_flash_meta_img(const char *arg, void *data, unsigned sz)
 			(img_header_entry[i].start_offset == 0) ||
 			(img_header_entry[i].size == 0))
 			break;
+
+		if( data_end < ((uintptr_t)data + img_header_entry[i].start_offset
+						+ img_header_entry[i].size) )
+		{
+			fastboot_fail("Cannot  flash: image size mismatch");
+			break;
+		}
 
 		cmd_flash_mmc_img(img_header_entry[i].ptn_name,
 					(void *) data + img_header_entry[i].start_offset,
@@ -2631,6 +2758,7 @@ void cmd_flash_mmc_sparse_img(const char *arg, void *data, unsigned sz)
 
 			if (data_end < (uint32_t)data + sizeof(uint32_t)) {
 				fastboot_fail("buffer overreads occured due to invalid sparse header");
+				free(fill_buf);
 				return;
 			}
 			fill_val = *(uint32_t *)data;
@@ -2641,12 +2769,20 @@ void cmd_flash_mmc_sparse_img(const char *arg, void *data, unsigned sz)
 				fill_buf[i] = fill_val;
 			}
 
+			if(total_blocks > (UINT_MAX - chunk_header->chunk_sz))
+			{
+				fastboot_fail("bogus size for chunk FILL type");
+				free(fill_buf);
+				return;
+			}
+
 			for (i = 0; i < chunk_header->chunk_sz; i++)
 			{
 				/* Make sure that the data written to partition does not exceed partition size */
 				if ((uint64_t)total_blocks * (uint64_t)sparse_header->blk_sz + sparse_header->blk_sz > size)
 				{
 					fastboot_fail("Chunk data size for fill type exceeds partition size");
+					free(fill_buf);
 					return;
 				}
 
@@ -2862,6 +2998,7 @@ void cmd_flash_nand(const char *arg, void *data, unsigned sz)
 	struct ptentry *ptn;
 	struct ptable *ptable;
 	unsigned extra = 0;
+	uint64_t partition_size = 0;
 
 	ptable = flash_get_ptable();
 	if (ptable == NULL) {
@@ -2892,6 +3029,17 @@ void cmd_flash_nand(const char *arg, void *data, unsigned sz)
 		extra = 1;
 	else
 		sz = ROUND_TO_PAGE(sz, page_mask);
+
+	partition_size = (uint64_t)ptn->length * (uint64_t)flash_num_pages_per_blk() *  (uint64_t)flash_page_size();
+	if (partition_size > UINT_MAX) {
+		fastboot_fail("Invalid partition size");
+		return;
+	}
+
+	if (sz > partition_size) {
+		fastboot_fail("Image size too large");
+		return;
+	}
 
 	dprintf(INFO, "writing %d bytes to '%s'\n", sz, ptn->name);
 	if (!memcmp((void *)data, UBI_MAGIC, UBI_MAGIC_SIZE)) {
@@ -2968,6 +3116,33 @@ void cmd_oem_disable_charger_screen(const char *arg, void *data, unsigned size)
 {
 	dprintf(INFO, "Disabling charger screen check\n");
 	device.charger_screen_enabled = 0;
+	write_device_info(&device);
+	fastboot_okay("");
+}
+
+void cmd_oem_off_mode_charger(const char *arg, void *data, unsigned size)
+{
+	char *p = NULL;
+	const char *delim = " \t\n\r";
+	char *sp;
+
+	if (arg) {
+		p = strtok_r((char *)arg, delim, &sp);
+		if (p) {
+			if (!strncmp(p, "0", 1)) {
+				device.charger_screen_enabled = 0;
+			} else if (!strncmp(p, "1", 1)) {
+				device.charger_screen_enabled = 1;
+			}
+		}
+	}
+
+	/* update charger_screen_enabled value for getvar
+	 * command
+	 */
+	snprintf(charger_screen_enabled, MAX_RSP_SIZE, "%d",
+		device.charger_screen_enabled);
+
 	write_device_info(&device);
 	fastboot_okay("");
 }
@@ -3315,6 +3490,7 @@ void aboot_fastboot_register_commands(void)
 						{"preflash", cmd_preflash},
 						{"oem enable-charger-screen", cmd_oem_enable_charger_screen},
 						{"oem disable-charger-screen", cmd_oem_disable_charger_screen},
+						{"oem off-mode-charge", cmd_oem_off_mode_charger},
 						{"oem select-display-panel", cmd_oem_select_display_panel},
 #endif
 						};
@@ -3346,6 +3522,7 @@ void aboot_fastboot_register_commands(void)
 			device.charger_screen_enabled);
 	fastboot_publish("charger-screen-enabled",
 			(const char *) charger_screen_enabled);
+	fastboot_publish("off-mode-charge", (const char *) charger_screen_enabled);
 	snprintf(panel_display_mode, MAX_RSP_SIZE, "%s",
 			device.display_panel);
 	fastboot_publish("display-panel",
@@ -3461,8 +3638,13 @@ void aboot_init(const struct app_descriptor *app)
 		hard_reboot_mode == DM_VERITY_ENFORCING_HARD_RESET_MODE) {
 		device.verity_mode = 1;
 		write_device_info(&device);
-	} else if(reboot_mode == DM_VERITY_LOGGING ||
-		hard_reboot_mode == DM_VERITY_LOGGING_HARD_RESET_MODE) {
+	}
+#if ENABLE_VB_ATTEST
+	else if (reboot_mode == DM_VERITY_EIO)
+#else
+	else if (reboot_mode == DM_VERITY_LOGGING)
+#endif
+	{
 		device.verity_mode = 0;
 		write_device_info(&device);
 	} else if(reboot_mode == DM_VERITY_KEYSCLEAR ||

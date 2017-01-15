@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -44,6 +44,7 @@
 #include <qseecom_lk_api.h>
 #include <secapp_loader.h>
 #include <target.h>
+#include "bootimg.h"
 
 #define ASN1_ENCODED_SHA256_SIZE 0x33
 #define ASN1_ENCODED_SHA256_OFFSET 0x13
@@ -56,6 +57,9 @@ char KEYSTORE_PTN_NAME[] = "keystore";
 RSA *rsa_from_cert = NULL;
 unsigned char fp[EVP_MAX_MD_SIZE];
 uint32_t fp_size;
+#if OSVERSION_IN_BOOTIMAGE
+km_boot_state_t boot_state_info;
+#endif
 
 ASN1_SEQUENCE(AUTH_ATTR) ={
 	ASN1_SIMPLE(AUTH_ATTR, target, ASN1_PRINTABLESTRING),
@@ -96,14 +100,14 @@ IMPLEMENT_ASN1_FUNCTIONS(KEYSTORE_INNER)
 	} ASN1_SEQUENCE_END(KEYSTORE)
 IMPLEMENT_ASN1_FUNCTIONS(KEYSTORE)
 
-static uint32_t read_der_message_length(unsigned char* input)
+uint32_t read_der_message_length(unsigned char* input, unsigned sz)
 {
 	uint32_t len = 0;
-	int pos = 0;
+	uint32_t pos = 0;
 	uint8_t len_bytes = 1;
 
 	/* Check if input starts with Sequence id (0X30) */
-	if(input[pos] != 0x30)
+	if(sz < 3 || input[pos] != 0x30)
 		return len;
 	pos++;
 
@@ -132,7 +136,7 @@ static uint32_t read_der_message_length(unsigned char* input)
 		}
 
 		/* Read next octet */
-		if (pos < (int) ASN1_SIGNATURE_BUFFER_SZ)
+		if (pos < (uint32_t) ASN1_SIGNATURE_BUFFER_SZ && pos < sz)
 			len = len | input[pos];
 		else
 		{
@@ -228,6 +232,7 @@ static bool verify_image_with_sig(unsigned char* img_addr, uint32_t img_size,
 	RSA *rsa = NULL;
 	bool keystore_verification = false;
 	EVP_PKEY* key = NULL;
+	int attr = 0;
 
 	if(!strcmp(pname, "keystore"))
 		keystore_verification = true;
@@ -268,8 +273,14 @@ static bool verify_image_with_sig(unsigned char* img_addr, uint32_t img_size,
 	if(!keystore_verification)
 	{
 		// verifying a non keystore partition
-		img_size += add_attribute_to_img((unsigned char*)(img_addr + img_size),
+		attr = add_attribute_to_img((unsigned char*)(img_addr + img_size),
 				sig->auth_attr);
+		if (img_size > (UINT_MAX - attr))
+		{
+			dprintf(CRITICAL,"Interger overflow detected\n");
+			ASSERT(0);
+		}
+		else img_size += attr;
 	}
 
 	/* compare SHA256SUM of image with value in signature */
@@ -387,6 +398,53 @@ uint32_t boot_verify_keystore_init()
 	return dev_boot_state;
 }
 
+#if OSVERSION_IN_BOOTIMAGE
+static void boot_verify_send_boot_state(km_boot_state_t *boot_state)
+{
+	km_get_version_req_t version_req;
+	km_get_version_rsp_t version_rsp;
+	int ret;
+	int app_handle = get_secapp_handle();
+	km_set_boot_state_req_t *bs_req = NULL;
+	km_set_boot_state_rsp_t boot_state_rsp;
+	uint8_t *boot_state_ptr;
+
+	version_req.cmd_id = KEYMASTER_GET_VERSION;
+	ret = qseecom_send_command(app_handle, (void*) &version_req, sizeof(version_req), (void*) &version_rsp, sizeof(version_rsp));
+	if (ret < 0 || version_rsp.status < 0)
+	{
+		dprintf(CRITICAL, "QSEEcom command for getting keymaster version returned error: %d\n", version_rsp.status);
+		ASSERT(0);
+	}
+
+	if (version_rsp.major_version >= 0x2)
+	{
+		bs_req = malloc(sizeof(km_set_boot_state_req_t) + sizeof(km_boot_state_t));
+		ASSERT(bs_req);
+
+		boot_state_ptr = (uint8_t *) bs_req + sizeof(km_set_boot_state_req_t);
+		/* copy the boot state data */
+		memscpy(boot_state_ptr, sizeof(km_boot_state_t), &boot_state_info, sizeof(boot_state_info));
+
+		bs_req->cmd_id = KEYMASTER_SET_BOOT_STATE;
+		bs_req->version = 0x0;
+		bs_req->boot_state_offset = sizeof(km_set_boot_state_req_t);
+		bs_req->boot_state_size = sizeof(km_boot_state_t);
+
+		ret = qseecom_send_command(app_handle, (void *)bs_req, sizeof(*bs_req) + sizeof(km_boot_state_t), (void *) &boot_state_rsp, sizeof(boot_state_rsp));
+		if (ret < 0 || boot_state_rsp.status < 0)
+		{
+			dprintf(CRITICAL, "QSEEcom command for Sending boot state returned error: %d\n", boot_state_rsp.status);
+			free(bs_req);
+			ASSERT(0);
+		}
+	}
+
+	if (bs_req)
+		free(bs_req);
+}
+#endif
+
 bool send_rot_command(uint32_t is_unlocked)
 {
 	int ret = 0;
@@ -408,6 +466,18 @@ bool send_rot_command(uint32_t is_unlocked)
 			// Send hash of key from OEM KEYSTORE + Boot device state
 			n = BN_num_bytes(oem_keystore->mykeybag->mykey->key_material->n);
 			e = BN_num_bytes(oem_keystore->mykeybag->mykey->key_material->e);
+			/*this assumes a valid acceptable range for RSA, including 4096 bits of modulo n. */
+			if (n<0 || n>1024)
+			{
+				dprintf(CRITICAL, "Invalid n value from key_material\n");
+				ASSERT(0);
+			}
+			/* e can assumes 3,5,17,257,65537 as valid values, which should be 1 byte long only, we accept 2 bytes or 16 bits long */
+			if( e < 0 || e >16)
+			{
+				dprintf(CRITICAL, "Invalid e value from key_material\n");
+				ASSERT(0);
+			}
 			len_oem_rsa = n + e;
 			if(!(input = malloc(len_oem_rsa)))
 			{
@@ -430,6 +500,18 @@ bool send_rot_command(uint32_t is_unlocked)
 			// Send hash of key from certificate in boot image + boot device state
 			n = BN_num_bytes(rsa_from_cert->n);
 			e = BN_num_bytes(rsa_from_cert->e);
+			/*this assumes a valid acceptable range for RSA, including 4096 bits of modulo n. */
+			if (n<0 || n>1024)
+			{
+				dprintf(CRITICAL, "Invalid n value from rsa_from_cert\n");
+				ASSERT(0);
+			}
+			/* e can assumes 3,5,17,257,65537 as valid values, which should be 1 byte long only, we accept 2 bytes or 16 bits long */
+			if( e < 0 || e >16)
+			{
+				dprintf(CRITICAL, "Invalid e value from rsa_from_cert\n");
+				ASSERT(0);
+			}
 			len_from_cert = n + e;
 			if(!(input = malloc(len_from_cert)))
 			{
@@ -479,6 +561,13 @@ bool send_rot_command(uint32_t is_unlocked)
 		free(rot_input);
 		return false;
 	}
+
+#if OSVERSION_IN_BOOTIMAGE
+	boot_state_info.is_unlocked = is_unlocked;
+	boot_state_info.color = boot_verify_get_state();
+	memscpy(boot_state_info.public_key, sizeof(boot_state_info.public_key), digest, 32);
+	boot_verify_send_boot_state(&boot_state_info);
+#endif
 	dprintf(SPEW, "Sending Root of Trust to trustzone: end\n");
 	if(input)
 		free(input);
@@ -503,6 +592,9 @@ bool boot_verify_image(unsigned char* img_addr, uint32_t img_size, char *pname)
 	unsigned char* sig_addr = (unsigned char*)(img_addr + img_size);
 	uint32_t sig_len = 0;
 	unsigned char *signature = NULL;
+#if OSVERSION_IN_BOOTIMAGE
+	struct boot_img_hdr *img_hdr = NULL;
+#endif
 
 	if(dev_boot_state == ORANGE)
 	{
@@ -516,7 +608,7 @@ bool boot_verify_image(unsigned char* img_addr, uint32_t img_size, char *pname)
 
 	/* Copy the signature from scratch memory to buffer */
 	memcpy(signature, sig_addr, ASN1_SIGNATURE_BUFFER_SZ);
-	sig_len = read_der_message_length(signature);
+	sig_len = read_der_message_length(signature, ASN1_SIGNATURE_BUFFER_SZ);
 
 	if(!sig_len)
 	{
@@ -544,6 +636,13 @@ bool boot_verify_image(unsigned char* img_addr, uint32_t img_size, char *pname)
 	}
 
 	ret = verify_image_with_sig(img_addr, img_size, pname, sig, user_keystore);
+
+#if OSVERSION_IN_BOOTIMAGE
+	/* Extract the os version and patch level */
+	img_hdr = (struct boot_img_hdr *)img_addr;
+	boot_state_info.system_version = (img_hdr->os_version & 0xFFFFF8) >> 11;
+	boot_state_info.system_security_level = (img_hdr->os_version & 0x7FF);
+#endif
 
 	if(sig != NULL)
 		VERIFIED_BOOT_SIG_free(sig);
@@ -604,12 +703,12 @@ void boot_verify_print_state()
 	}
 }
 
-bool boot_verify_validate_keystore(unsigned char * user_addr)
+bool boot_verify_validate_keystore(unsigned char * user_addr, unsigned sz)
 {
 	bool ret = false;
 	unsigned char *input = user_addr;
 	KEYSTORE *ks = NULL;
-	uint32_t len = read_der_message_length(input);
+	uint32_t len = read_der_message_length(input, sz);
 	if(!len)
 	{
 		dprintf(CRITICAL, "boot_verifier: keystore length is invalid.\n");
