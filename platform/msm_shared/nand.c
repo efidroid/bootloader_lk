@@ -3572,6 +3572,12 @@ unsigned flash_page_size(void)
 	return flash_pagesize;
 }
 
+unsigned
+flash_num_pages_per_blk(void)
+{
+	return num_pages_per_blk;
+}
+
 void enable_interleave_mode(int status)
 {
 	interleaved_mode = status;
