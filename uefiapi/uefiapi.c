@@ -592,7 +592,7 @@ static void* api_mmap_get_all(void *_pdata, lkapi_mmap_add_cb_t cb) {
                           LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
     }
 #elif defined(MIPI_FB_ADDR)
-    pdata.pdata = pdata.cb(pdata->pdata, MIPI_FB_ADDR, LCD_VRAM_SIZE, LKAPI_MMAP_RANGEFLAG_DRAM,
+    pdata.pdata = pdata.cb(pdata.pdata, MIPI_FB_ADDR, LCD_VRAM_SIZE, LKAPI_MMAP_RANGEFLAG_DRAM,
                       LKAPI_MEMORYATTR_WRITE_THROUGH, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
 #endif
 
