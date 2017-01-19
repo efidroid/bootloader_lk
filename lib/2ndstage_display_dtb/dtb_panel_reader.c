@@ -10,6 +10,10 @@
 #include "gcdb_display.h"
 #include "private.h"
 
+#ifndef WITH_KERNEL_UEFIAPI
+#include "fastboot.h"
+#endif
+
 dtb_panel_config_t *dtbpanel_config = NULL;
 
 static char *safe_strdup(const char *s)
@@ -995,3 +999,239 @@ int dtbreader_init_panel_data(struct panel_struct *panelstruct,
 
     return PANEL_TYPE_DSI;
 }
+
+#ifndef WITH_KERNEL_UEFIAPI
+#define PRINT2OUTBUF(fmt, ...) do { \
+    size_t __bytes_written = sprintf(outbuf, (fmt), ##__VA_ARGS__); \
+    if(__bytes_written>0) { \
+        outbuf += __bytes_written; \
+    } \
+} while(0)
+
+char* print_panel_commands(char *outbuf, const char* prefix, const char* type, struct mipi_dsi_cmd* panel_commands, size_t num) {
+    uint32_t i, j;
+
+    for(i=0; i<num; i++) {
+        struct mipi_dsi_cmd* panel_cmd = &panel_commands[i];
+        PRINT2OUTBUF("static char %s_%s_cmd%u[] = {\n", prefix, type, i);
+        for(j=0; j<panel_cmd->size; j++) {
+            uint8_t* payload = (uint8_t*)panel_cmd->payload;
+            if(j%4==0)
+                PRINT2OUTBUF("\t");
+            else
+                PRINT2OUTBUF(", ");
+            PRINT2OUTBUF("0x%02X", payload[j]);
+
+            if(j%4==3)
+                PRINT2OUTBUF(",\n");
+
+        }
+        PRINT2OUTBUF("};\n\n");
+    }
+    PRINT2OUTBUF("static struct mipi_dsi_cmd %s_%s_command[] = {\n", prefix, type);
+    for(i=0; i<num; i++) {
+        struct mipi_dsi_cmd* panel_cmd = &panel_commands[i];
+        PRINT2OUTBUF("\t{0x%x, %s_%s_cmd%u, 0x%02x},\n", panel_cmd->size, prefix, type, i, panel_cmd->wait);
+    }
+    PRINT2OUTBUF("};\n");
+
+    char* typeupper = str2upper(strdup(type));
+    char* prefixupper = str2upper(strdup(prefix));
+    PRINT2OUTBUF("\n#define %s_%s_COMMAND %u\n", prefixupper, typeupper, num);
+    free(prefixupper);
+    free(typeupper);
+
+    return outbuf;
+}
+
+void cmd_oem_dump_panelheader(const char *arg, void *data, unsigned sz) {
+    uint32_t i;
+
+    dtb_panel_config_t* config = dtbpanel_config;
+    if (!dtbpanel_config) {
+        fastboot_fail("no config found");
+        return ;
+    }
+
+    struct panel_config* paneldata = config->paneldata;
+    struct panel_resolution* panelres = config->panelres;
+    struct color_info* color = config->color;
+    struct videopanel_info* videopanel = config->videopanel;
+    struct commandpanel_info* commandpanel = config->commandpanel;
+    struct command_state* state = config->state;
+    struct lane_configuration* laneconfig = config->laneconfig;
+    struct panel_timing* paneltiminginfo = config->paneltiminginfo;
+    struct panel_reset_sequence* panelresetseq = config->panelresetseq;
+    struct backlight* backlightinfo = config->backlightinfo;
+    struct fb_compression* fbcinfo = &config->fbcinfo;
+
+    const char* prefix = arg;
+    char* prefixupper = str2upper(strdup(prefix));
+    char* outbuf = (char*) data;
+
+    PRINT2OUTBUF("#ifndef _PANEL_%s_H_\n", prefixupper);
+    PRINT2OUTBUF("#define _PANEL_%s_H_\n", prefixupper);
+    PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+    PRINT2OUTBUF("/* HEADER files                                                              */\n");
+    PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+    PRINT2OUTBUF("#include \"panel.h\"\n");
+
+    if(paneldata) {
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Panel configuration                                                       */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct panel_config %s_panel_data = {\n", prefix);
+        PRINT2OUTBUF("\t\"%s\", \"%s\", \"%s\",\n",
+            paneldata->panel_node_id, paneldata->panel_controller, paneldata->panel_compatible
+        );
+        PRINT2OUTBUF("\t%u, %u, \"%s\", %u, 0x%08x, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, \"%s\"\n",
+            paneldata->panel_interface, paneldata->panel_type, paneldata->panel_destination,
+            paneldata->panel_orientation, paneldata->panel_clockrate, paneldata->panel_framerate, paneldata->panel_channelid,
+            paneldata->dsi_virtualchannel_id, paneldata->panel_broadcast_mode, paneldata->panel_lp11_init, paneldata->panel_init_delay,
+            paneldata->dsi_stream, paneldata->interleave_mode, paneldata->panel_bitclock_freq,
+            paneldata->panel_operating_mode, paneldata->panel_with_enable_gpio, paneldata->mode_gpio_state,
+            paneldata->slave_panel_node_id
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(panelres) {
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Panel resolution                                                          */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct panel_resolution %s_panel_res = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\n",
+            panelres->panel_width, panelres->panel_height, panelres->hfront_porch, panelres->hback_porch,
+            panelres->hpulse_width, panelres->hsync_skew, panelres->vfront_porch, panelres->vback_porch,
+            panelres->vpulse_width, panelres->hleft_border, panelres->hright_border, panelres->vtop_border,
+            panelres->vbottom_border, panelres->hactive_res, panelres->vactive_res,
+            panelres->invert_data_polarity, panelres->invert_vsync_polarity, panelres->invert_hsync_polarity
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(color) {
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Panel color information                                                   */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct color_info %s_color = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, 0x%x, %u, %u, %u\n",
+            color->color_format, color->color_order, color->underflow_color, color->border_color,
+            color->pixel_packing, color->pixel_alignment
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    // panel commands
+    PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+    PRINT2OUTBUF("/* Panel on/off command information                                          */\n");
+    PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+    if(config->on_commands)
+        outbuf = print_panel_commands(outbuf, prefix, "on", config->on_commands, config->num_on_commands);
+    PRINT2OUTBUF("\n\n");
+    if(config->off_commands)
+        outbuf = print_panel_commands(outbuf, prefix, "off", config->off_commands, config->num_off_commands);
+    PRINT2OUTBUF("\n");
+
+    if(state) {
+        // state
+        PRINT2OUTBUF("\nstatic struct command_state %s_state = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u\n",
+            state->oncommand_state, state->offcommand_state
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(commandpanel) {
+        // commandpanel
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Command mode panel information                                            */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct commandpanel_info %s_command_panel = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\n",
+            commandpanel->techeck_enable, commandpanel->tepin_select, commandpanel->teusing_tepin,
+            commandpanel->autorefresh_enable, commandpanel->autorefresh_framenumdiv,
+            commandpanel->tevsync_rdptr_irqline, commandpanel->tevsync_continue_lines, commandpanel->tevsync_startline_divisor,
+            commandpanel->tepercent_variance, commandpanel->tedcs_command, commandpanel->disable_eotafter_hsxfer,
+            commandpanel->cmdmode_idletime
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(videopanel) {
+        // videopanel
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Video mode panel information                                              */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct videopanel_info %s_video_panel = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, %u, %u, %u, %u, %u, %u, %u\n",
+            videopanel->hsync_pulse, videopanel->hfp_power_mode, videopanel->hbp_power_mode, videopanel->hsa_power_mode,
+            videopanel->bllp_eof_power_mode, videopanel->bllp_power_mode, videopanel->traffic_mode,
+            videopanel->dma_delayafter_vsync, videopanel->bllp_eof_power
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(laneconfig) {
+        // laneconfig
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Lane configuration                                                        */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct lane_configuration %s_lane_config = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, %u, %u, %u, %u, %u\n",
+            laneconfig->dsi_lanes, laneconfig->dsi_lanemap,
+            laneconfig->lane0_state, laneconfig->lane1_state, laneconfig->lane2_state, laneconfig->lane3_state,
+            laneconfig->force_clk_lane_hs
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    if(config->timing) {
+        // paneltiminginfo
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Panel timing                                                              */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+
+        PRINT2OUTBUF("static const uint32_t %s_timings[] = {\n", prefix);
+        PRINT2OUTBUF("\t");
+        for(i=0; i<config->timing_len; i++) {
+            if(i!=0)
+                PRINT2OUTBUF(", ");
+            PRINT2OUTBUF("0x%02x", config->timing[i]);
+        }
+        PRINT2OUTBUF("\n};\n");
+    }
+
+    if(paneltiminginfo) {
+        PRINT2OUTBUF("\nstatic struct panel_timing %s_timing_info = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, 0x%02x, 0x%02x\n",
+            paneltiminginfo->dsi_mdp_trigger, paneltiminginfo->dsi_dma_trigger,
+            paneltiminginfo->tclk_post, paneltiminginfo->tclk_pre
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    // TODO: panelresetseq
+
+    if(backlightinfo) {
+        // backlightinfo
+        PRINT2OUTBUF("\n/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("/* Backlight setting                                                         */\n");
+        PRINT2OUTBUF("/*---------------------------------------------------------------------------*/\n");
+        PRINT2OUTBUF("static struct backlight %s_backlight = {\n", prefix);
+        PRINT2OUTBUF("\t%u, %u, %u, %u, %u, \"%s\"\n",
+            backlightinfo->bl_interface_type, backlightinfo->bl_min_level, backlightinfo->bl_max_level,
+            backlightinfo->bl_step, backlightinfo->bl_pmic_controltype, backlightinfo->bl_pmic_model
+        );
+        PRINT2OUTBUF("};\n");
+    }
+
+    // TODO: fbcinfo
+
+    PRINT2OUTBUF("\n#endif /*_PANEL_%s_H_*/", prefixupper);
+
+    free(prefixupper);
+    fastboot_send_string_human(data, (size_t)(outbuf-(char*)data));
+    fastboot_okay("");
+}
+#endif

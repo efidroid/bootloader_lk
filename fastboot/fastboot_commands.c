@@ -687,6 +687,10 @@ static void cmd_boot(const char *arg, void *data, unsigned sz)
 }
 #endif
 
+#ifdef WITH_LIB_2NDSTAGE_DISPLAY_DTB
+void cmd_oem_dump_panelheader(const char *arg, void *data, unsigned sz);
+#endif
+
 void aboot_fastboot_register_commands_ex(void)
 {
     int i;
@@ -718,6 +722,9 @@ void aboot_fastboot_register_commands_ex(void)
 #endif
 #if defined(WITH_LIB_BASE64)
         {"oem dump-mem", cmd_oem_dumpmem},
+#endif
+#ifdef WITH_LIB_2NDSTAGE_DISPLAY_DTB
+        {"oem dump_panelheader", cmd_oem_dump_panelheader},
 #endif
 
         // these work because fastboot checks the last commands first
