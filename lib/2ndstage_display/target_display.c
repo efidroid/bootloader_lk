@@ -42,6 +42,11 @@ static int check_aboot_addr_range_overlap(uint32_t start, uint32_t size)
 }
 
 #if defined(WITH_LIB_2NDSTAGE_DISPLAY_MDP3)
+static void mdss_mdp_cmd_kickoff(void) {
+	writel(0x00000001, MDP_DMA_P_START);
+	mdelay(10);
+}
+
 int mdp_dump_config(struct fbcon_config *fb)
 {
     fb->base = (void *) readl(MDP_DMA_P_BUF_ADDR);
@@ -50,6 +55,10 @@ int mdp_dump_config(struct fbcon_config *fb)
     fb->stride = fb->width;
     fb->bpp = 24;
     fb->format = FB_FORMAT_RGB888;
+
+#ifdef WITH_2NDSTAGE_DISPLAY_DMA_TRIGGER
+    fb->update_start = mdss_mdp_cmd_kickoff;
+#endif
 
     return NO_ERROR;
 }
