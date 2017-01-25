@@ -536,6 +536,11 @@ next:
             qciditem_add("lge,lge_rev", dt_entry->u.lge.lge_rev);
         }
 
+        if(!strcmp(fdt_parser_name, "qcom_motorola")) {
+            dprintf(SPEW, "MOTO: version=%u model=%s\n", dt_entry->u.motorola.version, dt_entry->u.motorola.model);
+            qciditem_add("motorola,model", (uint32_t) dt_entry->u.motorola.model);
+        }
+
         // build hwinfo_tags
         qchwinfo_t *hwinfo_tags = calloc(1, sizeof(qchwinfo_t));
         ASSERT(hwinfo_tags);
