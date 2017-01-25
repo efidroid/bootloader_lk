@@ -154,6 +154,10 @@ boot_uintn_t libboot_platform_strlen(const char *str)
     return strlen(str);
 }
 
+char *libboot_platform_strncpy(char *dest, const char *src, boot_uintn_t n) {
+    return strncpy(dest, src, n);
+}
+
 typedef struct {
     void *ext_pdata;
     libboot_platform_getmemory_callback_t cb;
