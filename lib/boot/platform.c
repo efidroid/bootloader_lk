@@ -94,6 +94,11 @@ boot_uint32_t libboot_qcdt_get_oppo_id1(void) {
     return qciditem_get_zero("oppo,id1");
 }
 
+const char *libboot_qcdt_get_motorola_model(void)
+{
+    return (char*)qciditem_get_zero("motorola,model");
+}
+
 const char *libboot_qcdt_get_default_parser(void) {
 #ifdef DEVICE_DEFAULT_FDT_PARSER
     return DEVICE_DEFAULT_FDT_PARSER;
