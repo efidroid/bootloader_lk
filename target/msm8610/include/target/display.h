@@ -72,7 +72,7 @@ static const uint32_t panel_physical_ctrl[] = {
 #define MIPI_FB_ADDR  0x03200000
 
 #define MIPI_HSYNC_PULSE_WIDTH       8
-#define MIPI_HSYNC_BACK_PORCH_DCLK   40
+#define MIPI_HSYNC_BACK_PORCH_DCLK   60
 #define MIPI_HSYNC_FRONT_PORCH_DCLK  160
 
 #define MIPI_VSYNC_PULSE_WIDTH       2
