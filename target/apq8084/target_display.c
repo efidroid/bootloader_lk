@@ -539,11 +539,11 @@ void target_display_init(const char *panel_name)
 		return;
 	} else if (!strcmp(oem.panel, HDMI_PANEL_NAME)) {
 		dprintf(INFO, "%s: HDMI is primary\n", __func__);
-		mdss_hdmi_display_init(MDP_REV_50, (void *)HDMI_FB_ADDR);
+		mdss_hdmi_display_init(MDP_REV_50, (void *) HDMI_FB_ADDR);
 		return;
 	}
 
-	ret = gcdb_display_init(oem.panel, MDP_REV_50, (void *)MIPI_FB_ADDR);
+	ret = gcdb_display_init(oem.panel, MDP_REV_50, (void *) MIPI_FB_ADDR);
 	if (ret) {
 		target_force_cont_splash_disable(true);
 		msm_display_off();

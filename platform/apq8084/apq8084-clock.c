@@ -790,7 +790,7 @@ static struct clk_freq_tbl ftbl_mdss_edplink_clk[] = {
 };
 
 static struct rcg_clk edplink_clk_src = {
-	.cmd_reg = (uint32_t *)EDPLINK_CMD_RCGR,
+	.cmd_reg = (uint32_t *) EDPLINK_CMD_RCGR,
 	.set_rate = clock_lib2_rcg_set_rate_hid,
 	.freq_tbl = ftbl_mdss_edplink_clk,
 	.current_freq = &rcg_dummy_freq,
