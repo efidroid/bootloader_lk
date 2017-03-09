@@ -35,6 +35,10 @@
 #include <kernel/dpc.h>
 #include <boot_stats.h>
 
+#if WITH_LIB_BIO
+#include <lib/bio.h>
+#endif
+
 #if WITH_LIB_ATAGPARSE
 #include <lib/atagparse.h>
 #endif

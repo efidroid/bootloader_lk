@@ -36,6 +36,9 @@
 #include <platform/iomap.h>
 #include <platform.h>
 
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wshift-negative-value"
+
 /* Mux source select values */
 #define cxo_source_val    0
 #define gpll0_source_val  1
