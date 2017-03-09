@@ -134,7 +134,9 @@ void cmd_oem_reboot_download(const char *arg, void *data, unsigned sz)
     if (set_download_mode(EMERGENCY_DLOAD)) {
         dprintf(CRITICAL,"dload mode not supported by target\n");
     } else {
+#ifdef DLOAD
         reboot_device(DLOAD);
+#endif
         dprintf(CRITICAL,"Failed to reboot into dload mode\n");
     }
 }
