@@ -65,6 +65,7 @@ void clock_config_cdc(uint32_t interface);
 int platform_is_msm8939(void);
 int platform_is_msm8909(void);
 int platform_is_msm8992(void);
+int platform_is_msm8929(void);
 int boot_device_mask(int);
 uint32_t platform_detect_panel(void);
 uint32_t platform_get_max_periph(void);

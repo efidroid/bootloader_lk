@@ -33,7 +33,9 @@
 #include <msm_panel.h>
 #include <board.h>
 #include <mipi_dsi.h>
+#include <platform/timer.h>
 #include <target/display.h>
+#include <string.h>
 
 #include "include/panel.h"
 #include "panel_display.h"
@@ -570,7 +572,7 @@ static int init_panel_data(struct panel_struct *panelstruct,
 	return pan_type;
 }
 
-uint32_t oem_panel_max_auto_detect_panels()
+uint32_t oem_panel_max_auto_detect_panels(void)
 {
         return target_panel_auto_detect_enabled() ?
                         DISPLAY_MAX_PANEL_DETECTION : 0;

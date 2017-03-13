@@ -87,6 +87,7 @@
 
 #define MDSS_MAX_LINE_BUF_WIDTH 2048
 
+#if 0
 #define MDP_HW_REV                              REG_MDP(0x0100)
 #define MDP_INTR_EN                             REG_MDP(0x0110)
 #define MDP_INTR_CLEAR                          REG_MDP(0x0118)
@@ -96,14 +97,17 @@
 #define MDP_VIDEO_INTF_UNDERFLOW_CTL            REG_MDP(0x03E0)
 #define MDP_UPPER_NEW_ROI_PRIOR_RO_START        REG_MDP(0x02EC)
 #define MDP_LOWER_NEW_ROI_PRIOR_TO_START        REG_MDP(0x04F8)
+#endif
 
 #define MDP_INTF_0_TIMING_ENGINE_EN             REG_MDP(0x12500)
 #define MDP_INTF_1_TIMING_ENGINE_EN             REG_MDP(0x12700)
 #define MDP_INTF_2_TIMING_ENGINE_EN             REG_MDP(0x12900)
 #define MDP_INTF_3_TIMING_ENGINE_EN             REG_MDP(0x12B00)
 
+#if 0
 #define MDP_CTL_0_BASE                          REG_MDP(0x600)
 #define MDP_CTL_1_BASE                          REG_MDP(0x700)
+#endif
 
 #define MDP_PP_0_BASE                           REG_MDP(0x12D00)
 #define MDP_PP_1_BASE                           REG_MDP(0x12E00)
@@ -114,6 +118,7 @@
 #define CTL_FLUSH                               0x18
 #define CTL_START                               0x1C
 
+#if 0
 #define MDP_REG_SPLIT_DISPLAY_EN                REG_MDP(0x3F4)
 #define MDP_REG_SPLIT_DISPLAY_UPPER_PIPE_CTL    REG_MDP(0x3F8)
 #define MDP_REG_SPLIT_DISPLAY_LOWER_PIPE_CTL    REG_MDP(0x4F0)
@@ -121,6 +126,7 @@
 #define MDP_INTF_0_BASE                         REG_MDP(0x12500)
 #define MDP_INTF_1_BASE                         REG_MDP(0x12700)
 #define MDP_INTF_2_BASE                         REG_MDP(0x12900)
+#endif
 #define MDP_INTF_3_BASE                         REG_MDP(0x12B00)
 
 #define MDP_INTF_CONFIG                         0x04
@@ -143,6 +149,7 @@
 #define MDP_PANEL_FORMAT                        0x90
 #define MDP_PROG_FETCH_START                    0x170
 
+#if 0
 #define MDP_CLK_CTRL0                           REG_MDP(0x03AC)
 #define MDP_CLK_CTRL1                           REG_MDP(0x03B4)
 #define MDP_CLK_CTRL2                           REG_MDP(0x03BC)
@@ -154,11 +161,13 @@
 
 #define MMSS_MDP_SMP_ALLOC_W_BASE               REG_MDP(0x0180)
 #define MMSS_MDP_SMP_ALLOC_R_BASE               REG_MDP(0x0230)
+#endif
 
 /* source pipe opmode bits for flip */
 #define MDSS_MDP_OP_MODE_FLIP_UD                BIT(14)
 #define MDSS_MDP_OP_MODE_FLIP_LR                BIT(13)
 
+#if 0
 #define MDP_QOS_REMAPPER_CLASS_0                REG_MDP(0x02E0)
 #define MDP_QOS_REMAPPER_CLASS_1                REG_MDP(0x02E4)
 
@@ -181,6 +190,7 @@
 #define VBIF_VBIF_ABIT_SHORT                    REG_MDP(0x24070)
 #define VBIF_VBIF_ABIT_SHORT_CONF               REG_MDP(0x24074)
 #define VBIF_VBIF_GATE_OFF_WRREQ_EN             REG_MDP(0x240A8)
+#endif
 
 #define MDSS_MDP_REG_PP_FBC_MODE                0x034
 #define MDSS_MDP_REG_PP_FBC_BUDGET_CTL          0x038
