@@ -969,6 +969,16 @@ void atag_parse(void)
         }
     }
 
+    // get charger bootmode
+    const char *bootmode = cmdline_get(&cmdline_list, "androidboot.mode");
+    if (bootmode) {
+        dprintf(INFO, "androidboot.mode = [%s]\n", bootmode);
+
+        if (!strcmp(bootmode, "charger")) {
+            uefi_bootmode = LKARGS_BOOTMODE_CHARGER;
+        }
+    }
+
     // build and print hwinfo_lk
     {
         uint32_t platform_id = board_platform_id();
