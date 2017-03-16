@@ -145,6 +145,9 @@ __WEAK unsigned int api_platform_get_uefi_bootmode(void)
         case LKARGS_BOOTMODE_RECOVERY:
             return LKAPI_UEFI_BM_RECOVERY;
 
+        case LKARGS_BOOTMODE_CHARGER:
+            return LKAPI_UEFI_BM_CHARGER;
+
         case LKARGS_BOOTMODE_NORMAL:
         default:
             return LKAPI_UEFI_BM_NORMAL;

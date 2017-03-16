@@ -7,6 +7,7 @@ typedef void *(*lkargs_mmap_cb_t)(void *pdata, uint64_t addr, uint64_t size);
 
 #define LKARGS_BOOTMODE_NORMAL 0
 #define LKARGS_BOOTMODE_RECOVERY 1
+#define LKARGS_BOOTMODE_CHARGER 2
 
 // init
 void atag_parse(void);
