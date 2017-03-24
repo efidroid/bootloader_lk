@@ -291,6 +291,7 @@ static void set_sdc_power_ctrl(uint8_t slot)
 void target_sdc_init(void)
 {
 	struct mmc_config_data config = {0};
+	struct mmc_device *tmpdev;
 
 	config.bus_width = DATA_BUS_WIDTH_8BIT;
 	config.max_clk_rate = MMC_CLK_192MHZ;
@@ -307,22 +308,28 @@ void target_sdc_init(void)
 
 	if (!(dev = mmc_init(&config)))
 	{
-		/* Try slot 2 */
-		config.slot = 2;
-		config.max_clk_rate = MMC_CLK_200MHZ;
-		config.sdhc_base = mmc_sdhci_base[config.slot - 1];
-		config.pwrctl_base = mmc_pwrctl_base[config.slot - 1];
-		config.pwr_irq     = mmc_sdc_pwrctl_irq[config.slot - 1];
-
-		/* Set drive strength & pull ctrl values */
-		set_sdc_power_ctrl(config.slot);
-
-		if (!(dev = mmc_init(&config)))
-		{
-			dprintf(CRITICAL, "mmc init failed!");
-			ASSERT(0);
-		}
+		dprintf(CRITICAL, "mmc1 init failed!");
 	}
+
+	/* Try slot 2 */
+	config.slot = 2;
+	config.max_clk_rate = MMC_CLK_200MHZ;
+	config.sdhc_base = mmc_sdhci_base[config.slot - 1];
+	config.pwrctl_base = mmc_pwrctl_base[config.slot - 1];
+	config.pwr_irq     = mmc_sdc_pwrctl_irq[config.slot - 1];
+
+	/* Set drive strength & pull ctrl values */
+	set_sdc_power_ctrl(config.slot);
+
+	if (!(tmpdev = mmc_init(&config)))
+	{
+		dprintf(CRITICAL, "mmc2 init failed!");
+	}
+	else if(!dev)
+		dev = tmpdev;
+
+	/* we need at least one mmc device */
+	ASSERT(dev);
 }
 
 void *target_mmc_device(void)
