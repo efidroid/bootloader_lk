@@ -43,8 +43,7 @@ void uefiapi_platform_init_post(void)
 void* uefiapi_mmap_add_platform_mappings(void *pdata, lkapi_mmap_add_cb_t cb)
 {
     // iomap
-    pdata = cb(pdata, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MMAP_RANGEFLAG_RESERVED,
-                      LKAPI_MEMORYATTR_DEVICE, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
+    pdata = cb(pdata, MSM_IOMAP_BASE, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MEMORYATTR_DEVICE, 0, 0);
 
     return pdata;
 }
