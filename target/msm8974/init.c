@@ -256,6 +256,7 @@ static void target_mmc_sdhci_init(void)
 		dprintf(CRITICAL, "mmc1 init failed!");
 	}
 
+#ifndef MSM8974_SDIO_DEVICE
 	/* Trying Slot 2 next */
 	config.slot = 2;
 	config.max_clk_rate = MMC_CLK_200MHZ;
@@ -274,6 +275,7 @@ static void target_mmc_sdhci_init(void)
 	}
 	else if(!dev)
 		dev = tmpdev;
+#endif
 
 	/* we need at least one mmc device */
 	ASSERT(dev);
