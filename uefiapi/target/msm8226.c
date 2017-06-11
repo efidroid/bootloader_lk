@@ -1,5 +1,7 @@
 #include <err.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <arch/defines.h>
 #include <pm8x41.h>
 #include <dev/newkeys.h>
 #include <platform/iomap.h>
@@ -43,7 +45,7 @@ void uefiapi_platform_init_post(void)
 void* uefiapi_mmap_add_platform_mappings(void *pdata, lkapi_mmap_add_cb_t cb)
 {
     // iomap
-    pdata = cb(pdata, MSM_IOMAP_BASE, (MSM_IOMAP_END - MSM_IOMAP_BASE), LKAPI_MMAP_RANGEFLAG_RESERVED,
+    pdata = cb(pdata, MSM_IOMAP_BASE, ROUNDUP(MSM_IOMAP_END - MSM_IOMAP_BASE, PAGE_SIZE), LKAPI_MMAP_RANGEFLAG_RESERVED,
                       LKAPI_MEMORYATTR_DEVICE, 0, LKAPI_MMAP_RANGEFLAG_UNUSED|LKAPI_MMAP_RANGEFLAG_DRAM);
 
     return pdata;
